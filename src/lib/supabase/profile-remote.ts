@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { UserProfile } from "@/lib/types/profile";
-import { googleProfile } from "@/lib/supabase/auth";
+import type { PublicUserProfile, UserProfile } from "@/lib/types/profile";
 
 type ProfileRow = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
+  chakra: number | null;
   updated_at: string;
 };
 
@@ -14,7 +14,15 @@ function rowToProfile(row: ProfileRow): UserProfile {
     displayName: row.display_name,
     bio: row.bio ?? "",
     avatarUrl: row.avatar_url ?? undefined,
+    chakra: Number(row.chakra ?? 0),
     updatedAt: new Date(row.updated_at).getTime(),
+  };
+}
+
+function rowToPublic(row: Pick<ProfileRow, "display_name" | "chakra">): PublicUserProfile {
+  return {
+    displayName: row.display_name,
+    chakra: Number(row.chakra ?? 0),
   };
 }
 
@@ -24,13 +32,28 @@ export async function fetchProfileRemote(
 ): Promise<UserProfile | null> {
   const { data, error } = await client
     .from("profiles")
-    .select("display_name, bio, avatar_url, updated_at")
+    .select("display_name, bio, avatar_url, chakra, updated_at")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
   return rowToProfile(data as ProfileRow);
+}
+
+export async function fetchPublicProfileRemote(
+  client: SupabaseClient,
+  userId: string,
+): Promise<PublicUserProfile | null> {
+  const { data, error } = await client
+    .from("profiles")
+    .select("display_name, chakra")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return rowToPublic(data as ProfileRow);
 }
 
 export async function upsertProfileRemote(
@@ -50,30 +73,30 @@ export async function upsertProfileRemote(
       },
       { onConflict: "user_id" },
     )
-    .select("display_name, bio, avatar_url, updated_at")
+    .select("display_name, bio, avatar_url, chakra, updated_at")
     .single();
 
   if (error) throw error;
   return rowToProfile(data as ProfileRow);
 }
 
-export function profileFromGoogleSession(session: {
-  user: {
-    is_anonymous?: boolean;
-    email?: string;
-    user_metadata?: {
-      full_name?: string;
-      name?: string;
-      avatar_url?: string;
-      picture?: string;
-    };
-  };
-} | null): UserProfile | null {
-  const google = googleProfile(session);
-  if (!google) return null;
+export async function awardChakraRemote(
+  client: SupabaseClient,
+  userId: string,
+  points: number,
+): Promise<void> {
+  const { error } = await client.rpc("award_duty_chakra", {
+    p_user_id: userId,
+    p_points: points,
+  });
+  if (error) throw error;
+}
+
+/** Placeholder until the user picks an anonymous public name. */
+export function emptyProfileSeed(): UserProfile {
   return {
-    displayName: google.name,
+    displayName: "anon",
     bio: "",
-    avatarUrl: google.avatarUrl ?? undefined,
+    chakra: 0,
   };
 }

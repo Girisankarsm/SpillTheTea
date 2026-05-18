@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ChakraBadge } from "@/components/ChakraBadge";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { googleProfile, isGoogleSignedIn } from "@/lib/supabase/auth";
+import { useProfileStore } from "@/lib/profile-store";
+import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { getVisitorId } from "@/lib/visitor";
 
 export default function ProfilePage() {
   const { session, configured } = useSupabase();
   const { profile, saveProfile, loading, signedIn } = useUserProfile();
-  const google = googleProfile(session);
+  const upsertLocalPublicProfile = useProfileStore((s) => s.upsertLocalPublicProfile);
 
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -26,7 +29,15 @@ export default function ProfilePage() {
     setSaving(true);
     setSaved(false);
     try {
-      await saveProfile({ displayName, bio, avatarUrl: profile.avatarUrl });
+      const trimmedName = displayName.trim();
+      await saveProfile({ displayName: trimmedName, bio, avatarUrl: profile.avatarUrl });
+      const vid = getVisitorId();
+      if (vid) {
+        upsertLocalPublicProfile(vid, {
+          displayName: trimmedName,
+          chakra: profile.chakra ?? 0,
+        });
+      }
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -36,8 +47,7 @@ export default function ProfilePage() {
     }
   }
 
-  const avatarUrl = profile.avatarUrl ?? google?.avatarUrl ?? null;
-  const initial = (displayName || google?.name || "?").slice(0, 1).toUpperCase();
+  const initial = (displayName || "?").slice(0, 1).toUpperCase();
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-10">
@@ -52,36 +62,24 @@ export default function ProfilePage() {
           Your profile
         </h1>
         <p className="text-sm text-subtle">
-          This name shows when you post in tea rooms. Your email stays private.
+          Others only see your <strong>anonymous name</strong> and{" "}
+          <strong>chakra</strong> — never your email or Google name.
         </p>
       </header>
 
       <div className="flex items-center gap-4 rounded-xl border border-border bg-surface p-4">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt=""
-            className="h-16 w-16 rounded-full border-2 border-white shadow-sm"
-          />
-        ) : (
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-soft text-xl font-bold text-brand">
-            {initial}
-          </span>
-        )}
+        <ChakraBadge chakra={profile.chakra ?? 0} size="sm" showLabel={false} />
         <div className="min-w-0">
           <p className="truncate font-bold text-foreground">
-            {displayName || google?.name || "Set a display name"}
+            {displayName || "Pick an anonymous name"}
           </p>
-          {signedIn && google?.email ? (
-            <p className="truncate text-xs text-subtle">{google.email}</p>
-          ) : (
-            <p className="text-xs text-subtle">
-              {configured
+          <p className="text-xs text-subtle">
+            {signedIn && isGoogleSignedIn(session)
+              ? "Signed in — email stays private."
+              : configured
                 ? "Sign in with Google to sync across devices."
                 : "Saved on this device only."}
-            </p>
-          )}
+          </p>
         </div>
       </div>
 
@@ -90,7 +88,7 @@ export default function ProfilePage() {
         className="space-y-4 rounded-xl border border-border bg-surface p-4"
       >
         <label className="block text-xs font-semibold text-foreground">
-          Display name
+          Anonymous public name
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
@@ -100,13 +98,16 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
         </label>
+        <p className="text-[11px] text-subtle">
+          This is the only name people see on duties and your public profile.
+        </p>
 
         <label className="block text-xs font-semibold text-foreground">
-          Bio <span className="font-normal text-subtle">(optional)</span>
+          Bio <span className="font-normal text-subtle">(private — only you see this)</span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="What's your vibe?"
+            placeholder="Notes for yourself…"
             maxLength={200}
             rows={3}
             className="mt-1 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
@@ -122,11 +123,9 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      {!signedIn && configured && !isGoogleSignedIn(session) ? (
-        <p className="text-center text-xs text-subtle">
-          Tip: sign in with Google in the header to keep your profile everywhere.
-        </p>
-      ) : null}
+      <p className="text-center text-xs text-subtle">
+        Earn chakra by completing duties — +1 base, more for bigger rewards.
+      </p>
     </div>
   );
 }

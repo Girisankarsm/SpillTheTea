@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { AppLogo } from "@/components/AppShell";
 
 const steps = [
   { n: "1", label: "Open a room", detail: "Browse or start one." },
@@ -11,15 +11,8 @@ export default function Home() {
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col items-center justify-center gap-10 px-4 py-16 text-center">
       <div className="space-y-4">
-        <div className="mx-auto w-full max-w-[220px] overflow-hidden rounded-2xl border border-border bg-surface">
-          <Image
-            src="/meet-greet-logo.png"
-            alt="SpillTheTea"
-            width={1024}
-            height={682}
-            priority
-            className="h-auto w-full object-contain"
-          />
+        <div className="mx-auto">
+          <AppLogo heightPx={180} priority className="shadow-md" />
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           SpillTheTea
@@ -27,12 +20,18 @@ export default function Home() {
         <p className="text-sm text-subtle">Anonymous convo rooms. That&apos;s it.</p>
       </div>
 
-      <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
         <Link
           href="/topics"
           className="rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white hover:opacity-90"
         >
           Browse rooms
+        </Link>
+        <Link
+          href="/duties"
+          className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
+        >
+          Duties
         </Link>
         <Link
           href="/topics"

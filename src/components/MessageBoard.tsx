@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ChatMessage } from "@/lib/types";
+import { CreatePollModal } from "@/components/CreatePollModal";
+import { PollCard } from "@/components/PollCard";
 import { GifPicker } from "@/components/GifPicker";
+import { buildRoomFeed } from "@/lib/feed";
 import {
   buildMessageThread,
   countReplies,
   type ThreadNode,
 } from "@/lib/message-thread";
+import type { ChatMessage } from "@/lib/types";
+import type { RoomPoll } from "@/lib/types/poll";
 
 function formatChatTime(ms: number): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -129,11 +133,13 @@ type ComposerProps = {
   replyTo: ChatMessage | null;
   pendingFile: File | null;
   disabled?: boolean;
+  pollDisabled?: boolean;
   onNameChange: (v: string) => void;
   onBodyChange: (v: string) => void;
   onGifUrlChange: (v: string) => void;
   onFilePick: (file: File | null) => void;
   onCancelReply: () => void;
+  onOpenPoll: () => void;
   onSubmit: () => void;
 };
 
@@ -145,11 +151,13 @@ function Composer({
   replyTo,
   pendingFile,
   disabled,
+  pollDisabled,
   onNameChange,
   onBodyChange,
   onGifUrlChange,
   onFilePick,
   onCancelReply,
+  onOpenPoll,
   onSubmit,
 }: ComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -288,6 +296,14 @@ function Composer({
             From device
           </button>
           <button
+            type="button"
+            onClick={onOpenPoll}
+            disabled={pollDisabled || Boolean(replyTo)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-bold text-foreground hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Poll
+          </button>
+          <button
             type="submit"
             disabled={disabled}
             className="ml-auto rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
@@ -308,6 +324,7 @@ function Composer({
 
 type MessageBoardProps = {
   messages: ChatMessage[];
+  polls: RoomPoll[];
   name: string;
   nameLocked?: boolean;
   body: string;
@@ -315,6 +332,7 @@ type MessageBoardProps = {
   replyTo: ChatMessage | null;
   pendingFile: File | null;
   composerDisabled?: boolean;
+  pollDisabled?: boolean;
   currentUserId?: string | null;
   onPrivateChat?: (message: ChatMessage) => void;
   onNameChange: (v: string) => void;
@@ -324,10 +342,13 @@ type MessageBoardProps = {
   onReply: (message: ChatMessage) => void;
   onCancelReply: () => void;
   onSubmit: () => void;
+  onCreatePoll: (input: { question: string; options: string[] }) => void;
+  onVotePoll: (pollId: string, optionId: string) => void;
 };
 
 export function MessageBoard({
   messages,
+  polls,
   name,
   nameLocked,
   body,
@@ -335,6 +356,7 @@ export function MessageBoard({
   replyTo,
   pendingFile,
   composerDisabled,
+  pollDisabled,
   currentUserId,
   onPrivateChat,
   onNameChange,
@@ -344,28 +366,53 @@ export function MessageBoard({
   onReply,
   onCancelReply,
   onSubmit,
+  onCreatePoll,
+  onVotePoll,
 }: MessageBoardProps) {
+  const [pollModalOpen, setPollModalOpen] = useState(false);
+  const feed = buildRoomFeed(messages, polls);
   const thread = buildMessageThread(messages);
+  const topLevelMessageIds = new Set(thread.map((node) => node.message.id));
 
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4">
-        {thread.length === 0 ? (
+        {feed.length === 0 ? (
           <p className="text-sm text-subtle">
-            No posts yet — start the thread or drop a GIF.
+            No posts yet — start the thread, drop a GIF, or start a poll.
           </p>
         ) : (
-          thread.map((node) => (
-            <ThreadBranch
-              key={node.message.id}
-              node={node}
-              depth={0}
-              messages={messages}
-              currentUserId={currentUserId}
-              onReply={onReply}
-              onPrivateChat={onPrivateChat}
-            />
-          ))
+          feed.map((item) => {
+            if (item.kind === "poll") {
+              return (
+                <PollCard
+                  key={`poll-${item.poll.id}`}
+                  poll={item.poll}
+                  disabled={pollDisabled}
+                  onVote={onVotePoll}
+                />
+              );
+            }
+
+            if (!topLevelMessageIds.has(item.message.id)) {
+              return null;
+            }
+
+            const node = thread.find((entry) => entry.message.id === item.message.id);
+            if (!node) return null;
+
+            return (
+              <ThreadBranch
+                key={item.message.id}
+                node={node}
+                depth={0}
+                messages={messages}
+                currentUserId={currentUserId}
+                onReply={onReply}
+                onPrivateChat={onPrivateChat}
+              />
+            );
+          })
         )}
       </div>
 
@@ -377,12 +424,24 @@ export function MessageBoard({
         replyTo={replyTo}
         pendingFile={pendingFile}
         disabled={composerDisabled}
+        pollDisabled={pollDisabled}
         onNameChange={onNameChange}
         onBodyChange={onBodyChange}
         onGifUrlChange={onGifUrlChange}
         onFilePick={onFilePick}
         onCancelReply={onCancelReply}
+        onOpenPoll={() => setPollModalOpen(true)}
         onSubmit={onSubmit}
+      />
+
+      <CreatePollModal
+        open={pollModalOpen}
+        disabled={pollDisabled}
+        onClose={() => setPollModalOpen(false)}
+        onSubmit={(input) => {
+          onCreatePoll(input);
+          setPollModalOpen(false);
+        }}
       />
     </>
   );

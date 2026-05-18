@@ -4,8 +4,8 @@ import { AuthMenu } from "@/components/AuthMenu";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { SetupBanner } from "@/components/SetupBanner";
 
-const LOGO_SRC = "/meet-greet-logo.png";
-const LOGO_RATIO = 1024 / 682;
+const LOGO_SRC = "/spillthetea-logo.png";
+const LOGO_SIZE = 1024;
 
 type AppLogoProps = {
   /** Approximate rendered height in CSS px */
@@ -22,17 +22,17 @@ export function AppLogo({
 }: AppLogoProps) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface ${className}`}
-      style={{ height: heightPx, maxWidth: Math.round(heightPx * LOGO_RATIO) }}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ${className}`}
+      style={{ height: heightPx, width: heightPx }}
     >
       <Image
         src={LOGO_SRC}
         alt="SpillTheTea"
-        width={1024}
-        height={682}
+        width={LOGO_SIZE}
+        height={LOGO_SIZE}
         priority={priority}
-        sizes={`${Math.round(heightPx * LOGO_RATIO)}px`}
-        className="h-full w-auto max-w-full object-contain object-[center_42%]"
+        sizes={`${heightPx}px`}
+        className="h-full w-full object-cover"
       />
     </span>
   );
@@ -41,6 +41,7 @@ export function AppLogo({
 const links = [
   { href: "/", label: "Home" },
   { href: "/topics", label: "Tea rooms" },
+  { href: "/duties", label: "Duties" },
   { href: "/explore", label: "Map" },
 ] as const;
 

@@ -8,6 +8,8 @@ import { PrivateChatPanel } from "@/components/PrivateChatPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import type { ChatMessage, Topic } from "@/lib/types";
+import type { RoomPoll } from "@/lib/types/poll";
+import { enrichPollVotes } from "@/lib/feed";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { canDeleteTopic } from "@/lib/admin";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
@@ -24,6 +26,11 @@ import {
   getCurrentUserId,
   sendMessageRemote,
 } from "@/lib/supabase/meet-greet-remote";
+import {
+  createPollRemote,
+  fetchTopicPolls,
+  votePollRemote,
+} from "@/lib/supabase/poll-remote";
 import {
   normalizeMediaUrlInput,
   uploadMessageMedia,
@@ -73,6 +80,10 @@ export default function TopicChatPage() {
   const localTopics = useMeetGreetStore((s) => s.topics);
   const localMessages = useMeetGreetStore((s) => s.messages);
   const sendMessageLocal = useMeetGreetStore((s) => s.sendMessage);
+  const createPollLocal = useMeetGreetStore((s) => s.createPoll);
+  const votePollLocal = useMeetGreetStore((s) => s.votePoll);
+  const localPolls = useMeetGreetStore((s) => s.polls);
+  const localPollVotes = useMeetGreetStore((s) => s.pollVotes);
   const deleteTopicLocal = useMeetGreetStore((s) => s.deleteTopic);
   const getLockedRoomNameLocal = useMeetGreetStore((s) => s.getLockedRoomName);
 
@@ -91,11 +102,31 @@ export default function TopicChatPage() {
 
   const [remoteTopic, setRemoteTopic] = useState<Topic | null>(null);
   const [remoteMessages, setRemoteMessages] = useState<ChatMessage[]>([]);
+  const [remotePolls, setRemotePolls] = useState<RoomPoll[]>([]);
   const [remoteLoaded, setRemoteLoaded] = useState(!remoteReady);
   const [remoteErr, setRemoteErr] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  const localRoomPolls = useMemo(() => {
+    const voterKey = getVisitorId();
+    return enrichPollVotes(
+      localPolls.filter((poll) => poll.topicId === id),
+      localPollVotes,
+      voterKey,
+    );
+  }, [localPolls, localPollVotes, id]);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const refreshRemotePolls = useCallback(async () => {
+    if (!supabase || !id) return;
+    try {
+      const polls = await fetchTopicPolls(supabase, id);
+      setRemotePolls(polls);
+    } catch (e) {
+      setRemoteErr(unknownErrorMessage(e, "Could not refresh polls."));
+    }
+  }, [supabase, id]);
 
   const refreshRemoteRoom = useCallback(async () => {
     if (!supabase || !id) return;
@@ -136,6 +167,10 @@ export default function TopicChatPage() {
           const msgs = await fetchTopicMessages(supabase, id);
           if (cancelled) return;
           setRemoteMessages(msgs);
+
+          const polls = await fetchTopicPolls(supabase, id);
+          if (cancelled) return;
+          setRemotePolls(polls);
 
           if (!cancelled) setCurrentUserId(await getCurrentUserId(supabase));
         } catch (e) {
@@ -180,6 +215,25 @@ export default function TopicChatPage() {
       .on(
         "postgres_changes",
         {
+          event: "INSERT",
+          schema: "public",
+          table: "polls",
+          filter: `topic_id=eq.${id}`,
+        },
+        () => void refreshRemotePolls(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "poll_votes",
+        },
+        () => void refreshRemotePolls(),
+      )
+      .on(
+        "postgres_changes",
+        {
           event: "DELETE",
           schema: "public",
           table: "topics",
@@ -192,10 +246,11 @@ export default function TopicChatPage() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [remoteReady, supabase, id, refreshRemoteRoom, router]);
+  }, [remoteReady, supabase, id, refreshRemoteRoom, refreshRemotePolls, router]);
 
   const topic = remoteReady ? remoteTopic : localTopic;
   const thread = remoteReady ? remoteMessages : localThread;
+  const roomPolls = remoteReady ? remotePolls : localRoomPolls;
 
   const [name, setName] = useState("");
   const [nameLocked, setNameLocked] = useState(false);
@@ -204,6 +259,7 @@ export default function TopicChatPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [posting, setPosting] = useState(false);
+  const [pollBusy, setPollBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
   const [dmInitialThreadId, setDmInitialThreadId] = useState<string | null>(null);
@@ -436,6 +492,65 @@ export default function TopicChatPage() {
     }
   }
 
+  async function submitPoll(input: { question: string; options: string[] }) {
+    if (!id || pollBusy) return;
+
+    const author = name.trim() || "anon";
+    setPollBusy(true);
+    try {
+      if (remoteReady && supabase) {
+        await createPollRemote(supabase, {
+          topicId: id,
+          authorName: author,
+          question: input.question,
+          options: input.options,
+        });
+        await refreshRemotePolls();
+      } else {
+        createPollLocal({
+          topicId: id,
+          authorName: author,
+          question: input.question,
+          options: input.options,
+        });
+      }
+
+      if (!nameLocked) {
+        setNameLocked(true);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not post poll.");
+    } finally {
+      setPollBusy(false);
+      queueMicrotask(() =>
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+      );
+    }
+  }
+
+  async function handleVotePoll(pollId: string, optionId: string) {
+    if (pollBusy) return;
+
+    setPollBusy(true);
+    try {
+      if (remoteReady && supabase) {
+        await votePollRemote(supabase, pollId, optionId);
+        await refreshRemotePolls();
+      } else {
+        const voterKey = getVisitorId();
+        if (!voterKey) {
+          alert("Could not save your vote in this browser.");
+          return;
+        }
+        votePollLocal(pollId, optionId, voterKey);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not save vote.");
+    } finally {
+      setPollBusy(false);
+    }
+  }
+
   const shareUrl = id ? roomShareUrl(id) : "";
 
   const canRemove = topic
@@ -579,6 +694,7 @@ export default function TopicChatPage() {
       ) : (
         <MessageBoard
           messages={thread}
+          polls={roomPolls}
           name={name}
           nameLocked={nameLocked}
           body={body}
@@ -587,6 +703,9 @@ export default function TopicChatPage() {
           pendingFile={pendingFile}
           composerDisabled={
             posting || (remoteReady && (!supabase || !remoteLoaded))
+          }
+          pollDisabled={
+            pollBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
           }
           currentUserId={currentUserId}
           onPrivateChat={canPrivateChat ? handlePrivateChat : undefined}
@@ -602,6 +721,8 @@ export default function TopicChatPage() {
           }}
           onCancelReply={() => setReplyTo(null)}
           onSubmit={() => void submitPost()}
+          onCreatePoll={(input) => void submitPoll(input)}
+          onVotePoll={(pollId, optionId) => void handleVotePoll(pollId, optionId)}
         />
       )}
       <div ref={bottomRef} />

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
 import {
+  emptyProfileSeed,
   fetchProfileRemote,
-  profileFromGoogleSession,
   upsertProfileRemote,
 } from "@/lib/supabase/profile-remote";
 import { profileDisplayName, useProfileStore } from "@/lib/profile-store";
@@ -28,10 +28,11 @@ export function useUserProfile() {
     try {
       let profile = await fetchProfileRemote(supabase, session.user.id);
       if (!profile) {
-        const seed = profileFromGoogleSession(session);
-        if (seed) {
-          profile = await upsertProfileRemote(supabase, session.user.id, seed);
-        }
+        profile = await upsertProfileRemote(
+          supabase,
+          session.user.id,
+          emptyProfileSeed(),
+        );
       }
       setRemoteProfile(profile);
     } finally {
@@ -50,6 +51,7 @@ export function useUserProfile() {
       displayName: local.displayName,
       bio: local.bio,
       avatarUrl: local.avatarUrl,
+      chakra: local.chakra ?? 0,
       updatedAt: local.updatedAt,
     };
   }, [remoteReady, signedIn, remoteProfile, local]);
