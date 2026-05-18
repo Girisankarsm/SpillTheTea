@@ -23,6 +23,7 @@ export type CreateTopicPayload = {
 
 type CreateTopicPanelProps = {
   onSubmit: (payload: CreateTopicPayload) => Promise<void> | void;
+  onClose?: () => void;
   disabled?: boolean;
   submitting?: boolean;
 };
@@ -45,6 +46,7 @@ function isValidHttpUrl(raw: string): boolean {
 
 export function CreateTopicPanel({
   onSubmit,
+  onClose,
   disabled = false,
   submitting = false,
 }: CreateTopicPanelProps) {
@@ -138,25 +140,35 @@ export function CreateTopicPanel({
         onSubmit={(e) => void handleSubmit(e)}
         className="overflow-hidden rounded-2xl border border-border bg-surface"
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-lg font-bold text-foreground">Create post</h2>
-        </div>
-
-        <div className="border-b border-border px-4 py-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold text-foreground">
-            <span aria-hidden>🍵</span>
-            Tea
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground">Create post</h2>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+              <span aria-hidden>🍵</span>
+              Tea
+            </span>
           </div>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-subtle hover:bg-brand-soft hover:text-foreground disabled:opacity-50"
+              aria-label="Close create post"
+            >
+              ✕
+            </button>
+          ) : null}
         </div>
 
-        <div className="flex gap-4 overflow-x-auto border-b border-border px-4">
+        <div className="flex items-end gap-1 overflow-x-auto border-b border-border px-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={[
-                "shrink-0 border-b-2 py-3 text-sm font-bold transition",
+                "shrink-0 border-b-2 px-3 py-3 text-sm font-bold transition",
                 activeTab === tab.id
                   ? "border-brand text-foreground"
                   : "border-transparent text-subtle hover:text-foreground",
@@ -167,7 +179,7 @@ export function CreateTopicPanel({
           ))}
         </div>
 
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 px-4 py-4">
           <div className="relative">
             <label className="pointer-events-none absolute left-3 top-2 text-[11px] font-semibold text-subtle">
               Title<span className="text-danger-text">*</span>

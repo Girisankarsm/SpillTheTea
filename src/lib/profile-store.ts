@@ -19,6 +19,8 @@ export const useProfileStore = create<ProfileState>()(
       avatarUrl: undefined,
       chakra: 0,
       updatedAt: undefined,
+      paymentUpi: undefined,
+      paymentPhone: undefined,
       localPublicProfiles: {},
       setProfile: (input) =>
         set((s) => ({

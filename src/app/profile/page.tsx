@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { readFileAsDataUrl } from "@/lib/message-thread";
+import { isImageFile } from "@/lib/image-file";
+import { normalizePaymentPhone } from "@/lib/payments/upi";
 import { useProfileStore } from "@/lib/profile-store";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
 import { uploadProfileAvatar } from "@/lib/supabase/profile-media";
@@ -24,13 +26,16 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
+    if (dirty || pendingFile) return;
     setDisplayName(profile.displayName);
     setAvatarUrl(profile.avatarUrl);
     setPaymentUpi(profile.paymentUpi ?? "");
     setPaymentPhone(profile.paymentPhone ?? "");
-  }, [profile.displayName, profile.avatarUrl, profile.paymentUpi, profile.paymentPhone]);
+  }, [profile.displayName, profile.avatarUrl, profile.paymentUpi, profile.paymentPhone, dirty, pendingFile]);
 
   useEffect(() => {
     if (!pendingFile) {
@@ -44,15 +49,17 @@ export default function ProfilePage() {
 
   function handleFilePick(file: File | null) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (!isImageFile(file)) {
       alert("Pick an image file for your profile photo.");
       return;
     }
+    setDirty(true);
     setPendingFile(file);
     if (fileRef.current) fileRef.current.value = "";
   }
 
   function removePhoto() {
+    setDirty(true);
     setPendingFile(null);
     setAvatarUrl(undefined);
   }
@@ -63,9 +70,17 @@ export default function ProfilePage() {
     setSaved(false);
     try {
       const trimmedName = displayName.trim();
+      const trimmedUpi = paymentUpi.trim();
+      const trimmedPhone = paymentPhone.trim();
+
+      if (trimmedPhone && !normalizePaymentPhone(trimmedPhone)) {
+        throw new Error("Phone must be 10 digits.");
+      }
+
       let nextAvatarUrl = avatarUrl;
 
       if (pendingFile) {
+        setPhotoBusy(true);
         if (remoteReady && supabase && session?.user?.id && signedIn) {
           nextAvatarUrl = await uploadProfileAvatar(
             supabase,
@@ -80,12 +95,13 @@ export default function ProfilePage() {
       await saveProfile({
         displayName: trimmedName,
         avatarUrl: nextAvatarUrl,
-        paymentUpi: paymentUpi.trim() || undefined,
-        paymentPhone: paymentPhone.trim() || undefined,
+        paymentUpi: trimmedUpi || undefined,
+        paymentPhone: trimmedPhone || undefined,
       });
 
       setAvatarUrl(nextAvatarUrl);
       setPendingFile(null);
+      setDirty(false);
 
       const vid = getVisitorId();
       if (vid) {
@@ -101,6 +117,7 @@ export default function ProfilePage() {
       alert(err instanceof Error ? err.message : "Could not save profile.");
     } finally {
       setSaving(false);
+      setPhotoBusy(false);
     }
   }
 
@@ -175,7 +192,9 @@ export default function ProfilePage() {
                 </button>
               ) : null}
             </div>
-            <p className="text-[11px] text-subtle">JPG, PNG, or GIF · max 5 MB</p>
+            <p className="text-[11px] text-subtle">
+              JPG, PNG, GIF, or HEIC · max 5 MB · tap Save profile after picking
+            </p>
           </div>
         </div>
 
@@ -183,7 +202,10 @@ export default function ProfilePage() {
           Anonymous public name
           <input
             value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setDisplayName(e.target.value);
+            }}
             placeholder="e.g. tea_spiller_42"
             maxLength={40}
             required
@@ -194,14 +216,17 @@ export default function ProfilePage() {
         <div className="space-y-3 rounded-lg border border-border bg-background p-3">
           <p className="text-xs font-bold text-foreground">Get paid (duties & rides)</p>
           <p className="text-[11px] text-subtle">
-            Add UPI or phone so posters can pay you via GPay/PhonePe or call you. Cash
-            always works too.
+            UPI & phone stay hidden. Only the duty or ride poster sees them after
+            they pick you — then they can pay via GPay/UPI, call, or cash.
           </p>
           <label className="block text-xs font-semibold text-foreground">
             UPI ID
             <input
               value={paymentUpi}
-              onChange={(e) => setPaymentUpi(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setPaymentUpi(e.target.value);
+              }}
               placeholder="e.g. name@paytm or 98xxxx@ybl"
               maxLength={100}
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
@@ -211,7 +236,10 @@ export default function ProfilePage() {
             Phone (10 digits)
             <input
               value={paymentPhone}
-              onChange={(e) => setPaymentPhone(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setPaymentPhone(e.target.value);
+              }}
               placeholder="e.g. 9876543210"
               inputMode="tel"
               maxLength={15}
@@ -230,10 +258,10 @@ export default function ProfilePage() {
 
         <button
           type="submit"
-          disabled={saving || loading}
+          disabled={saving || loading || photoBusy}
           className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : saved ? "Saved ✓" : "Save profile"}
+          {saving || photoBusy ? "Saving…" : saved ? "Saved ✓" : "Save profile"}
         </button>
       </form>
 

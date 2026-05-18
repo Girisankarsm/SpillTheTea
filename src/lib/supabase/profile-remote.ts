@@ -49,7 +49,7 @@ export async function fetchPublicProfileRemote(
   userId: string,
 ): Promise<PublicUserProfile | null> {
   const { data, error } = await client
-    .from("profiles")
+    .from("profiles_public")
     .select("display_name, chakra")
     .eq("user_id", userId)
     .maybeSingle();
@@ -99,18 +99,21 @@ export async function awardChakraRemote(
 
 export async function fetchPayeePaymentRemote(
   client: SupabaseClient,
-  userId: string,
+  payeeUserId: string,
+  context: { dutyId?: string; rideId?: string },
 ): Promise<PayeePaymentInfo> {
-  const { data, error } = await client
-    .from("profiles")
-    .select("payment_upi, payment_phone")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error } = await client.rpc("get_payee_payment", {
+    p_payee_user_id: payeeUserId,
+    p_duty_id: context.dutyId ?? null,
+    p_ride_id: context.rideId ?? null,
+  });
 
   if (error) throw error;
+
+  const row = Array.isArray(data) ? data[0] : data;
   return {
-    paymentUpi: (data?.payment_upi as string | null)?.trim() || undefined,
-    paymentPhone: (data?.payment_phone as string | null)?.trim() || undefined,
+    paymentUpi: (row?.payment_upi as string | null)?.trim() || undefined,
+    paymentPhone: (row?.payment_phone as string | null)?.trim() || undefined,
   };
 }
 

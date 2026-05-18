@@ -19,6 +19,8 @@ type PayHelperPanelProps = {
   payeeName: string;
   amount: number;
   currency?: string;
+  dutyId?: string;
+  rideId?: string;
   /** Person paying sees UPI / phone / cash options */
   payerView?: boolean;
   /** Helper/driver sees setup prompt */
@@ -32,6 +34,8 @@ export function PayHelperPanel({
   payeeName,
   amount,
   currency = "INR",
+  dutyId,
+  rideId,
   payerView = false,
   payeeView = false,
   contextLabel = "SpillTheTea",
@@ -41,14 +45,14 @@ export function PayHelperPanel({
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!payerView || !supabase || !payeeUserId) {
+    if (!payerView || !supabase || !payeeUserId || (!dutyId && !rideId)) {
       setPayment(null);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
-    void fetchPayeePaymentRemote(supabase, payeeUserId)
+    void fetchPayeePaymentRemote(supabase, payeeUserId, { dutyId, rideId })
       .then((info) => {
         if (!cancelled) setPayment(info);
       })
@@ -62,7 +66,7 @@ export function PayHelperPanel({
     return () => {
       cancelled = true;
     };
-  }, [payerView, supabase, payeeUserId]);
+  }, [payerView, supabase, payeeUserId, dutyId, rideId]);
 
   const upiId = payment?.paymentUpi ? normalizeUpiId(payment.paymentUpi) : null;
   const phone = payment?.paymentPhone
@@ -147,11 +151,11 @@ export function PayHelperPanel({
 
       {payeeView ? (
         <p className="mt-3 text-xs text-subtle">
-          The poster pays you directly.{" "}
+          The poster pays you after you&apos;re assigned.{" "}
           <Link href="/profile" className="font-bold text-brand hover:underline">
-            Add UPI ID or phone on your profile
+            Add UPI or phone on your profile
           </Link>{" "}
-          so they can pay via GPay/UPI.
+          — only they can see it, not the public.
         </p>
       ) : null}
     </section>

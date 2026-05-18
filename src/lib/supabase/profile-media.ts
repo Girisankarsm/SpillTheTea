@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { imageContentType, isImageFile } from "@/lib/image-file";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
@@ -7,7 +8,7 @@ export async function uploadProfileAvatar(
   file: File,
   userId: string,
 ): Promise<string> {
-  if (!file.type.startsWith("image/")) {
+  if (!isImageFile(file)) {
     throw new Error("Pick an image file for your profile photo.");
   }
   if (file.size > MAX_AVATAR_BYTES) {
@@ -19,8 +20,8 @@ export async function uploadProfileAvatar(
 
   const { error } = await client.storage.from("profile-avatars").upload(path, file, {
     cacheControl: "3600",
-    upsert: true,
-    contentType: file.type || undefined,
+    upsert: false,
+    contentType: imageContentType(file),
   });
 
   if (error) throw error;

@@ -180,6 +180,7 @@ export function DutyDetailPanel({
           payeeName={assignedOffer.helperName}
           amount={assignedOffer.rewardAmount}
           currency={assignedOffer.currency}
+          dutyId={duty.id}
           payerView={author}
           payeeView={helper}
           contextLabel="Duty"

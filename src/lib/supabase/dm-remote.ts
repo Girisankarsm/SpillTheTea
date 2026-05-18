@@ -23,7 +23,7 @@ async function displayNameForUserInTopic(
   if (name) return name;
 
   const { data: profile } = await client
-    .from("profiles")
+    .from("profiles_public")
     .select("display_name")
     .eq("user_id", userId)
     .maybeSingle();

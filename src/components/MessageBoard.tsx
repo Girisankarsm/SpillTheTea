@@ -421,24 +421,26 @@ export function MessageBoard({
 
   return (
     <>
-      <div className="flex items-center justify-end gap-1 border-b border-border pb-2">
-        <span className="mr-auto text-[11px] font-semibold uppercase tracking-wide text-subtle">
+      <div className="flex items-center justify-between gap-3 border-b border-border py-2.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
           Sort
         </span>
-        <button
-          type="button"
-          onClick={() => onSortChange("hot")}
-          className={sortButtonClass(sort === "hot")}
-        >
-          Hot
-        </button>
-        <button
-          type="button"
-          onClick={() => onSortChange("new")}
-          className={sortButtonClass(sort === "new")}
-        >
-          New
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onSortChange("hot")}
+            className={sortButtonClass(sort === "hot")}
+          >
+            Hot
+          </button>
+          <button
+            type="button"
+            onClick={() => onSortChange("new")}
+            className={sortButtonClass(sort === "new")}
+          >
+            New
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4">

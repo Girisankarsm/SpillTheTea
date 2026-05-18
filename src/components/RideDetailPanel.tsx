@@ -187,6 +187,7 @@ export function RideDetailPanel({
           payeeName={matchedOffer.driverName}
           amount={matchedOffer.rewardAmount}
           currency={matchedOffer.currency}
+          rideId={ride.id}
           payerView={rider}
           payeeView={driver}
           contextLabel="Ride"

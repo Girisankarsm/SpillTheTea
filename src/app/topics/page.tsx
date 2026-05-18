@@ -45,6 +45,7 @@ export default function TopicsDirectoryPage() {
   const deleteTopicLocal = useMeetGreetStore((s) => s.deleteTopic);
 
   const [posting, setPosting] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const [rxTopics, setRxTopics] = useState<Awaited<
     ReturnType<typeof fetchExploreFeeds>
@@ -275,13 +276,22 @@ export default function TopicsDirectoryPage() {
           Pick a topic, post anonymously, and discuss in replies — like Reddit. DM someone
           from any post. Only the topic starter (or app admin) can close a topic.
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Link
             href="/explore"
             className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-subtle hover:border-brand hover:text-foreground sm:w-auto"
           >
             Map
           </Link>
+          {!createOpen ? (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+            >
+              + Create post
+            </button>
+          ) : null}
         </div>
         {remoteReady && rxLoading ? (
           <p className="text-xs font-semibold text-brand">Refreshing…</p>
@@ -293,11 +303,14 @@ export default function TopicsDirectoryPage() {
         ) : null}
       </header>
 
-      <CreateTopicPanel
-        onSubmit={spillTea}
-        disabled={remoteReady && (!supabase || rxLoading)}
-        submitting={posting}
-      />
+      {createOpen ? (
+        <CreateTopicPanel
+          onSubmit={spillTea}
+          onClose={() => setCreateOpen(false)}
+          disabled={remoteReady && (!supabase || rxLoading)}
+          submitting={posting}
+        />
+      ) : null}
 
       <ul className="flex flex-col gap-3">
         {ranked.map((t) => {
@@ -348,7 +361,10 @@ export default function TopicsDirectoryPage() {
       </ul>
 
       {ranked.length === 0 ? (
-        <p className="text-center text-sm text-subtle">No topics yet — create one above.</p>
+        <p className="text-center text-sm text-subtle">
+          No topics yet — tap <strong className="text-foreground">+ Create post</strong> to
+          start one.
+        </p>
       ) : null}
 
       <ShareRoomModal
