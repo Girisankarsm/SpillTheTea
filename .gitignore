@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# markdown (local docs only — not published to GitHub)
+*.md
+
 # vercel
 .vercel
 
