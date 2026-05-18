@@ -128,6 +128,8 @@ export type MeetGreetState = {
   dutyOffers: DutyOffer[];
   /** Local poll votes keyed by pollId::visitorId */
   pollVotes: Record<string, string>;
+  /** Local message upvotes keyed by messageId::visitorId */
+  messageUpvotes: Record<string, string>;
   topicMemberIds: Record<string, string[]>;
   /** Locked display name per room + browser visitor (local mode). */
   roomDisplayNames: Record<string, string>;
@@ -138,6 +140,7 @@ export type MeetGreetState = {
   sendMessage: (input: SendMessageInput) => void;
   createPoll: (input: CreatePollInput) => string;
   votePoll: (pollId: string, optionId: string, voterKey: string) => void;
+  toggleMessageUpvote: (messageId: string, voterKey: string) => void;
   createDuty: (input: CreateDutyInput) => string;
   createDutyOffer: (input: CreateDutyOfferInput) => string;
   pickDutyOffer: (dutyId: string, offerId: string) => void;
@@ -155,6 +158,7 @@ export const useMeetGreetStore = create<MeetGreetState>()(
       duties: seedDuties,
       dutyOffers: seedDutyOffers,
       pollVotes: {},
+      messageUpvotes: {},
       topicMemberIds: {},
       roomDisplayNames: {},
 
@@ -197,6 +201,9 @@ export const useMeetGreetStore = create<MeetGreetState>()(
           return false;
         }
         set((s) => {
+          const topicMessageIds = new Set(
+            s.messages.filter((m) => m.topicId === topicId).map((m) => m.id),
+          );
           const { [topicId]: _removed, ...restMembers } = s.topicMemberIds;
           const restRoomNames = Object.fromEntries(
             Object.entries(s.roomDisplayNames).filter(
@@ -209,6 +216,12 @@ export const useMeetGreetStore = create<MeetGreetState>()(
             polls: s.polls.filter((p) => p.topicId !== topicId),
             pollVotes: Object.fromEntries(
               Object.entries(s.pollVotes).filter(([key]) => !key.startsWith(`${topicId}::`)),
+            ),
+            messageUpvotes: Object.fromEntries(
+              Object.entries(s.messageUpvotes).filter(([key]) => {
+                const messageId = key.split("::")[0];
+                return !topicMessageIds.has(messageId);
+              }),
             ),
             topicMemberIds: restMembers,
             roomDisplayNames: restRoomNames,
@@ -370,6 +383,21 @@ export const useMeetGreetStore = create<MeetGreetState>()(
         });
       },
 
+      toggleMessageUpvote: (messageId, voterKey) => {
+        if (!voterKey) return;
+        const voteKey = `${messageId}::${voterKey}`;
+        set((s) => {
+          if (!s.messages.some((m) => m.id === messageId)) return s;
+          const next = { ...s.messageUpvotes };
+          if (next[voteKey]) {
+            delete next[voteKey];
+          } else {
+            next[voteKey] = "1";
+          }
+          return { messageUpvotes: next };
+        });
+      },
+
       createDuty: ({ title, description, authorName }) => {
         const vid = getVisitorId();
         if (!vid) return "";
@@ -512,6 +540,7 @@ export const useMeetGreetStore = create<MeetGreetState>()(
           roomDisplayNames: P.roomDisplayNames ?? currentState.roomDisplayNames ?? {},
           polls: P.polls ?? currentState.polls ?? [],
           pollVotes: P.pollVotes ?? currentState.pollVotes ?? {},
+          messageUpvotes: P.messageUpvotes ?? currentState.messageUpvotes ?? {},
           duties: P.duties ?? currentState.duties ?? [],
           dutyOffers: P.dutyOffers ?? currentState.dutyOffers ?? [],
         };

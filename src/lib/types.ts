@@ -22,6 +22,8 @@ export type ChatMessage = {
   replyToId?: string;
   mediaUrl?: string;
   mediaType?: MessageMediaType;
+  upvoteCount?: number;
+  myUpvote?: boolean;
 };
 
 export type SendMessageInput = {

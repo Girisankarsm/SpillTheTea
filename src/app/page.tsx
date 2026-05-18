@@ -4,30 +4,26 @@ import { AppLogo } from "@/components/AppLogo";
 const features = [
   {
     id: "tea",
-    emoji: "🍵",
     title: "Tea",
-    flow: "Pick a topic → post anonymously → discuss in replies (like Reddit) → DM someone from a post",
+    flow: "1. Topic → 2. Post → 3. Reply → 4. DM",
     href: "/topics",
   },
   {
     id: "duties",
-    emoji: "🤝",
     title: "Duties",
-    flow: "Post a small favor → helpers offer a reward → pick one → chat → pay via UPI/cash",
+    flow: "1. Favor → 2. Offers → 3. Pick → 4. Pay",
     href: "/duties",
   },
   {
     id: "rides",
-    emoji: "🚗",
     title: "Ride pooling",
-    flow: "Post pickup & drop → drivers offer → pick a driver → share live location → chat or call",
+    flow: "1. Route → 2. Offers → 3. Pick → 4. Track → 5. Chat",
     href: "/rides",
   },
   {
     id: "map",
-    emoji: "🗺️",
     title: "Map",
-    flow: "See open topics near you on the map",
+    flow: "1. Map → 2. Nearby topics",
     href: "/explore",
   },
 ] as const;
@@ -42,9 +38,8 @@ export default function Home() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           SpillTheTea
         </h1>
-        <p className="text-sm leading-relaxed text-subtle">
-          Anonymous posts and discussions under topics — plus duties, ride pooling, and
-          private chat.
+        <p className="text-sm text-subtle">
+          Anonymous topics, duties, rides, and chat.
         </p>
       </div>
 
@@ -86,19 +81,12 @@ export default function Home() {
                 href={feature.href}
                 className="block rounded-xl border border-border bg-surface p-4 transition hover:border-brand/40 hover:bg-brand-soft/30"
               >
-                <p className="text-sm font-bold text-foreground">
-                  <span aria-hidden>{feature.emoji} </span>
-                  {feature.title}
-                </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-subtle">{feature.flow}</p>
+                <p className="text-sm font-bold text-foreground">{feature.title}</p>
+                <p className="mt-1 text-xs text-subtle">{feature.flow}</p>
               </Link>
             </li>
           ))}
         </ul>
-        <p className="text-center text-[11px] text-subtle">
-          Rewards for duties and rides are recorded in the app — you pay the person directly
-          (UPI/cash).
-        </p>
       </div>
     </div>
   );

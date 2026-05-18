@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { CreateTopicPanel } from "@/components/CreateTopicPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
 import { useSupabase } from "@/components/SupabaseProvider";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { canDeleteTopic } from "@/lib/admin";
 import {
   createTopicRemote,
@@ -12,9 +14,10 @@ import {
   fetchExploreFeeds,
   getCurrentUserId,
   rankTopicsByMessages,
+  sendMessageRemote,
 } from "@/lib/supabase/meet-greet-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
-import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
+import { yellowButtonSmClass } from "@/lib/ui";
 import { roomShareUrl } from "@/lib/share-room";
 import {
   trendingTopics,
@@ -26,13 +29,17 @@ import { getVisitorId } from "@/lib/visitor";
 export default function TopicsDirectoryPage() {
   const router = useRouter();
   const { supabase, remoteReady } = useSupabase();
+  const { defaultDisplayName } = useUserProfile();
 
   const localTopics = useMeetGreetStore((s) => s.topics);
   const localMessages = useMeetGreetStore((s) => s.messages);
   const createTopicLocal = useMeetGreetStore((s) => s.createTopic);
+  const sendMessageLocal = useMeetGreetStore((s) => s.sendMessage);
   const deleteTopicLocal = useMeetGreetStore((s) => s.deleteTopic);
 
   const [newTeaTitle, setNewTeaTitle] = useState("");
+  const [newTeaBody, setNewTeaBody] = useState("");
+  const [posting, setPosting] = useState(false);
 
   const [rxTopics, setRxTopics] = useState<Awaited<
     ReturnType<typeof fetchExploreFeeds>
@@ -122,29 +129,48 @@ export default function TopicsDirectoryPage() {
     }
   }
 
-  async function spillTea(e: React.FormEvent) {
-    e.preventDefault();
+  async function spillTea() {
     const title = newTeaTitle.trim();
-    if (!title) return;
+    const body = newTeaBody.trim();
+    if (!title || posting) return;
 
-    if (remoteReady && supabase) {
-      try {
+    setPosting(true);
+    try {
+      if (remoteReady && supabase) {
         const tid = await createTopicRemote(supabase, {
           title,
           lat: 0,
           lng: 0,
         });
+        if (body) {
+          await sendMessageRemote(supabase, {
+            topicId: tid,
+            authorName: defaultDisplayName?.trim() || "anon",
+            body,
+          });
+        }
         setNewTeaTitle("");
+        setNewTeaBody("");
         router.push(`/topics/${tid}`);
-      } catch (err) {
-        alert(unknownErrorMessage(err, "Could not start topic."));
+        return;
       }
-      return;
-    }
 
-    const id = createTopicLocal({ title, lat: 0, lng: 0 });
-    setNewTeaTitle("");
-    router.push(`/topics/${id}`);
+      const id = createTopicLocal({ title, lat: 0, lng: 0 });
+      if (body) {
+        sendMessageLocal({
+          topicId: id,
+          authorName: defaultDisplayName?.trim() || "anon",
+          body,
+        });
+      }
+      setNewTeaTitle("");
+      setNewTeaBody("");
+      router.push(`/topics/${id}`);
+    } catch (err) {
+      alert(unknownErrorMessage(err, "Could not start topic."));
+    } finally {
+      setPosting(false);
+    }
   }
 
   return (
@@ -158,15 +184,6 @@ export default function TopicsDirectoryPage() {
           from any post. Only the topic starter (or app admin) can close a topic.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Link
-            href="/explore#spill-tea"
-            className={`${yellowButtonMdClass} w-full gap-1.5 sm:w-auto`}
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              +
-            </span>
-            SpillTheTea
-          </Link>
           <Link
             href="/explore"
             className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-subtle hover:border-brand hover:text-foreground sm:w-auto"
@@ -184,30 +201,15 @@ export default function TopicsDirectoryPage() {
         ) : null}
       </header>
 
-      <form
-        onSubmit={(e) => void spillTea(e)}
-        className="rounded-xl border border-border bg-surface p-4"
-      >
-        <h2 className="text-sm font-bold text-foreground">SpillTheTea</h2>
-        <p className="mt-1 text-xs text-subtle">
-          Start a topic — post anonymously and discuss in replies. No map needed.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            value={newTeaTitle}
-            onChange={(e) => setNewTeaTitle(e.target.value)}
-            placeholder="What's the tea?"
-            className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
-          />
-          <button
-            type="submit"
-            disabled={remoteReady && (!supabase || rxLoading)}
-            className={`${yellowButtonMdClass} w-full shrink-0 sm:w-auto`}
-          >
-            Start topic
-          </button>
-        </div>
-      </form>
+      <CreateTopicPanel
+        title={newTeaTitle}
+        body={newTeaBody}
+        onTitleChange={setNewTeaTitle}
+        onBodyChange={setNewTeaBody}
+        onSubmit={() => void spillTea()}
+        disabled={remoteReady && (!supabase || rxLoading)}
+        submitting={posting}
+      />
 
       <ul className="flex flex-col gap-3">
         {ranked.map((t) => {
@@ -258,15 +260,7 @@ export default function TopicsDirectoryPage() {
       </ul>
 
       {ranked.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface px-5 py-8 text-center">
-          <p className="text-sm text-subtle">No topics yet.</p>
-          <Link
-            href="/explore#spill-tea"
-            className={`${yellowButtonSmClass} mt-4 gap-1`}
-          >
-            <span aria-hidden>+</span> SpillTheTea
-          </Link>
-        </div>
+        <p className="text-center text-sm text-subtle">No topics yet — create one above.</p>
       ) : null}
 
       <ShareRoomModal

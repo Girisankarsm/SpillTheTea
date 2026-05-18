@@ -10,6 +10,7 @@ import {
   countReplies,
   type ThreadNode,
 } from "@/lib/message-thread";
+import type { TopicSort } from "@/lib/message-upvotes";
 import type { ChatMessage } from "@/lib/types";
 import type { RoomPoll } from "@/lib/types/poll";
 
@@ -46,6 +47,8 @@ function ThreadBranch({
   currentUserId,
   onReply,
   onPrivateChat,
+  onUpvote,
+  upvoteDisabled,
 }: {
   node: ThreadNode;
   depth: number;
@@ -53,61 +56,84 @@ function ThreadBranch({
   currentUserId?: string | null;
   onReply: (message: ChatMessage) => void;
   onPrivateChat?: (message: ChatMessage) => void;
+  onUpvote?: (message: ChatMessage) => void;
+  upvoteDisabled?: boolean;
 }) {
   const { message, replies } = node;
   const replyCount = countReplies(messages, message.id);
   const indent = Math.min(depth, 4);
+  const upvotes = message.upvoteCount ?? 0;
 
   return (
     <div className={indent > 0 ? "mt-2 border-l-2 border-brand/30 pl-3" : ""}>
       <article
         id={`msg-${message.id}`}
-        className="rounded-xl border border-border bg-surface px-4 py-3"
+        className="flex gap-2 rounded-xl border border-border bg-surface px-3 py-3 sm:gap-3"
         style={indent > 0 ? { marginLeft: `${indent * 4}px` } : undefined}
       >
-        <header className="flex flex-wrap items-baseline justify-between gap-2">
-          <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-sm font-bold text-foreground">
-              {message.authorName}
-            </span>
-            <time
-              suppressHydrationWarning
-              className="text-[11px] text-subtle"
-              dateTime={new Date(message.createdAt).toISOString()}
-            >
-              {formatChatTime(message.createdAt)}
-            </time>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {message.authorUserId &&
-            message.authorUserId !== currentUserId &&
-            onPrivateChat ? (
-              <button
-                type="button"
-                onClick={() => onPrivateChat(message)}
-                className="text-xs font-bold text-subtle hover:text-brand hover:underline"
-              >
-                Private
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => onReply(message)}
-              className="text-xs font-bold text-brand hover:underline"
-            >
-              Reply
-              {replyCount > 0 ? ` · ${replyCount}` : ""}
-            </button>
-          </div>
-        </header>
-
-        {message.body.trim() ? (
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-            {message.body}
-          </p>
+        {onUpvote ? (
+          <button
+            type="button"
+            disabled={upvoteDisabled}
+            onClick={() => onUpvote(message)}
+            className={`flex shrink-0 flex-col items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              message.myUpvote
+                ? "bg-brand text-white"
+                : "text-subtle hover:bg-brand-soft hover:text-brand"
+            }`}
+            aria-pressed={message.myUpvote ?? false}
+            aria-label={message.myUpvote ? "Remove upvote" : "Upvote"}
+          >
+            <span aria-hidden>▲</span>
+            <span>{upvotes > 0 ? upvotes : ""}</span>
+          </button>
         ) : null}
 
-        <MessageMedia message={message} />
+        <div className="min-w-0 flex-1">
+          <header className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-sm font-bold text-foreground">
+                {message.authorName}
+              </span>
+              <time
+                suppressHydrationWarning
+                className="text-[11px] text-subtle"
+                dateTime={new Date(message.createdAt).toISOString()}
+              >
+                {formatChatTime(message.createdAt)}
+              </time>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {message.authorUserId &&
+              message.authorUserId !== currentUserId &&
+              onPrivateChat ? (
+                <button
+                  type="button"
+                  onClick={() => onPrivateChat(message)}
+                  className="text-xs font-bold text-subtle hover:text-brand hover:underline"
+                >
+                  Private
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onReply(message)}
+                className="text-xs font-bold text-brand hover:underline"
+              >
+                Reply
+                {replyCount > 0 ? ` · ${replyCount}` : ""}
+              </button>
+            </div>
+          </header>
+
+          {message.body.trim() ? (
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {message.body}
+            </p>
+          ) : null}
+
+          <MessageMedia message={message} />
+        </div>
       </article>
 
       {replies.map((child) => (
@@ -119,6 +145,8 @@ function ThreadBranch({
           currentUserId={currentUserId}
           onReply={onReply}
           onPrivateChat={onPrivateChat}
+          onUpvote={onUpvote}
+          upvoteDisabled={upvoteDisabled}
         />
       ))}
     </div>
@@ -344,6 +372,10 @@ type MessageBoardProps = {
   onSubmit: () => void;
   onCreatePoll: (input: { question: string; options: string[] }) => void;
   onVotePoll: (pollId: string, optionId: string) => void;
+  sort: TopicSort;
+  onSortChange: (sort: TopicSort) => void;
+  onUpvote?: (message: ChatMessage) => void;
+  upvoteDisabled?: boolean;
 };
 
 export function MessageBoard({
@@ -368,14 +400,47 @@ export function MessageBoard({
   onSubmit,
   onCreatePoll,
   onVotePoll,
+  sort,
+  onSortChange,
+  onUpvote,
+  upvoteDisabled,
 }: MessageBoardProps) {
   const [pollModalOpen, setPollModalOpen] = useState(false);
-  const feed = buildRoomFeed(messages, polls);
+  const feed = buildRoomFeed(messages, polls, sort);
   const thread = buildMessageThread(messages);
   const topLevelMessageIds = new Set(thread.map((node) => node.message.id));
 
+  function sortButtonClass(active: boolean): string {
+    return [
+      "rounded-md px-2.5 py-1 text-xs font-bold transition",
+      active
+        ? "bg-brand text-white"
+        : "text-subtle hover:bg-brand-soft hover:text-foreground",
+    ].join(" ");
+  }
+
   return (
     <>
+      <div className="flex items-center justify-end gap-1 border-b border-border pb-2">
+        <span className="mr-auto text-[11px] font-semibold uppercase tracking-wide text-subtle">
+          Sort
+        </span>
+        <button
+          type="button"
+          onClick={() => onSortChange("hot")}
+          className={sortButtonClass(sort === "hot")}
+        >
+          Hot
+        </button>
+        <button
+          type="button"
+          onClick={() => onSortChange("new")}
+          className={sortButtonClass(sort === "new")}
+        >
+          New
+        </button>
+      </div>
+
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4">
         {feed.length === 0 ? (
           <p className="text-sm text-subtle">
@@ -410,6 +475,8 @@ export function MessageBoard({
                 currentUserId={currentUserId}
                 onReply={onReply}
                 onPrivateChat={onPrivateChat}
+                onUpvote={onUpvote}
+                upvoteDisabled={upvoteDisabled}
               />
             );
           })

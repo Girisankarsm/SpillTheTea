@@ -1,5 +1,7 @@
 import type { ChatMessage } from "@/lib/types";
 import type { RoomPoll } from "@/lib/types/poll";
+import { countReplies } from "@/lib/message-thread";
+import { hotScore, pollHotScore, type TopicSort } from "@/lib/message-upvotes";
 
 export type FeedItem =
   | { kind: "message"; createdAt: number; message: ChatMessage }
@@ -8,6 +10,7 @@ export type FeedItem =
 export function buildRoomFeed(
   messages: ChatMessage[],
   polls: RoomPoll[],
+  sort: TopicSort = "hot",
 ): FeedItem[] {
   const items: FeedItem[] = [
     ...messages.map((message) => ({
@@ -22,7 +25,21 @@ export function buildRoomFeed(
     })),
   ];
 
-  return items.sort((a, b) => a.createdAt - b.createdAt);
+  if (sort === "new") {
+    return items.sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  return items.sort((a, b) => feedHotScore(b, messages) - feedHotScore(a, messages));
+}
+
+function feedHotScore(item: FeedItem, messages: ChatMessage[]): number {
+  if (item.kind === "poll") {
+    const votes = item.poll.options.reduce((sum, option) => sum + option.voteCount, 0);
+    return pollHotScore(votes, item.createdAt);
+  }
+
+  const replyCount = countReplies(messages, item.message.id);
+  return hotScore(item.message.upvoteCount ?? 0, replyCount, item.createdAt);
 }
 
 export function enrichPollVotes(

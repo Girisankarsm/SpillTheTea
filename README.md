@@ -6,7 +6,7 @@ Anonymous posts and discussions under topics, a map of open topics, small paid f
 
 ## Features
 
-- **Tea** — pick a topic, post anonymously, discuss in replies (like Reddit), GIFs, images, share/QR, polls
+- **Tea** — pick a topic, post anonymously, discuss in replies (like Reddit), upvotes, Hot/New sort, GIFs, images, share/QR, polls
 - **Map** — browse and start topics on a map (yellow = open, fire = trending)
 - **Duties** — post favors, helpers offer with a reward, pick one, complete, reward in-app
 - **Ride pooling** — post pickup → drop, drivers offer, pick → live location → chat or call
@@ -86,7 +86,8 @@ Key migrations for messaging & rides:
 | 018 | `018_enable_realtime_messaging.sql` | Live updates |
 | 019 | `019_ride_pooling.sql` | Ride requests/offers |
 | 020 | `020_ride_messages.sql` | Ride private chat |
-| 021 | `021_push_subscriptions.sql` | Push notification subscriptions |
+| 023 | `023_ride_vehicle_info.sql` | Rider vehicle preference + driver vehicle on offers |
+| 024 | `024_message_upvotes.sql` | Upvotes on tea posts + Hot/New sort |
 
 ### 4. Run the dev server
 

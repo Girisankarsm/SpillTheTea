@@ -10,6 +10,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import type { ChatMessage, Topic } from "@/lib/types";
 import type { RoomPoll } from "@/lib/types/poll";
 import { enrichPollVotes } from "@/lib/feed";
+import { applyLocalUpvotesToMessages, type TopicSort } from "@/lib/message-upvotes";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { canDeleteTopic } from "@/lib/admin";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
@@ -35,6 +36,11 @@ import {
   normalizeMediaUrlInput,
   uploadMessageMedia,
 } from "@/lib/supabase/message-media";
+import {
+  applyUpvotesToMessages,
+  fetchMessageUpvotes,
+  toggleMessageUpvoteRemote,
+} from "@/lib/supabase/message-upvote-remote";
 import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { roomShareUrl } from "@/lib/share-room";
@@ -83,8 +89,10 @@ export default function TopicChatPage() {
   const sendMessageLocal = useMeetGreetStore((s) => s.sendMessage);
   const createPollLocal = useMeetGreetStore((s) => s.createPoll);
   const votePollLocal = useMeetGreetStore((s) => s.votePoll);
+  const toggleMessageUpvoteLocal = useMeetGreetStore((s) => s.toggleMessageUpvote);
   const localPolls = useMeetGreetStore((s) => s.polls);
   const localPollVotes = useMeetGreetStore((s) => s.pollVotes);
+  const localMessageUpvotes = useMeetGreetStore((s) => s.messageUpvotes);
   const deleteTopicLocal = useMeetGreetStore((s) => s.deleteTopic);
   const getLockedRoomNameLocal = useMeetGreetStore((s) => s.getLockedRoomName);
 
@@ -118,6 +126,18 @@ export default function TopicChatPage() {
   }, [localPolls, localPollVotes, id]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const refreshRemoteUpvotes = useCallback(
+    async (messages: ChatMessage[], userId: string | null) => {
+      if (!supabase || messages.length === 0) return messages;
+      const upvotes = await fetchMessageUpvotes(
+        supabase,
+        messages.map((message) => message.id),
+      );
+      return applyUpvotesToMessages(messages, upvotes, userId);
+    },
+    [supabase],
+  );
 
   const refreshRemotePolls = useCallback(async () => {
     if (!supabase || !id) return;
@@ -167,7 +187,9 @@ export default function TopicChatPage() {
 
           const msgs = await fetchTopicMessages(supabase, id);
           if (cancelled) return;
-          setRemoteMessages(msgs);
+          const userId = await getCurrentUserId(supabase);
+          if (cancelled) return;
+          setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
 
           const polls = await fetchTopicPolls(supabase, id);
           if (cancelled) return;
@@ -187,7 +209,7 @@ export default function TopicChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [remoteReady, supabase, id]);
+  }, [remoteReady, supabase, id, refreshRemoteUpvotes]);
 
   useEffect(() => {
     if (!remoteReady || !supabase || !id) return;
@@ -211,6 +233,22 @@ export default function TopicChatPage() {
             return next.sort((a, b) => a.createdAt - b.createdAt);
           });
           void refreshRemoteRoom();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "message_upvotes",
+        },
+        () => {
+          void (async () => {
+            if (!supabase || !id) return;
+            const msgs = await fetchTopicMessages(supabase, id);
+            const userId = await getCurrentUserId(supabase);
+            setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
+          })();
         },
       )
       .on(
@@ -251,11 +289,18 @@ export default function TopicChatPage() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [remoteReady, supabase, id, refreshRemoteRoom, refreshRemotePolls, router]);
+  }, [remoteReady, supabase, id, refreshRemoteRoom, refreshRemotePolls, refreshRemoteUpvotes, router]);
+
+  const localThreadWithUpvotes = useMemo(() => {
+    const voterKey = getVisitorId();
+    return applyLocalUpvotesToMessages(localThread, localMessageUpvotes, voterKey);
+  }, [localThread, localMessageUpvotes]);
 
   const topic = remoteReady ? remoteTopic : localTopic;
-  const thread = remoteReady ? remoteMessages : localThread;
+  const thread = remoteReady ? remoteMessages : localThreadWithUpvotes;
   const roomPolls = remoteReady ? remotePolls : localRoomPolls;
+
+  const [sort, setSort] = useState<TopicSort>("hot");
 
   const [name, setName] = useState("");
   const [nameLocked, setNameLocked] = useState(false);
@@ -265,6 +310,7 @@ export default function TopicChatPage() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [posting, setPosting] = useState(false);
   const [pollBusy, setPollBusy] = useState(false);
+  const [upvoteBusy, setUpvoteBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
   const [dmInitialThreadId, setDmInitialThreadId] = useState<string | null>(null);
@@ -537,6 +583,42 @@ export default function TopicChatPage() {
     }
   }
 
+  async function handleUpvote(message: ChatMessage) {
+    if (upvoteBusy) return;
+
+    setUpvoteBusy(true);
+    try {
+      if (remoteReady && supabase) {
+        const upvoted = await toggleMessageUpvoteRemote(supabase, message.id);
+        setRemoteMessages((prev) =>
+          prev.map((entry) =>
+            entry.id === message.id
+              ? {
+                  ...entry,
+                  myUpvote: upvoted,
+                  upvoteCount: Math.max(
+                    0,
+                    (entry.upvoteCount ?? 0) + (upvoted ? 1 : -1),
+                  ),
+                }
+              : entry,
+          ),
+        );
+      } else {
+        const voterKey = getVisitorId();
+        if (!voterKey) {
+          alert("Could not save your upvote in this browser.");
+          return;
+        }
+        toggleMessageUpvoteLocal(message.id, voterKey);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not save upvote.");
+    } finally {
+      setUpvoteBusy(false);
+    }
+  }
+
   async function handleVotePoll(pollId: string, optionId: string) {
     if (pollBusy) return;
 
@@ -732,6 +814,12 @@ export default function TopicChatPage() {
           onSubmit={() => void submitPost()}
           onCreatePoll={(input) => void submitPoll(input)}
           onVotePoll={(pollId, optionId) => void handleVotePoll(pollId, optionId)}
+          sort={sort}
+          onSortChange={setSort}
+          onUpvote={(message) => void handleUpvote(message)}
+          upvoteDisabled={
+            upvoteBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
+          }
         />
       )}
       <div ref={bottomRef} />
