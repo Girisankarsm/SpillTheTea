@@ -1,6 +1,6 @@
 # SpillTheTea
 
-**Live app:** [https://spill-the-tea-lilac.vercel.app/](https://spill-the-tea-lilac.vercel.app/)
+**Live app:** [https://spilltheteahere.vercel.app/](https://spilltheteahere.vercel.app/)
 
 Anonymous posts and discussions under topics, a map of open topics, small paid favors (“duties”), ride pooling, polls, and profiles — sign in with Google to use the app.
 
@@ -48,6 +48,7 @@ Required:
 
 | Variable | Description |
 |----------|-------------|
+| `NEXT_PUBLIC_APP_URL` | Production URL (e.g. `https://spilltheteahere.vercel.app`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `GIPHY_API_KEY` | GIF search ([Giphy dashboard](https://developers.giphy.com/dashboard/)) |
@@ -73,8 +74,8 @@ npx web-push generate-vapid-keys
 
 1. Create a Supabase project and enable **Google** under Authentication → Providers.
 2. In **Authentication → URL Configuration**, set:
-   - **Site URL:** your production URL (e.g. `https://spill-the-tea-lilac.vercel.app`)
-   - **Redirect URLs:** production URL, `http://localhost:3000/**`
+   - **Site URL:** `https://spilltheteahere.vercel.app`
+   - **Redirect URLs:** `https://spilltheteahere.vercel.app/**`, `http://localhost:3000/**`
 3. Run SQL migrations in order in the Supabase SQL Editor (files in `supabase/migrations/`, `001` → `021`).
 
 Key migrations for messaging & rides:
@@ -107,6 +108,8 @@ Production deploys automatically:
 
 Set the same environment variables in **Vercel → Project → Settings → Environment Variables** (including VAPID keys and `SUPABASE_SERVICE_ROLE_KEY` for push).
 
+**Production domain:** [spilltheteahere.vercel.app](https://spilltheteahere.vercel.app) — add as custom domain in Vercel if not already assigned.
+
 ## Scripts
 
 | Command | Description |
@@ -119,7 +122,7 @@ Set the same environment variables in **Vercel → Project → Settings → Envi
 ## Repository
 
 - **GitHub:** [github.com/Girisankarsm/SpillTheTea](https://github.com/Girisankarsm/SpillTheTea)
-- **Production:** [spill-the-tea-lilac.vercel.app](https://spill-the-tea-lilac.vercel.app/)
+- **Production:** [spilltheteahere.vercel.app](https://spilltheteahere.vercel.app)
 
 ## License
 
