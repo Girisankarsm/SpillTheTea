@@ -78,11 +78,20 @@ type SendDutyMessageInput = {
   fileName?: string;
 };
 
+type DutyChatContext = {
+  currentUserId: string;
+  authorUserId: string;
+  authorName: string;
+  helperUserId: string;
+  helperName: string;
+};
+
 export async function sendDutyChatMessage(
   client: SupabaseClient,
   dutyId: string,
   input: SendDutyMessageInput,
-): Promise<void> {
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
   const {
     data: { user },
     error: userErr,
@@ -102,36 +111,56 @@ export async function sendDutyChatMessage(
     throw new Error("Attachment is missing.");
   }
 
-  const { error } = await client.from("duty_messages").insert({
-    duty_id: dutyId,
-    sender_id: user.id,
-    body: messageType === "voice" ? "" : body,
-    message_type: messageType,
-    audio_url: messageType === "voice" ? audioUrl : null,
-    media_url: ["image", "gif", "file"].includes(messageType) ? mediaUrl : null,
-    file_name: messageType === "file" ? fileName ?? null : null,
-  });
+  const { data, error } = await client
+    .from("duty_messages")
+    .insert({
+      duty_id: dutyId,
+      sender_id: user.id,
+      body: messageType === "voice" ? "" : body,
+      message_type: messageType,
+      audio_url: messageType === "voice" ? audioUrl : null,
+      media_url: ["image", "gif", "file"].includes(messageType) ? mediaUrl : null,
+      file_name: messageType === "file" ? fileName ?? null : null,
+    })
+    .select(MESSAGE_SELECT)
+    .single();
 
-  if (error) throw error;
+  if (error || !data) throw error ?? new Error("Could not send message.");
+
+  return mapMessage(
+    data as MessageRow,
+    ctx.currentUserId,
+    ctx.authorUserId,
+    ctx.authorName,
+    ctx.helperUserId,
+    ctx.helperName,
+  );
 }
 
 export async function sendDutyMessage(
   client: SupabaseClient,
   dutyId: string,
   body: string,
-): Promise<void> {
-  await sendDutyChatMessage(client, dutyId, { messageType: "text", body });
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
+  return sendDutyChatMessage(client, dutyId, { messageType: "text", body }, ctx);
 }
 
 export async function sendDutyVoiceMessage(
   client: SupabaseClient,
   dutyId: string,
   audioUrl: string,
-): Promise<void> {
-  await sendDutyChatMessage(client, dutyId, {
-    messageType: "voice",
-    audioUrl,
-  });
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
+  return sendDutyChatMessage(
+    client,
+    dutyId,
+    {
+      messageType: "voice",
+      audioUrl,
+    },
+    ctx,
+  );
 }
 
 export function mapDutyChatRow(

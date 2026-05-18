@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GifPicker } from "@/components/GifPicker";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { uploadDutyAttachment, uploadDutyVoice } from "@/lib/supabase/duty-chat-media";
 import {
@@ -145,6 +146,14 @@ export function DutyChatPanel({
 
   const hasAttachment = Boolean(pendingFile || gifUrl);
 
+  const chatContext = {
+    currentUserId,
+    authorUserId,
+    authorName,
+    helperUserId,
+    helperName,
+  };
+
   const reload = useCallback(async () => {
     setLoading(true);
     try {
@@ -189,32 +198,22 @@ export function DutyChatPanel({
           filter: `duty_id=eq.${dutyId}`,
         },
         (payload) => {
-          const row = payload.new as {
-            id: string;
-            duty_id: string;
-            sender_id: string;
-            body: string;
-            message_type?: DutyChatMessage["messageType"];
-            audio_url?: string | null;
-            media_url?: string | null;
-            file_name?: string | null;
-            created_at: string;
-          };
           const mapped = mapDutyChatRow(
-            row,
+            payload.new as Parameters<typeof mapDutyChatRow>[0],
             currentUserId,
             authorUserId,
             authorName,
             helperUserId,
             helperName,
           );
-          setMessages((prev) => {
-            if (prev.some((entry) => entry.id === mapped.id)) return prev;
-            return [...prev, mapped];
-          });
+          setMessages((prev) => appendUniqueMessage(prev, mapped));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          void reload();
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -227,6 +226,7 @@ export function DutyChatPanel({
     authorName,
     helperUserId,
     helperName,
+    reload,
   ]);
 
   useEffect(() => {
@@ -270,32 +270,50 @@ export function DutyChatPanel({
     try {
       if (pendingFile) {
         const uploaded = await uploadDutyAttachment(supabase, dutyId, pendingFile);
-        await sendDutyChatMessage(supabase, dutyId, {
-          messageType: uploaded.messageType,
-          mediaUrl: uploaded.url,
-          fileName: uploaded.messageType === "file" ? uploaded.fileName : undefined,
-          body: caption,
-        });
+        const sent = await sendDutyChatMessage(
+          supabase,
+          dutyId,
+          {
+            messageType: uploaded.messageType,
+            mediaUrl: uploaded.url,
+            fileName: uploaded.messageType === "file" ? uploaded.fileName : undefined,
+            body: caption,
+          },
+          chatContext,
+        );
+        setMessages((prev) => appendUniqueMessage(prev, sent));
         clearAttachment();
         setDraft("");
         return;
       }
 
       if (gifUrl) {
-        await sendDutyChatMessage(supabase, dutyId, {
-          messageType: "gif",
-          mediaUrl: gifUrl,
-          body: caption,
-        });
+        const sent = await sendDutyChatMessage(
+          supabase,
+          dutyId,
+          {
+            messageType: "gif",
+            mediaUrl: gifUrl,
+            body: caption,
+          },
+          chatContext,
+        );
+        setMessages((prev) => appendUniqueMessage(prev, sent));
         clearAttachment();
         setDraft("");
         return;
       }
 
-      await sendDutyChatMessage(supabase, dutyId, {
-        messageType: "text",
-        body: caption,
-      });
+      const sent = await sendDutyChatMessage(
+        supabase,
+        dutyId,
+        {
+          messageType: "text",
+          body: caption,
+        },
+        chatContext,
+      );
+      setMessages((prev) => appendUniqueMessage(prev, sent));
       setDraft("");
     } catch (err) {
       alert(unknownErrorMessage(err, "Could not send message."));
@@ -316,10 +334,16 @@ export function DutyChatPanel({
           return;
         }
         const audioUrl = await uploadDutyVoice(supabase, dutyId, blob);
-        await sendDutyChatMessage(supabase, dutyId, {
-          messageType: "voice",
-          audioUrl,
-        });
+        const sent = await sendDutyChatMessage(
+          supabase,
+          dutyId,
+          {
+            messageType: "voice",
+            audioUrl,
+          },
+          chatContext,
+        );
+        setMessages((prev) => appendUniqueMessage(prev, sent));
       } catch (err) {
         alert(unknownErrorMessage(err, "Could not send voice message."));
       } finally {

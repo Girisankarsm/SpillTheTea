@@ -218,7 +218,7 @@ export async function fetchLockedRoomDisplayName(
 export async function sendMessageRemote(
   client: SupabaseClient,
   input: SendMessageInput,
-): Promise<void> {
+): Promise<ChatMessage> {
   const {
     data: { user },
     error: userErr,
@@ -237,22 +237,45 @@ export async function sendMessageRemote(
   );
   const authorName = lockedName ?? (input.authorName.trim() || "anon");
 
-  const { error: msgErr } = await client.from("messages").insert({
-    topic_id: input.topicId,
-    author_name: authorName,
-    body: trimmedBody,
-    user_id: user.id,
-    reply_to_id: input.replyToId ?? null,
-    media_url: input.mediaUrl ?? null,
-    media_type: input.mediaType ?? null,
-  });
-  if (msgErr) throw msgErr;
+  const { error: msgErr, data } = await client
+    .from("messages")
+    .insert({
+      topic_id: input.topicId,
+      author_name: authorName,
+      body: trimmedBody,
+      user_id: user.id,
+      reply_to_id: input.replyToId ?? null,
+      media_url: input.mediaUrl ?? null,
+      media_type: input.mediaType ?? null,
+    })
+    .select(
+      "id, topic_id, author_name, body, created_at, user_id, reply_to_id, media_url, media_type",
+    )
+    .single();
+  if (msgErr || !data) throw msgErr ?? new Error("Could not post message.");
 
   const { error: memErr } = await client.from("topic_members").insert({
     topic_id: input.topicId,
     user_id: user.id,
   });
   if (memErr && memErr.code !== "23505") throw memErr;
+
+  const mediaType =
+    data.media_type === "gif" || data.media_type === "image"
+      ? data.media_type
+      : undefined;
+
+  return {
+    id: data.id as string,
+    topicId: data.topic_id as string,
+    authorName: (data.author_name as string) || "anon",
+    body: data.body as string,
+    createdAt: new Date(data.created_at as string).getTime(),
+    authorUserId: (data.user_id as string | null) ?? undefined,
+    replyToId: (data.reply_to_id as string | null) ?? undefined,
+    mediaUrl: (data.media_url as string | null) ?? undefined,
+    mediaType,
+  };
 }
 
 export async function joinTopicRoomRemote(

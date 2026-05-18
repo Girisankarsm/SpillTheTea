@@ -246,7 +246,8 @@ export async function sendDmMessage(
   client: SupabaseClient,
   threadId: string,
   body: string,
-): Promise<void> {
+  currentUserId: string,
+): Promise<DmMessage> {
   const {
     data: { user },
   } = await client.auth.getUser();
@@ -255,13 +256,26 @@ export async function sendDmMessage(
   const trimmed = body.trim();
   if (!trimmed) throw new Error("Message cannot be empty.");
 
-  const { error } = await client.from("dm_messages").insert({
-    thread_id: threadId,
-    sender_id: user.id,
-    body: trimmed,
-  });
+  const { data, error } = await client
+    .from("dm_messages")
+    .insert({
+      thread_id: threadId,
+      sender_id: user.id,
+      body: trimmed,
+    })
+    .select("id, thread_id, sender_id, body, created_at")
+    .single();
 
-  if (error) throw error;
+  if (error || !data) throw error ?? new Error("Could not send message.");
+
+  return {
+    id: data.id as string,
+    threadId: data.thread_id as string,
+    senderId: data.sender_id as string,
+    body: data.body as string,
+    createdAt: new Date(data.created_at as string).getTime(),
+    isMine: (data.sender_id as string) === currentUserId,
+  };
 }
 
 export async function findThreadWithUser(

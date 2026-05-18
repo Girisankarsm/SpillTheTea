@@ -35,6 +35,7 @@ import {
   normalizeMediaUrlInput,
   uploadMessageMedia,
 } from "@/lib/supabase/message-media";
+import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { roomShareUrl } from "@/lib/share-room";
 import { useMeetGreetStore } from "@/lib/store";
@@ -206,8 +207,8 @@ export default function TopicChatPage() {
             payload.new as Parameters<typeof mapRealtimeMessageRow>[0],
           );
           setRemoteMessages((prev) => {
-            if (prev.some((m) => m.id === mapped.id)) return prev;
-            return [...prev, mapped].sort((a, b) => a.createdAt - b.createdAt);
+            const next = appendUniqueMessage(prev, mapped);
+            return next.sort((a, b) => a.createdAt - b.createdAt);
           });
           void refreshRemoteRoom();
         },
@@ -241,7 +242,11 @@ export default function TopicChatPage() {
         },
         () => router.replace("/topics"),
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          void refreshRemoteRoom();
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -470,7 +475,11 @@ export default function TopicChatPage() {
       };
 
       if (remoteReady && supabase) {
-        await sendMessageRemote(supabase, payload);
+        const posted = await sendMessageRemote(supabase, payload);
+        setRemoteMessages((prev) => {
+          const next = appendUniqueMessage(prev, posted);
+          return next.sort((a, b) => a.createdAt - b.createdAt);
+        });
       } else {
         sendMessageLocal(payload);
       }

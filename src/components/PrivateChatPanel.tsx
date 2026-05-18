@@ -12,6 +12,7 @@ import {
   sendDmMessage,
   sendDmRequest,
 } from "@/lib/supabase/dm-remote";
+import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 
 type PrivateChatPanelProps = {
@@ -163,13 +164,17 @@ export function PrivateChatPanel({
             createdAt: new Date(row.created_at).getTime(),
             isMine: row.sender_id === currentUserId,
           };
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === mapped.id)) return prev;
-            return [...prev, mapped];
-          });
+          setMessages((prev) => appendUniqueMessage(prev, mapped));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          void fetchDmMessages(supabase, activeThreadId, currentUserId).then(
+            (msgs) => setMessages(msgs),
+            () => undefined,
+          );
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -214,7 +219,8 @@ export function PrivateChatPanel({
     if (!activeThreadId || sending) return;
     setSending(true);
     try {
-      await sendDmMessage(supabase, activeThreadId, draft);
+      const sent = await sendDmMessage(supabase, activeThreadId, draft, currentUserId);
+      setMessages((prev) => appendUniqueMessage(prev, sent));
       setDraft("");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not send.");
