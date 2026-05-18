@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateDutyModal } from "@/components/CreateDutyModal";
 import { DutyCard } from "@/components/DutyCard";
 import { useSupabase } from "@/components/SupabaseProvider";
+import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
 import { unknownErrorMessage } from "@/lib/error-message";
 import {
   getStoredDutyAuthorName,
@@ -155,7 +156,7 @@ export default function DutiesPage() {
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+          className={`${yellowButtonMdClass} w-full gap-1.5 sm:w-auto`}
         >
           <span className="text-lg leading-none" aria-hidden>
             +
@@ -215,7 +216,7 @@ export default function DutiesPage() {
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="mt-4 rounded-lg bg-brand px-5 py-2.5 text-sm font-bold text-white hover:opacity-90"
+            className={`${yellowButtonSmClass} mt-4`}
           >
             Post the first one
           </button>

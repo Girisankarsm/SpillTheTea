@@ -14,6 +14,7 @@ import {
   rankTopicsByMessages,
 } from "@/lib/supabase/meet-greet-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
+import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
 import { roomShareUrl } from "@/lib/share-room";
 import {
   trendingTopics,
@@ -159,7 +160,7 @@ export default function TopicsDirectoryPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
             href="/explore#spill-tea"
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+            className={`${yellowButtonMdClass} w-full gap-1.5 sm:w-auto`}
           >
             <span className="text-lg leading-none" aria-hidden>
               +
@@ -201,7 +202,7 @@ export default function TopicsDirectoryPage() {
           <button
             type="submit"
             disabled={remoteReady && (!supabase || rxLoading)}
-            className="w-full shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            className={`${yellowButtonMdClass} w-full shrink-0 sm:w-auto`}
           >
             Open room
           </button>
@@ -245,7 +246,7 @@ export default function TopicsDirectoryPage() {
                   </button>
                   <Link
                     href={`/topics/${t.id}`}
-                    className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+                    className={`${yellowButtonSmClass} w-full sm:w-auto`}
                   >
                     Open chat
                   </Link>
@@ -261,7 +262,7 @@ export default function TopicsDirectoryPage() {
           <p className="text-sm text-subtle">No tea rooms yet.</p>
           <Link
             href="/explore#spill-tea"
-            className="mt-4 inline-flex items-center gap-1 rounded-lg bg-brand px-5 py-2.5 text-sm font-bold text-white hover:opacity-90"
+            className={`${yellowButtonSmClass} mt-4 gap-1`}
           >
             <span aria-hidden>+</span> SpillTheTea
           </Link>

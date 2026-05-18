@@ -11,6 +11,7 @@ import {
   rankTopicsByMessages,
 } from "@/lib/supabase/meet-greet-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
+import { yellowButtonMdClass } from "@/lib/ui";
 import {
   trendingTopics,
   topicMessageCount,
@@ -236,7 +237,7 @@ export default function ExplorePage() {
             <button
               type="button"
               onClick={locateMe}
-              className="w-full rounded-full bg-[#fffc00] px-4 py-2.5 text-xs font-extrabold text-stone-900 shadow-[0_2px_0_rgb(0_0_0_0.12)] hover:brightness-95 sm:w-auto"
+              className={`${yellowButtonMdClass} w-full sm:w-auto`}
             >
               📍 Find me
             </button>
@@ -320,7 +321,7 @@ export default function ExplorePage() {
             <button
               type="submit"
               disabled={remoteReady && (!supabase || rxLoading)}
-              className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${yellowButtonMdClass} mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50`}
             >
               Open tea room
             </button>

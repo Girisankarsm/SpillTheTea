@@ -4,6 +4,7 @@ import {
   formatMoney,
   type DutyWithOffers,
 } from "@/lib/types/duty";
+import { yellowButtonMdClass } from "@/lib/ui";
 
 type DutyCardProps = {
   duty: DutyWithOffers;
@@ -42,7 +43,7 @@ export function DutyCard({ duty, isAuthor = false }: DutyCardProps) {
         </div>
         <Link
           href={`/duties/${duty.id}`}
-          className="flex w-full shrink-0 items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+          className={`${yellowButtonMdClass} w-full sm:w-auto`}
         >
           View
         </Link>

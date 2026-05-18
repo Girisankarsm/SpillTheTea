@@ -5,6 +5,7 @@ import {
   getStoredDutyAuthorName,
   setStoredDutyAuthorName,
 } from "@/lib/duty-names";
+import { yellowButtonMdClass } from "@/lib/ui";
 
 type CreateDutyModalProps = {
   open: boolean;
@@ -105,7 +106,7 @@ export function CreateDutyModal({
           <button
             type="submit"
             disabled={disabled}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${yellowButtonMdClass} px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Post duty
           </button>
