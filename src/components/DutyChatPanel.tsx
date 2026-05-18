@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { GifPicker } from "@/components/GifPicker";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { unknownErrorMessage } from "@/lib/error-message";
-import { uploadDutyVoice } from "@/lib/supabase/duty-chat-media";
+import { uploadDutyAttachment, uploadDutyVoice } from "@/lib/supabase/duty-chat-media";
 import {
   fetchDutyMessages,
   mapDutyChatRow,
-  sendDutyMessage,
-  sendDutyVoiceMessage,
+  sendDutyChatMessage,
 } from "@/lib/supabase/duty-chat-remote";
 import { formatMoney } from "@/lib/types/duty";
 import type { DutyChatMessage } from "@/lib/types/duty-chat";
@@ -67,6 +67,58 @@ function PersonChip({
   );
 }
 
+function DutyChatBubble({ message }: { message: DutyChatMessage }) {
+  const tone = message.isMine
+    ? "ml-auto bg-brand text-white"
+    : "bg-surface text-foreground";
+
+  return (
+    <div className={`max-w-[88%] rounded-xl px-3 py-2 text-sm ${tone}`}>
+      <p className="mb-0.5 text-[10px] font-bold opacity-80">{message.senderName}</p>
+
+      {message.messageType === "voice" && message.audioUrl ? (
+        <audio controls preload="none" src={message.audioUrl} className="max-w-full" />
+      ) : null}
+
+      {(message.messageType === "image" || message.messageType === "gif") &&
+      message.mediaUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={message.mediaUrl}
+          alt={message.messageType === "gif" ? "GIF attachment" : "Image attachment"}
+          className="max-h-48 max-w-full rounded-lg object-contain"
+        />
+      ) : null}
+
+      {message.messageType === "file" && message.mediaUrl ? (
+        <a
+          href={message.mediaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold ${
+            message.isMine
+              ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
+              : "border-border bg-background text-brand hover:underline"
+          }`}
+        >
+          <span aria-hidden>📎</span>
+          <span className="truncate">{message.fileName ?? "Download file"}</span>
+        </a>
+      ) : null}
+
+      {message.body.trim() ? (
+        <p className={`whitespace-pre-wrap ${message.mediaUrl || message.audioUrl ? "mt-2" : ""}`}>
+          {message.body}
+        </p>
+      ) : null}
+
+      <time className="mt-1 block text-[10px] opacity-70">
+        {formatTime(message.createdAt)}
+      </time>
+    </div>
+  );
+}
+
 export function DutyChatPanel({
   dutyId,
   supabase,
@@ -81,10 +133,17 @@ export function DutyChatPanel({
 }: DutyChatPanelProps) {
   const [messages, setMessages] = useState<DutyChatMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [gifUrl, setGifUrl] = useState("");
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const voice = useVoiceRecorder();
+
+  const hasAttachment = Boolean(pendingFile || gifUrl);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -135,8 +194,10 @@ export function DutyChatPanel({
             duty_id: string;
             sender_id: string;
             body: string;
-            message_type?: "text" | "voice";
+            message_type?: DutyChatMessage["messageType"];
             audio_url?: string | null;
+            media_url?: string | null;
+            file_name?: string | null;
             created_at: string;
           };
           const mapped = mapDutyChatRow(
@@ -172,12 +233,69 @@ export function DutyChatPanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (!pendingFile) {
+      setFilePreview(null);
+      return;
+    }
+    if (!pendingFile.type.startsWith("image/")) {
+      setFilePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingFile);
+    setFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
+
+  function clearAttachment() {
+    setPendingFile(null);
+    setGifUrl("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function handleFilePick(file: File | null) {
+    if (!file) return;
+    setGifUrl("");
+    setPendingFile(file);
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (sending || !draft.trim()) return;
+    if (sending || voice.recording) return;
+
+    const caption = draft.trim();
+    if (!caption && !hasAttachment) return;
+
     setSending(true);
     try {
-      await sendDutyMessage(supabase, dutyId, draft);
+      if (pendingFile) {
+        const uploaded = await uploadDutyAttachment(supabase, dutyId, pendingFile);
+        await sendDutyChatMessage(supabase, dutyId, {
+          messageType: uploaded.messageType,
+          mediaUrl: uploaded.url,
+          fileName: uploaded.messageType === "file" ? uploaded.fileName : undefined,
+          body: caption,
+        });
+        clearAttachment();
+        setDraft("");
+        return;
+      }
+
+      if (gifUrl) {
+        await sendDutyChatMessage(supabase, dutyId, {
+          messageType: "gif",
+          mediaUrl: gifUrl,
+          body: caption,
+        });
+        clearAttachment();
+        setDraft("");
+        return;
+      }
+
+      await sendDutyChatMessage(supabase, dutyId, {
+        messageType: "text",
+        body: caption,
+      });
       setDraft("");
     } catch (err) {
       alert(unknownErrorMessage(err, "Could not send message."));
@@ -198,7 +316,10 @@ export function DutyChatPanel({
           return;
         }
         const audioUrl = await uploadDutyVoice(supabase, dutyId, blob);
-        await sendDutyVoiceMessage(supabase, dutyId, audioUrl);
+        await sendDutyChatMessage(supabase, dutyId, {
+          messageType: "voice",
+          audioUrl,
+        });
       } catch (err) {
         alert(unknownErrorMessage(err, "Could not send voice message."));
       } finally {
@@ -209,6 +330,8 @@ export function DutyChatPanel({
 
     await voice.start();
   }
+
+  const canSend = Boolean(draft.trim() || hasAttachment);
 
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
@@ -254,31 +377,7 @@ export function DutyChatPanel({
           </p>
         ) : (
           messages.map((message) => (
-            <div
-              key={message.id}
-              className={`max-w-[88%] rounded-xl px-3 py-2 text-sm ${
-                message.isMine
-                  ? "ml-auto bg-brand text-white"
-                  : "bg-surface text-foreground"
-              }`}
-            >
-              <p className="mb-0.5 text-[10px] font-bold opacity-80">
-                {message.senderName}
-              </p>
-              {message.messageType === "voice" && message.audioUrl ? (
-                <audio
-                  controls
-                  preload="none"
-                  src={message.audioUrl}
-                  className="max-w-full"
-                />
-              ) : (
-                <p className="whitespace-pre-wrap">{message.body}</p>
-              )}
-              <time className="mt-1 block text-[10px] opacity-70">
-                {formatTime(message.createdAt)}
-              </time>
-            </div>
+            <DutyChatBubble key={message.id} message={message} />
           ))
         )}
         <div ref={bottomRef} />
@@ -288,39 +387,102 @@ export function DutyChatPanel({
         <p className="mt-2 text-xs text-danger-text">{voice.error}</p>
       ) : null}
 
-      <form onSubmit={(e) => void handleSend(e)} className="mt-3 flex gap-2">
+      <form onSubmit={(e) => void handleSend(e)} className="mt-3 space-y-2">
+        {hasAttachment ? (
+          <div className="relative overflow-hidden rounded-lg border border-border bg-background p-2">
+            {filePreview || gifUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={filePreview ?? gifUrl}
+                alt="Attachment preview"
+                className="max-h-36 w-full rounded-md object-contain"
+              />
+            ) : pendingFile ? (
+              <p className="rounded-md bg-surface px-3 py-4 text-center text-sm text-subtle">
+                📎 {pendingFile.name}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={clearAttachment}
+              className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white hover:bg-black/80"
+            >
+              Remove
+            </button>
+          </div>
+        ) : null}
+
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Private message…"
+          placeholder={
+            hasAttachment ? "Add a caption (optional)…" : "Private message…"
+          }
           maxLength={2000}
           disabled={voice.recording}
-          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
         />
-        {voice.supported ? (
+
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/heic,application/pdf,.pdf,.doc,.docx,.txt,.zip"
+            className="hidden"
+            onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
+          />
           <button
             type="button"
-            onClick={() => void handleVoiceToggle()}
-            disabled={sending}
-            title={voice.recording ? "Stop and send voice note" : "Record voice note"}
-            aria-label={voice.recording ? "Stop recording" : "Record voice note"}
-            className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50 ${
-              voice.recording
-                ? "animate-pulse border-danger-border bg-danger-bg text-danger-text"
-                : "border-border bg-background text-foreground hover:bg-surface"
-            }`}
+            onClick={() => setGifPickerOpen(true)}
+            disabled={sending || voice.recording}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-surface disabled:opacity-50"
           >
-            {voice.recording ? "Stop" : "Voice"}
+            GIF
           </button>
-        ) : null}
-        <button
-          type="submit"
-          disabled={sending || !draft.trim() || voice.recording}
-          className="shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-        >
-          Send
-        </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={sending || voice.recording}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-surface disabled:opacity-50"
+          >
+            Attach
+          </button>
+          {voice.supported ? (
+            <button
+              type="button"
+              onClick={() => void handleVoiceToggle()}
+              disabled={sending}
+              title={voice.recording ? "Stop and send voice note" : "Record voice note"}
+              aria-label={voice.recording ? "Stop recording" : "Record voice note"}
+              className={`rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50 ${
+                voice.recording
+                  ? "animate-pulse border-danger-border bg-danger-bg text-danger-text"
+                  : "border-border bg-background text-foreground hover:bg-surface"
+              }`}
+            >
+              {voice.recording ? "Stop" : "Voice"}
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            disabled={sending || !canSend || voice.recording}
+            className="ml-auto rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            Send
+          </button>
+        </div>
       </form>
+
+      <GifPicker
+        open={gifPickerOpen}
+        onClose={() => setGifPickerOpen(false)}
+        onSelect={(url) => {
+          setPendingFile(null);
+          if (fileRef.current) fileRef.current.value = "";
+          setGifUrl(url);
+          setGifPickerOpen(false);
+        }}
+      />
     </section>
   );
 }
