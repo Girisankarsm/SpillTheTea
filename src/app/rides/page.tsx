@@ -115,6 +115,8 @@ export default function RidesPage() {
     pickupLat?: number;
     pickupLng?: number;
     dropLabel: string;
+    dropLat?: number;
+    dropLng?: number;
     notes: string;
     maxReward?: number;
   }) {

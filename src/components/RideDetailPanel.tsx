@@ -6,6 +6,8 @@ import {
   rideStatusLabel,
   type RideWithOffers,
 } from "@/lib/types/ride";
+import { RideChatPanel } from "@/components/RideChatPanel";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RideDetailPanelProps = {
   ride: RideWithOffers;
@@ -16,6 +18,11 @@ type RideDetailPanelProps = {
   onComplete: () => void;
   onReward: () => void;
   onCancel: () => void;
+  chat?: {
+    rideId: string;
+    supabase: SupabaseClient;
+    currentUserId: string;
+  } | null;
 };
 
 function isRider(ride: RideWithOffers, viewerUserId?: string | null): boolean {
@@ -52,12 +59,19 @@ export function RideDetailPanel({
   onComplete,
   onReward,
   onCancel,
+  chat,
 }: RideDetailPanelProps) {
   const rider = isRider(ride, viewerUserId);
   const driver = isMatchedDriver(ride, viewerUserId);
   const alreadyOffered = hasPendingOffer(ride, viewerUserId);
   const matchedOffer = ride.offers.find((offer) => offer.id === ride.matchedOfferId);
   const pendingOffers = ride.offers.filter((offer) => offer.status === "pending");
+  const showPrivateChat =
+    !!chat &&
+    (rider || driver) &&
+    !!matchedOffer?.driverUserId &&
+    !!ride.riderUserId &&
+    ride.status !== "open";
 
   return (
     <div className="space-y-6">
@@ -153,7 +167,20 @@ export function RideDetailPanel({
         </div>
       </section>
 
-      {(rider || driver) && matchedOffer && ride.status !== "open" ? (
+      {showPrivateChat && matchedOffer && chat ? (
+        <RideChatPanel
+          rideId={chat.rideId}
+          supabase={chat.supabase}
+          currentUserId={chat.currentUserId}
+          riderUserId={ride.riderUserId!}
+          riderName={ride.riderName}
+          driverUserId={matchedOffer.driverUserId!}
+          driverName={matchedOffer.driverName}
+          driverRewardAmount={matchedOffer.rewardAmount}
+          driverCurrency={matchedOffer.currency}
+          driverPitch={matchedOffer.pitch}
+        />
+      ) : (rider || driver) && matchedOffer && ride.status !== "open" ? (
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="text-sm font-bold text-foreground">Matched driver</h2>
           <p className="mt-2 text-sm text-foreground">

@@ -2,7 +2,7 @@
 
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
@@ -26,6 +26,7 @@ type RideLocationPickerMapProps = {
   activeField: "pickup" | "drop";
   onMapClick: (lat: number, lng: number) => void;
   userLocation?: MapPoint | null;
+  flyTo?: MapPoint | null;
 };
 
 function fixLeafletIcons(): void {
@@ -92,12 +93,28 @@ function FitPoints({
   return null;
 }
 
+function FlyToPoint({ point }: { point: MapPoint | null }) {
+  const map = useMap();
+  const lastKeyRef = useRef("");
+
+  useEffect(() => {
+    if (!point) return;
+    const key = `${point.lat},${point.lng}`;
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
+    map.flyTo([point.lat, point.lng], 16, { animate: true, duration: 0.75 });
+  }, [map, point]);
+
+  return null;
+}
+
 export function RideLocationPickerMap({
   pickup,
   drop,
   activeField,
   onMapClick,
   userLocation,
+  flyTo,
 }: RideLocationPickerMapProps) {
   useEffect(() => {
     fixLeafletIcons();
@@ -131,6 +148,7 @@ export function RideLocationPickerMap({
         <TileLayer attribution='&copy; <a href="https://carto.com/">CARTO</a>' url={CARTO_VOYAGER} />
         <MapClickHandler onMapClick={onMapClick} />
         <FitPoints pickup={pickup} drop={drop} userLocation={userLocation} />
+        <FlyToPoint point={flyTo ?? null} />
         {routeLine ? (
           <Polyline
             positions={routeLine}

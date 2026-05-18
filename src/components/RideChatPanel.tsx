@@ -11,26 +11,26 @@ import {
   maybeShowLocalMessageNotification,
   notifyMessageRecipient,
 } from "@/lib/push/client";
-import { uploadDutyAttachment, uploadDutyVoice } from "@/lib/supabase/duty-chat-media";
+import { uploadRideAttachment, uploadRideVoice } from "@/lib/supabase/ride-chat-media";
 import {
-  fetchDutyMessages,
-  mapDutyChatRow,
-  sendDutyChatMessage,
-} from "@/lib/supabase/duty-chat-remote";
-import { formatMoney } from "@/lib/types/duty";
-import type { DutyChatMessage } from "@/lib/types/duty-chat";
+  fetchRideMessages,
+  mapRideChatRow,
+  sendRideChatMessage,
+} from "@/lib/supabase/ride-chat-remote";
+import { formatMoney } from "@/lib/types/ride";
+import type { RideChatMessage } from "@/lib/types/ride-chat";
 
-type DutyChatPanelProps = {
-  dutyId: string;
+type RideChatPanelProps = {
+  rideId: string;
   supabase: SupabaseClient;
   currentUserId: string;
-  authorUserId: string;
-  authorName: string;
-  helperUserId: string;
-  helperName: string;
-  helperRewardAmount?: number;
-  helperCurrency?: string;
-  helperPitch?: string;
+  riderUserId: string;
+  riderName: string;
+  driverUserId: string;
+  driverName: string;
+  driverRewardAmount?: number;
+  driverCurrency?: string;
+  driverPitch?: string;
 };
 
 function formatTime(ms: number): string {
@@ -73,7 +73,7 @@ function PersonChip({
   );
 }
 
-function DutyChatBubble({ message }: { message: DutyChatMessage }) {
+function RideChatBubble({ message }: { message: RideChatMessage }) {
   const tone = message.isMine
     ? "ml-auto bg-brand text-white"
     : "bg-surface text-foreground";
@@ -125,19 +125,19 @@ function DutyChatBubble({ message }: { message: DutyChatMessage }) {
   );
 }
 
-export function DutyChatPanel({
-  dutyId,
+export function RideChatPanel({
+  rideId,
   supabase,
   currentUserId,
-  authorUserId,
-  authorName,
-  helperUserId,
-  helperName,
-  helperRewardAmount,
-  helperCurrency = "INR",
-  helperPitch,
-}: DutyChatPanelProps) {
-  const [messages, setMessages] = useState<DutyChatMessage[]>([]);
+  riderUserId,
+  riderName,
+  driverUserId,
+  driverName,
+  driverRewardAmount,
+  driverCurrency = "INR",
+  driverPitch,
+}: RideChatPanelProps) {
+  const [messages, setMessages] = useState<RideChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [gifUrl, setGifUrl] = useState("");
@@ -153,23 +153,23 @@ export function DutyChatPanel({
 
   const chatContext = {
     currentUserId,
-    authorUserId,
-    authorName,
-    helperUserId,
-    helperName,
+    riderUserId,
+    riderName,
+    driverUserId,
+    driverName,
   };
 
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await fetchDutyMessages(
+      const rows = await fetchRideMessages(
         supabase,
-        dutyId,
+        rideId,
         currentUserId,
-        authorUserId,
-        authorName,
-        helperUserId,
-        helperName,
+        riderUserId,
+        riderName,
+        driverUserId,
+        driverName,
       );
       setMessages(rows);
     } catch (e) {
@@ -179,12 +179,12 @@ export function DutyChatPanel({
     }
   }, [
     supabase,
-    dutyId,
+    rideId,
     currentUserId,
-    authorUserId,
-    authorName,
-    helperUserId,
-    helperName,
+    riderUserId,
+    riderName,
+    driverUserId,
+    driverName,
   ]);
 
   useEffect(() => {
@@ -193,30 +193,30 @@ export function DutyChatPanel({
 
   useEffect(() => {
     const channel = supabase
-      .channel(`duty-chat-${dutyId}`)
+      .channel(`ride-chat-${rideId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "duty_messages",
-          filter: `duty_id=eq.${dutyId}`,
+          table: "ride_messages",
+          filter: `ride_id=eq.${rideId}`,
         },
         (payload) => {
-          const mapped = mapDutyChatRow(
-            payload.new as Parameters<typeof mapDutyChatRow>[0],
+          const mapped = mapRideChatRow(
+            payload.new as Parameters<typeof mapRideChatRow>[0],
             currentUserId,
-            authorUserId,
-            authorName,
-            helperUserId,
-            helperName,
+            riderUserId,
+            riderName,
+            driverUserId,
+            driverName,
           );
           setMessages((prev) => appendUniqueMessage(prev, mapped));
           if (mapped.senderId !== currentUserId) {
             maybeShowLocalMessageNotification({
-              title: `${mapped.senderName} (duty chat)`,
+              title: `${mapped.senderName} (ride chat)`,
               body: chatMessagePreview(mapped.body, mapped.messageType),
-              url: `/duties/${dutyId}`,
+              url: `/rides/${rideId}`,
               senderId: mapped.senderId,
               currentUserId,
             });
@@ -234,12 +234,12 @@ export function DutyChatPanel({
     };
   }, [
     supabase,
-    dutyId,
+    rideId,
     currentUserId,
-    authorUserId,
-    authorName,
-    helperUserId,
-    helperName,
+    riderUserId,
+    riderName,
+    driverUserId,
+    driverName,
     reload,
   ]);
 
@@ -283,10 +283,10 @@ export function DutyChatPanel({
     setSending(true);
     try {
       if (pendingFile) {
-        const uploaded = await uploadDutyAttachment(supabase, dutyId, pendingFile);
-        const sent = await sendDutyChatMessage(
+        const uploaded = await uploadRideAttachment(supabase, rideId, pendingFile);
+        const sent = await sendRideChatMessage(
           supabase,
-          dutyId,
+          rideId,
           {
             messageType: uploaded.messageType,
             mediaUrl: uploaded.url,
@@ -296,16 +296,16 @@ export function DutyChatPanel({
           chatContext,
         );
         setMessages((prev) => appendUniqueMessage(prev, sent));
-        void notifyMessageRecipient({ kind: "duty_chat", messageId: sent.id });
+        void notifyMessageRecipient({ kind: "ride_chat", messageId: sent.id });
         clearAttachment();
         setDraft("");
         return;
       }
 
       if (gifUrl) {
-        const sent = await sendDutyChatMessage(
+        const sent = await sendRideChatMessage(
           supabase,
-          dutyId,
+          rideId,
           {
             messageType: "gif",
             mediaUrl: gifUrl,
@@ -314,15 +314,15 @@ export function DutyChatPanel({
           chatContext,
         );
         setMessages((prev) => appendUniqueMessage(prev, sent));
-        void notifyMessageRecipient({ kind: "duty_chat", messageId: sent.id });
+        void notifyMessageRecipient({ kind: "ride_chat", messageId: sent.id });
         clearAttachment();
         setDraft("");
         return;
       }
 
-      const sent = await sendDutyChatMessage(
+      const sent = await sendRideChatMessage(
         supabase,
-        dutyId,
+        rideId,
         {
           messageType: "text",
           body: caption,
@@ -330,7 +330,7 @@ export function DutyChatPanel({
         chatContext,
       );
       setMessages((prev) => appendUniqueMessage(prev, sent));
-      void notifyMessageRecipient({ kind: "duty_chat", messageId: sent.id });
+      void notifyMessageRecipient({ kind: "ride_chat", messageId: sent.id });
       setDraft("");
     } catch (err) {
       alert(unknownErrorMessage(err, "Could not send message."));
@@ -350,10 +350,10 @@ export function DutyChatPanel({
           alert("Recording was too short.");
           return;
         }
-        const audioUrl = await uploadDutyVoice(supabase, dutyId, blob);
-        const sent = await sendDutyChatMessage(
+        const audioUrl = await uploadRideVoice(supabase, rideId, blob);
+        const sent = await sendRideChatMessage(
           supabase,
-          dutyId,
+          rideId,
           {
             messageType: "voice",
             audioUrl,
@@ -361,7 +361,7 @@ export function DutyChatPanel({
           chatContext,
         );
         setMessages((prev) => appendUniqueMessage(prev, sent));
-        void notifyMessageRecipient({ kind: "duty_chat", messageId: sent.id });
+        void notifyMessageRecipient({ kind: "ride_chat", messageId: sent.id });
       } catch (err) {
         alert(unknownErrorMessage(err, "Could not send voice message."));
       } finally {
@@ -381,7 +381,7 @@ export function DutyChatPanel({
         <div>
           <h2 className="text-sm font-bold text-foreground">Private chat</h2>
           <p className="mt-1 text-xs text-subtle">
-            Only {authorName} and {helperName} can see this — posting names, not
+            Only {riderName} and {driverName} can see this — posting names, not
             profile names.
           </p>
         </div>
@@ -392,21 +392,21 @@ export function DutyChatPanel({
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <PersonChip
-          name={authorName}
-          role="Author"
-          active={currentUserId === authorUserId}
+          name={riderName}
+          role="Rider"
+          active={currentUserId === riderUserId}
         />
         <PersonChip
-          name={helperName}
-          role="Helper"
-          active={currentUserId === helperUserId}
+          name={driverName}
+          role="Driver"
+          active={currentUserId === driverUserId}
         />
       </div>
 
-      {helperRewardAmount != null ? (
+      {driverRewardAmount != null ? (
         <p className="mt-2 text-xs text-subtle">
-          Agreed reward: {formatMoney(helperRewardAmount, helperCurrency)}
-          {helperPitch ? ` · “${helperPitch}”` : ""}
+          Agreed reward: {formatMoney(driverRewardAmount, driverCurrency)}
+          {driverPitch ? ` · “${driverPitch}”` : ""}
         </p>
       ) : null}
 
@@ -419,7 +419,7 @@ export function DutyChatPanel({
           </p>
         ) : (
           messages.map((message) => (
-            <DutyChatBubble key={message.id} message={message} />
+            <RideChatBubble key={message.id} message={message} />
           ))
         )}
         <div ref={bottomRef} />

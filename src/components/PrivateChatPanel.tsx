@@ -14,6 +14,11 @@ import {
 } from "@/lib/supabase/dm-remote";
 import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
+import {
+  chatMessagePreview,
+  maybeShowLocalMessageNotification,
+  notifyMessageRecipient,
+} from "@/lib/push/client";
 
 type PrivateChatPanelProps = {
   open: boolean;
@@ -165,6 +170,15 @@ export function PrivateChatPanel({
             isMine: row.sender_id === currentUserId,
           };
           setMessages((prev) => appendUniqueMessage(prev, mapped));
+          if (mapped.senderId !== currentUserId) {
+            maybeShowLocalMessageNotification({
+              title: `${activeThread?.otherDisplayName ?? "Someone"} (private chat)`,
+              body: chatMessagePreview(mapped.body),
+              url: `/topics/${topicId}`,
+              senderId: mapped.senderId,
+              currentUserId,
+            });
+          }
         },
       )
       .subscribe((status) => {
@@ -221,6 +235,7 @@ export function PrivateChatPanel({
     try {
       const sent = await sendDmMessage(supabase, activeThreadId, draft, currentUserId);
       setMessages((prev) => appendUniqueMessage(prev, sent));
+      void notifyMessageRecipient({ kind: "dm", messageId: sent.id });
       setDraft("");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not send.");

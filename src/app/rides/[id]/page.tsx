@@ -33,6 +33,11 @@ export default function RideDetailPage() {
   const [offerOpen, setOfferOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  const rideChat =
+    remoteReady && supabase && currentUserId && rideId
+      ? { rideId, supabase, currentUserId }
+      : null;
+
   const reload = useCallback(async () => {
     if (!supabase || !remoteReady || !rideId) return;
     try {
@@ -237,6 +242,7 @@ export default function RideDetailPage() {
           onComplete={() => void handleComplete()}
           onReward={() => void handleReward()}
           onCancel={() => void handleCancel()}
+          chat={rideChat}
         />
       </div>
 

@@ -1,7 +1,7 @@
 {
   "name": "SpillTheTea",
   "short_name": "SpillTheTea",
-  "description": "Anonymous convo rooms. Tea rooms, duties, and more.",
+  "description": "Anonymous convo rooms. Tea rooms, duties, ride pooling, and private chats.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -3,6 +3,8 @@ export function formatCoordLabel(lat: number, lng: number): string {
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
+export { formatPlaceLabel } from "@/lib/place-search";
+
 /** Reverse geocode lat/lng to a short place name (OpenStreetMap Nominatim). */
 export async function reverseGeocodeLabel(
   lat: number,
