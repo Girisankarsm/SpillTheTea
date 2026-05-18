@@ -19,6 +19,7 @@ import {
   maybeShowLocalMessageNotification,
   notifyMessageRecipient,
 } from "@/lib/push/client";
+import { VoiceCallButton } from "@/components/VoiceCallButton";
 
 type PrivateChatPanelProps = {
   open: boolean;
@@ -285,9 +286,18 @@ export function PrivateChatPanel({
               >
                 ← All chats
               </button>
-              <p className="mt-1 text-sm font-bold text-foreground">
-                {activeThread.otherDisplayName}
-              </p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-foreground">
+                  {activeThread.otherDisplayName}
+                </p>
+                <VoiceCallButton
+                  roomId={`dm:${activeThread.id}`}
+                  roomLabel="Private chat"
+                  peerUserId={activeThread.otherUserId}
+                  peerName={activeThread.otherDisplayName}
+                  callerName="Guest"
+                />
+              </div>
             </div>
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
               {messages.length === 0 ? (

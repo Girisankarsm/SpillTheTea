@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { AppShellOrPlain } from "@/components/AppShellOrPlain";
 import { SupabaseProvider } from "@/components/SupabaseProvider";
+import { VoiceCallProvider } from "@/components/VoiceCallProvider";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -41,7 +42,9 @@ export default function RootLayout({
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
         <SupabaseProvider>
-          <AppShellOrPlain>{children}</AppShellOrPlain>
+          <VoiceCallProvider>
+            <AppShellOrPlain>{children}</AppShellOrPlain>
+          </VoiceCallProvider>
         </SupabaseProvider>
       </body>
     </html>

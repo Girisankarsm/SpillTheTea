@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GifPicker } from "@/components/GifPicker";
+import { VoiceCallButton } from "@/components/VoiceCallButton";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
@@ -374,6 +375,9 @@ export function DutyChatPanel({
   }
 
   const canSend = Boolean(draft.trim() || hasAttachment);
+  const peerUserId = currentUserId === authorUserId ? helperUserId : authorUserId;
+  const peerName = currentUserId === authorUserId ? helperName : authorName;
+  const callerName = currentUserId === authorUserId ? authorName : helperName;
 
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
@@ -385,9 +389,20 @@ export function DutyChatPanel({
             profile names.
           </p>
         </div>
-        <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-          Private
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {peerUserId ? (
+            <VoiceCallButton
+              roomId={`duty:${dutyId}`}
+              roomLabel="Duty chat"
+              peerUserId={peerUserId}
+              peerName={peerName}
+              callerName={callerName}
+            />
+          ) : null}
+          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+            Private
+          </span>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
