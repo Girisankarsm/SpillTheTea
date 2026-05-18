@@ -179,23 +179,28 @@ export default function DutiesPage() {
         </p>
       ) : null}
 
-      <div className="space-y-1">
-        <label className="text-xs font-semibold text-foreground" htmlFor="duty-author-name">
-          Default name on duties
-        </label>
-        <input
-          id="duty-author-name"
-          value={authorName}
-          onChange={(e) => {
-            const next = e.target.value;
-            setAuthorName(next);
-            setStoredDutyAuthorName(next);
-          }}
-          placeholder="anon"
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand sm:max-w-xs"
-        />
-        <p className="text-[11px] text-subtle">
-          Used when you post — you can change it in the post form too.
+      <div className="mx-auto w-full max-w-sm rounded-lg border border-border bg-surface/60 px-3 py-2.5 sm:mx-0">
+        <div className="flex items-center gap-2.5">
+          <label
+            className="shrink-0 text-[11px] font-medium text-subtle"
+            htmlFor="duty-author-name"
+          >
+            Default name
+          </label>
+          <input
+            id="duty-author-name"
+            value={authorName}
+            onChange={(e) => {
+              const next = e.target.value;
+              setAuthorName(next);
+              setStoredDutyAuthorName(next);
+            }}
+            placeholder="anon"
+            className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-brand"
+          />
+        </div>
+        <p className="mt-1.5 text-center text-[10px] leading-snug text-subtle sm:text-left">
+          Used when you post — editable in the post form too.
         </p>
       </div>
 
