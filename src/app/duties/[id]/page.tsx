@@ -46,6 +46,7 @@ export default function DutyDetailPage() {
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [helperName, setHelperName] = useState("Guest");
+  const [helperNameEdited, setHelperNameEdited] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const localDuty = useMemo(
@@ -119,8 +120,8 @@ export default function DutyDetailPage() {
   }, [supabase, remoteReady, dutyId, reload]);
 
   useEffect(() => {
-    if (defaultDisplayName) setHelperName(defaultDisplayName);
-  }, [defaultDisplayName]);
+    if (!helperNameEdited && defaultDisplayName) setHelperName(defaultDisplayName);
+  }, [defaultDisplayName, helperNameEdited]);
 
   async function handleOffer(input: { pitch: string; rewardAmount: number }) {
     if (!dutyId) return;
@@ -339,7 +340,10 @@ export default function DutyDetailPage() {
           <input
             id="duty-helper-name"
             value={helperName}
-            onChange={(e) => setHelperName(e.target.value)}
+            onChange={(e) => {
+              setHelperNameEdited(true);
+              setHelperName(e.target.value);
+            }}
             className="w-full max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
         </div>

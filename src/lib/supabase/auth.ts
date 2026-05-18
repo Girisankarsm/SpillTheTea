@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isAuthenticatedUser } from "@/lib/supabase/session";
 
 export function authCallbackUrl(nextPath = "/"): string {
   if (typeof window === "undefined") return "/auth/callback";
@@ -50,9 +51,7 @@ export async function signOutAndContinueAnonymous(
 export function isGoogleSignedIn(session: {
   user: { is_anonymous?: boolean; app_metadata?: { provider?: string } };
 } | null): boolean {
-  if (!session?.user) return false;
-  if (session.user.is_anonymous) return false;
-  return true;
+  return isAuthenticatedUser(session?.user ?? null);
 }
 
 export function googleProfile(session: {

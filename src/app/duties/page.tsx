@@ -29,6 +29,7 @@ export default function DutiesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authorName, setAuthorName] = useState("Guest");
+  const [authorNameEdited, setAuthorNameEdited] = useState(false);
 
   const localList = useMemo(
     () => dutiesWithOffers(localDuties, localOffers),
@@ -76,8 +77,8 @@ export default function DutiesPage() {
   }, [supabase, remoteReady, reload]);
 
   useEffect(() => {
-    if (defaultDisplayName) setAuthorName(defaultDisplayName);
-  }, [defaultDisplayName]);
+    if (!authorNameEdited && defaultDisplayName) setAuthorName(defaultDisplayName);
+  }, [defaultDisplayName, authorNameEdited]);
 
   async function handleCreate(input: { title: string; description: string }) {
     setBusy(true);
@@ -162,7 +163,10 @@ export default function DutiesPage() {
         <input
           id="duty-author-name"
           value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
+          onChange={(e) => {
+            setAuthorNameEdited(true);
+            setAuthorName(e.target.value);
+          }}
           className="w-full max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
         />
       </div>

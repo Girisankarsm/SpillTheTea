@@ -92,6 +92,7 @@ export function DutyDetailPanel({
             userId={duty.authorUserId}
             visitorId={duty.authorVisitorId}
             fallbackName={duty.authorName}
+            usePostingName
           />
         </p>
 
@@ -159,6 +160,7 @@ export function DutyDetailPanel({
               userId={assignedOffer.helperUserId}
               visitorId={assignedOffer.helperVisitorId}
               fallbackName={assignedOffer.helperName}
+              usePostingName
             />
             {" · "}
             {formatMoney(assignedOffer.rewardAmount, assignedOffer.currency)}
@@ -186,6 +188,7 @@ export function DutyDetailPanel({
                       userId={offer.helperUserId}
                       visitorId={offer.helperVisitorId}
                       fallbackName={offer.helperName}
+                      usePostingName
                     />
                   </p>
                   <p className="text-sm font-semibold text-brand">

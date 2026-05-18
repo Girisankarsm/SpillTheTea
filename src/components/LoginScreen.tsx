@@ -1,11 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { AppLogo } from "@/components/AppLogo";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { APP_DISCLAIMER } from "@/lib/disclaimer";
-import { isGoogleSignedIn, signInWithGoogle } from "@/lib/supabase/auth";
+import { signInWithGoogle } from "@/lib/supabase/auth";
 
 function GoogleMark() {
   return (
@@ -30,20 +30,30 @@ function GoogleMark() {
   );
 }
 
-export function LoginGate({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { supabase, session, authReady, configured } = useSupabase();
+function safeNextPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  if (raw.startsWith("/login") || raw.startsWith("/auth/callback")) return "/";
+  return raw;
+}
+
+export function LoginScreen() {
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get("next"));
+  const authFailed = searchParams.get("auth") === "failed";
+
+  const { supabase, authReady, configured } = useSupabase();
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const signedIn = isGoogleSignedIn(session);
-
-  if (pathname.startsWith("/auth/callback")) {
-    return children;
-  }
-
-  if (signedIn) {
-    return children;
+  async function handleGoogleSignIn() {
+    if (!supabase || !accepted || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await signInWithGoogle(supabase, nextPath);
+      if (error) alert(error.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (configured && !authReady) {
@@ -52,17 +62,6 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         <p className="text-sm text-subtle">Loading…</p>
       </div>
     );
-  }
-
-  async function handleGoogleSignIn() {
-    if (!supabase || !accepted || busy) return;
-    setBusy(true);
-    try {
-      const { error } = await signInWithGoogle(supabase, pathname || "/");
-      if (error) alert(error.message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   return (
@@ -75,6 +74,12 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
           </h1>
           <p className="text-sm text-subtle">Sign in to start using the app.</p>
         </div>
+
+        {authFailed ? (
+          <p className="w-full rounded-lg border border-danger-border bg-danger-bg px-4 py-3 text-xs text-danger-text">
+            Sign-in failed. Please try again.
+          </p>
+        ) : null}
 
         <p className="rounded-xl border border-border bg-surface px-4 py-3 text-left text-xs leading-relaxed text-subtle">
           {APP_DISCLAIMER}
@@ -105,9 +110,8 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         ) : (
           <p className="rounded-lg border border-danger-border bg-danger-bg px-4 py-3 text-xs text-danger-text">
             Add <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-            <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
-            <code className="font-mono">.env.local</code>, then restart the app. Google
-            sign-in must be enabled in Supabase.
+            <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your
+            environment, then redeploy. Google sign-in must be enabled in Supabase.
           </p>
         )}
       </div>

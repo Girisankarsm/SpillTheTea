@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
-import { AppShell } from "@/components/AppShell";
+import { AppShellOrPlain } from "@/components/AppShellOrPlain";
 import { SupabaseProvider } from "@/components/SupabaseProvider";
 import "./globals.css";
 
@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <SupabaseProvider>
-          <AppShell>{children}</AppShell>
+          <AppShellOrPlain>{children}</AppShellOrPlain>
         </SupabaseProvider>
       </body>
     </html>

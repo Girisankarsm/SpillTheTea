@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -37,6 +37,7 @@ function GoogleMark() {
 
 export function AuthMenu() {
   const pathname = usePathname();
+  const router = useRouter();
   const { supabase, session, authReady, configured } = useSupabase();
   const { profile, defaultDisplayName } = useUserProfile();
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,7 @@ export function AuthMenu() {
     setBusy(true);
     try {
       await signOutUser(supabase);
+      router.replace("/login");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not sign out.");
     } finally {
