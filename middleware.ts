@@ -17,6 +17,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  if (pathname === "/manifest.webmanifest" || pathname === "/sw.js") {
+    return NextResponse.next({ request });
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const configured = Boolean(url?.trim() && anonKey?.trim());

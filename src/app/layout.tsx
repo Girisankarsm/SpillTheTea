@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { AppShellOrPlain } from "@/components/AppShellOrPlain";
 import { SupabaseProvider } from "@/components/SupabaseProvider";
@@ -14,6 +14,22 @@ export const metadata: Metadata = {
   title: "SpillTheTea — Anonymous Convo Rooms",
   description:
     "Open anonymous chat rooms about any topic. Pick a nickname, join the conversation, and talk with people who showed up for the same tea.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "SpillTheTea",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2d6a4f" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+  ],
 };
 
 export default function RootLayout({

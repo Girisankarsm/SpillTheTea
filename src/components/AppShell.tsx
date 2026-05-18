@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppLogo } from "@/components/AppLogo";
 import { AuthMenu } from "@/components/AuthMenu";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
+import { InstallBanner } from "@/components/InstallBanner";
 import { SetupBanner } from "@/components/SetupBanner";
 
 const links = [
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         id="app-site-header"
         className="fixed inset-x-0 top-0 z-[500] border-b border-border bg-surface shadow-sm"
       >
+        <InstallBanner />
         <SetupBanner />
         <header>
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">

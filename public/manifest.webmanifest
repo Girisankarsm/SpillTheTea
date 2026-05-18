@@ -1,0 +1,30 @@
+{
+  "name": "SpillTheTea",
+  "short_name": "SpillTheTea",
+  "description": "Anonymous convo rooms. Tea rooms, duties, and more.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1c1917",
+  "theme_color": "#2d6a4f",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/spillthetea-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
