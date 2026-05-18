@@ -147,34 +147,32 @@ export default function TopicsDirectoryPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10">
-      <header className="space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Tea rooms
-          </h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/explore#spill-tea"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90"
-            >
-              <span className="text-lg leading-none" aria-hidden>
-                +
-              </span>
-              SpillTheTea
-            </Link>
-            <Link
-              href="/explore"
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-subtle hover:border-brand hover:text-foreground"
-            >
-              Map
-            </Link>
-          </div>
-        </div>
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-10">
+      <header className="space-y-3">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Tea rooms
+        </h1>
         <p className="text-sm leading-relaxed text-subtle">
           Anonymous convo rooms about anything. Open one, pick a nickname, and talk.
           Only the person who started a room (or the app admin) can close it.
         </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Link
+            href="/explore#spill-tea"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+          >
+            <span className="text-lg leading-none" aria-hidden>
+              +
+            </span>
+            SpillTheTea
+          </Link>
+          <Link
+            href="/explore"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-subtle hover:border-brand hover:text-foreground sm:w-auto"
+          >
+            Map
+          </Link>
+        </div>
         {remoteReady && rxLoading ? (
           <p className="text-xs font-semibold text-brand">Refreshing…</p>
         ) : null}
@@ -203,7 +201,7 @@ export default function TopicsDirectoryPage() {
           <button
             type="submit"
             disabled={remoteReady && (!supabase || rxLoading)}
-            className="shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             Open room
           </button>
@@ -228,12 +226,12 @@ export default function TopicsDirectoryPage() {
                     {remoteReady ? "" : " · this device"}
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
                   {deletable ? (
                     <button
                       type="button"
                       onClick={() => void removeRoom(t.id, t.title)}
-                      className="rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm font-bold text-danger-text hover:opacity-90"
+                      className="w-full rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm font-bold text-danger-text hover:opacity-90 sm:w-auto"
                     >
                       Close room
                     </button>
@@ -241,13 +239,13 @@ export default function TopicsDirectoryPage() {
                   <button
                     type="button"
                     onClick={() => setShareRoom({ id: t.id, title: t.title })}
-                    className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground hover:bg-brand-soft"
+                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground hover:bg-brand-soft sm:w-auto"
                   >
                     Share
                   </button>
                   <Link
                     href={`/topics/${t.id}`}
-                    className="inline-flex items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-bold text-white hover:opacity-90"
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
                   >
                     Open chat
                   </Link>
