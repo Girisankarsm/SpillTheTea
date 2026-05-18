@@ -7,6 +7,8 @@ import {
   type RideWithOffers,
 } from "@/lib/types/ride";
 import { RideChatPanel } from "@/components/RideChatPanel";
+import { RideLiveTrackingPanel } from "@/components/RideLiveTrackingPanel";
+import { RideRouteSummary } from "@/components/RideRouteSummary";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RideDetailPanelProps = {
@@ -72,32 +74,26 @@ export function RideDetailPanel({
     !!matchedOffer?.driverUserId &&
     !!ride.riderUserId &&
     ride.status !== "open";
+  const showLiveTracking =
+    !!chat &&
+    (rider || driver) &&
+    !!matchedOffer &&
+    ["matched", "completed"].includes(ride.status);
 
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-border bg-surface p-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-            Ride pool
+            🚗 Ride pool
           </span>
           <span className="text-xs font-semibold text-subtle">
             {rideStatusLabel(ride.status)}
           </span>
         </div>
 
-        <div className="mt-4 space-y-3">
-          <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-subtle">
-              Pickup
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-foreground">{ride.pickupLabel}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-subtle">
-              Drop
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-foreground">{ride.dropLabel}</p>
-          </div>
+        <div className="mt-4">
+          <RideRouteSummary pickupLabel={ride.pickupLabel} dropLabel={ride.dropLabel} />
         </div>
 
         {ride.notes ? (
@@ -125,7 +121,7 @@ export function RideDetailPanel({
               disabled={busy}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
-              I can drop you
+              🚗 I can drop you
             </button>
           ) : null}
 
@@ -167,6 +163,16 @@ export function RideDetailPanel({
         </div>
       </section>
 
+      {showLiveTracking && chat && matchedOffer ? (
+        <RideLiveTrackingPanel
+          ride={ride}
+          supabase={chat.supabase}
+          currentUserId={chat.currentUserId}
+          isRider={rider}
+          isDriver={driver}
+        />
+      ) : null}
+
       {showPrivateChat && matchedOffer && chat ? (
         <RideChatPanel
           rideId={chat.rideId}
@@ -182,7 +188,7 @@ export function RideDetailPanel({
         />
       ) : (rider || driver) && matchedOffer && ride.status !== "open" ? (
         <section className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="text-sm font-bold text-foreground">Matched driver</h2>
+          <h2 className="text-sm font-bold text-foreground">🚗 Matched driver</h2>
           <p className="mt-2 text-sm text-foreground">
             <span className="font-bold">{matchedOffer.driverName}</span>
             {" · "}
@@ -206,7 +212,9 @@ export function RideDetailPanel({
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-sm font-bold text-foreground">{offer.driverName}</p>
+                  <p className="text-sm font-bold text-foreground">
+                    🚗 {offer.driverName}
+                  </p>
                   <p className="text-sm font-semibold text-brand">
                     Wants {formatMoney(offer.rewardAmount, offer.currency)}
                   </p>
@@ -230,13 +238,19 @@ export function RideDetailPanel({
 
       {!rider && ride.status === "open" && alreadyOffered ? (
         <p className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-subtle">
-          Your offer is in — waiting for the rider to pick someone.
+          🚗 Your offer is in — waiting for the rider to pick someone.
         </p>
       ) : null}
 
       {rider && ride.status === "open" && pendingOffers.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-surface px-4 py-3 text-sm text-subtle">
-          No driver offers yet. Someone going your way can offer a drop.
+          No driver offers yet. Someone going your way can tap 🚗 I can drop you.
+        </p>
+      ) : null}
+
+      {rider && ride.status === "matched" ? (
+        <p className="rounded-lg border border-border bg-brand-soft px-4 py-3 text-sm text-foreground">
+          Driver matched! Tap <strong>Share my live location</strong> so they can find you at pickup.
         </p>
       ) : null}
 

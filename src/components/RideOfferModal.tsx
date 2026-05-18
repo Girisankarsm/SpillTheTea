@@ -57,7 +57,7 @@ export function RideOfferModal({
         className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-sm font-bold text-foreground">I can drop you</h2>
+        <h2 className="text-sm font-bold text-foreground">🚗 I can drop you</h2>
         <p className="mt-1 text-xs text-subtle">
           You&apos;re going their way — say what reward you want.
         </p>
