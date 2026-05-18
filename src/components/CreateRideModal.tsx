@@ -1,11 +1,29 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import type { MapPoint } from "@/components/RideLocationPickerMap";
+import { reverseGeocodeLabel } from "@/lib/geocoding";
 import {
   getStoredRideRiderName,
   setStoredRideRiderName,
 } from "@/lib/ride-names";
 import { yellowButtonMdClass } from "@/lib/ui";
+
+const RideLocationPickerMap = dynamic(
+  () =>
+    import("@/components/RideLocationPickerMap").then((m) => ({
+      default: m.RideLocationPickerMap,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-52 items-center justify-center rounded-xl border border-border bg-background text-xs text-subtle sm:h-56">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 type CreateRideModalProps = {
   open: boolean;
@@ -35,9 +53,12 @@ export function CreateRideModal({
   const [dropLabel, setDropLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [maxReward, setMaxReward] = useState("");
-  const [pickupLat, setPickupLat] = useState<number | undefined>();
-  const [pickupLng, setPickupLng] = useState<number | undefined>();
+  const [pickup, setPickup] = useState<MapPoint | null>(null);
+  const [drop, setDrop] = useState<MapPoint | null>(null);
+  const [activeField, setActiveField] = useState<"pickup" | "drop">("pickup");
+  const [userLocation, setUserLocation] = useState<MapPoint | null>(null);
   const [locating, setLocating] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -46,21 +67,54 @@ export function CreateRideModal({
     setDropLabel("");
     setNotes("");
     setMaxReward("");
-    setPickupLat(undefined);
-    setPickupLng(undefined);
+    setPickup(null);
+    setDrop(null);
+    setActiveField("pickup");
+    setUserLocation(null);
+
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
   }, [open]);
 
-  function useMyLocation() {
+  async function setPointFromMap(lat: number, lng: number) {
+    setGeocoding(true);
+    try {
+      const label = await reverseGeocodeLabel(lat, lng);
+      if (activeField === "pickup") {
+        setPickup({ lat, lng });
+        setPickupLabel(label);
+      } else {
+        setDrop({ lat, lng });
+        setDropLabel(label);
+      }
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
+  function useMyLocationForPickup() {
     if (!navigator.geolocation) {
       alert("Location is not available on this device.");
       return;
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPickupLat(pos.coords.latitude);
-        setPickupLng(pos.coords.longitude);
-        if (!pickupLabel.trim()) setPickupLabel("My current location");
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserLocation({ lat, lng });
+        setActiveField("pickup");
+        setPickup({ lat, lng });
+        setPickupLabel(await reverseGeocodeLabel(lat, lng));
         setLocating(false);
       },
       () => {
@@ -72,6 +126,13 @@ export function CreateRideModal({
   }
 
   if (!open) return null;
+
+  const fieldBtnClass = (field: "pickup" | "drop") =>
+    `flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${
+      activeField === field
+        ? "border-brand bg-brand-soft text-brand"
+        : "border-border bg-background text-foreground hover:bg-surface"
+    }`;
 
   return (
     <div
@@ -87,15 +148,17 @@ export function CreateRideModal({
           const budget = maxReward.trim() ? Number(maxReward) : undefined;
           onSubmit({
             riderName: trimmedName,
-            pickupLabel,
-            pickupLat,
-            pickupLng,
-            dropLabel,
+            pickupLabel: pickupLabel.trim() || "Pickup",
+            pickupLat: pickup?.lat,
+            pickupLng: pickup?.lng,
+            dropLabel: dropLabel.trim() || "Drop",
+            dropLat: drop?.lat,
+            dropLng: drop?.lng,
             notes,
             maxReward: budget != null && Number.isFinite(budget) ? budget : undefined,
           });
         }}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-xl"
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
         aria-labelledby="create-ride-title"
       >
@@ -103,9 +166,43 @@ export function CreateRideModal({
           Drop me — request a ride
         </h2>
         <p className="mt-1 text-xs text-subtle">
-          Say where you are and where you want to go. Someone heading that way can
-          offer to drop you for a reward.
+          Tap the map to set pickup (A) and drop (B). You can edit the names below.
         </p>
+
+        <div className="mt-3 flex gap-2">
+          <button type="button" className={fieldBtnClass("pickup")} onClick={() => setActiveField("pickup")}>
+            A · Pickup {pickup ? "✓" : ""}
+          </button>
+          <button type="button" className={fieldBtnClass("drop")} onClick={() => setActiveField("drop")}>
+            B · Drop {drop ? "✓" : ""}
+          </button>
+        </div>
+
+        <p className="mt-2 text-[11px] text-subtle">
+          {activeField === "pickup"
+            ? "Tap the map to set where you want to be picked up."
+            : "Tap the map to set where you want to be dropped."}
+          {geocoding ? " Finding place name…" : ""}
+        </p>
+
+        <div className="mt-2">
+          <RideLocationPickerMap
+            pickup={pickup}
+            drop={drop}
+            activeField={activeField}
+            onMapClick={(lat, lng) => void setPointFromMap(lat, lng)}
+            userLocation={userLocation}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={useMyLocationForPickup}
+          disabled={locating}
+          className="mt-2 text-xs font-bold text-brand hover:underline disabled:opacity-50"
+        >
+          {locating ? "Getting location…" : "Use my location for pickup"}
+        </button>
 
         <label className="mt-3 block space-y-1">
           <span className="text-xs font-semibold text-foreground">Your name</span>
@@ -123,19 +220,11 @@ export function CreateRideModal({
           <input
             value={pickupLabel}
             onChange={(e) => setPickupLabel(e.target.value)}
-            placeholder="e.g. VIT main gate"
+            placeholder="Tap map or type a place"
             maxLength={200}
             required
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
-          <button
-            type="button"
-            onClick={useMyLocation}
-            disabled={locating}
-            className="text-xs font-bold text-brand hover:underline disabled:opacity-50"
-          >
-            {locating ? "Getting location…" : "Use my current location"}
-          </button>
         </label>
 
         <label className="mt-3 block space-y-1">
@@ -143,7 +232,7 @@ export function CreateRideModal({
           <input
             value={dropLabel}
             onChange={(e) => setDropLabel(e.target.value)}
-            placeholder="e.g. Katpadi station"
+            placeholder="Tap map or type a place"
             maxLength={200}
             required
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
@@ -187,7 +276,7 @@ export function CreateRideModal({
           </button>
           <button
             type="submit"
-            disabled={disabled}
+            disabled={disabled || geocoding}
             className={`${yellowButtonMdClass} px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Post request
