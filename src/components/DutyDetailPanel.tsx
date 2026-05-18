@@ -3,6 +3,7 @@
 import {
   dutyStatusLabel,
   formatMoney,
+  canAuthorRemoveDuty,
   type DutyWithOffers,
 } from "@/lib/types/duty";
 import { DutyPersonLabel } from "@/components/DutyPersonLabel";
@@ -138,7 +139,7 @@ export function DutyDetailPanel({
             </button>
           ) : null}
 
-          {author && (duty.status === "open" || duty.status === "assigned") ? (
+          {author && canAuthorRemoveDuty(duty.status) ? (
             <button
               type="button"
               onClick={onCancel}

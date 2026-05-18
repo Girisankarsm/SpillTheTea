@@ -12,6 +12,7 @@ import type {
   DutyOffer,
   DutyWithOffers,
 } from "./types/duty";
+import { canAuthorRemoveDuty } from "./types/duty";
 import { getVisitorId } from "./visitor";
 
 function uid(): string {
@@ -491,7 +492,7 @@ export const useMeetGreetStore = create<MeetGreetState>()(
         set((s) => {
           const duty = s.duties.find((entry) => entry.id === dutyId);
           if (!duty || duty.authorVisitorId !== authorKey) return s;
-          if (duty.status !== "open" && duty.status !== "assigned") return s;
+          if (!canAuthorRemoveDuty(duty.status)) return s;
 
           return {
             duties: s.duties.filter((entry) => entry.id !== dutyId),

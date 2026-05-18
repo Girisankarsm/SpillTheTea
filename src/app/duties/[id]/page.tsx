@@ -264,8 +264,14 @@ export default function DutyDetailPage() {
   }
 
   async function handleCancel() {
-    if (!dutyId) return;
-    if (!window.confirm("Remove this duty? It will be deleted from the list.")) return;
+    if (!dutyId || !duty) return;
+    const message =
+      duty.status === "completed"
+        ? "Remove this duty? It will be deleted even though the helper marked it complete."
+        : duty.status === "assigned"
+          ? "Remove this duty? The assigned helper will no longer see it."
+          : "Remove this duty? It will be deleted from the list.";
+    if (!window.confirm(message)) return;
     setBusy(true);
     try {
       if (remoteReady && supabase) {

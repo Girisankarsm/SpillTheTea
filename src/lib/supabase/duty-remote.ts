@@ -346,7 +346,7 @@ export async function cancelDutyRemote(
     .delete()
     .eq("id", dutyId)
     .eq("user_id", user.id)
-    .in("status", ["open", "assigned"])
+    .in("status", ["open", "assigned", "completed"])
     .select("id");
 
   if (error) throw error;
