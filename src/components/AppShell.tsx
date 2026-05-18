@@ -17,6 +17,9 @@ export { AppLogo } from "@/components/AppLogo";
 const navLinkClass =
   "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-semibold text-subtle transition hover:bg-brand-soft hover:text-foreground sm:px-3 sm:py-2 sm:text-sm";
 
+const mobileNavLinkClass =
+  "flex items-center justify-center rounded-md px-1 py-2 text-center text-xs font-semibold text-subtle transition hover:bg-brand-soft hover:text-foreground";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -51,11 +54,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav
-            className="flex gap-0.5 overflow-x-auto border-t border-border py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden"
+            className="grid grid-cols-4 gap-0.5 border-t border-border px-1 py-1.5 sm:hidden"
             aria-label="Main navigation"
           >
             {links.map((l) => (
-              <Link key={l.href} href={l.href} className={navLinkClass}>
+              <Link key={l.href} href={l.href} className={mobileNavLinkClass}>
                 {l.shortLabel}
               </Link>
             ))}
