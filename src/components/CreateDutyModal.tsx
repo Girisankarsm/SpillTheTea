@@ -1,29 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  getStoredDutyAuthorName,
+  setStoredDutyAuthorName,
+} from "@/lib/duty-names";
 
 type CreateDutyModalProps = {
   open: boolean;
   disabled?: boolean;
-  authorName: string;
   onClose: () => void;
-  onSubmit: (input: { title: string; description: string }) => void;
+  onSubmit: (input: {
+    title: string;
+    description: string;
+    authorName: string;
+  }) => void;
 };
 
 export function CreateDutyModal({
   open,
   disabled,
-  authorName,
   onClose,
   onSubmit,
 }: CreateDutyModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [authorName, setAuthorName] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setTitle("");
     setDescription("");
+    setAuthorName(getStoredDutyAuthorName());
   }, [open]);
 
   if (!open) return null;
@@ -37,7 +45,9 @@ export function CreateDutyModal({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({ title, description });
+          const trimmedName = authorName.trim() || "anon";
+          setStoredDutyAuthorName(trimmedName);
+          onSubmit({ title, description, authorName: trimmedName });
         }}
         className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -50,9 +60,16 @@ export function CreateDutyModal({
           Ask for a small favor — helpers can offer and name their reward.
         </p>
 
-        <p className="mt-3 text-xs text-subtle">
-          Posting as <strong className="text-foreground">{authorName || "Guest"}</strong>
-        </p>
+        <label className="mt-3 block space-y-1">
+          <span className="text-xs font-semibold text-foreground">Your name on this duty</span>
+          <input
+            value={authorName}
+            onChange={(e) => setAuthorName(e.target.value)}
+            placeholder="anon"
+            maxLength={80}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
+          />
+        </label>
 
         <label className="mt-4 block space-y-1">
           <span className="text-xs font-semibold text-foreground">Title</span>

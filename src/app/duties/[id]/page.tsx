@@ -6,8 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DutyDetailPanel } from "@/components/DutyDetailPanel";
 import { DutyOfferModal } from "@/components/DutyOfferModal";
 import { useSupabase } from "@/components/SupabaseProvider";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { unknownErrorMessage } from "@/lib/error-message";
+import { setStoredDutyHelperName } from "@/lib/duty-names";
 import { chakraPointsForDuty } from "@/lib/chakra";
 import {
   cancelDutyRemote,
@@ -30,7 +30,6 @@ export default function DutyDetailPage() {
   const dutyId = typeof params?.id === "string" ? params.id : "";
 
   const { supabase, remoteReady } = useSupabase();
-  const { defaultDisplayName } = useUserProfile();
 
   const localDuties = useMeetGreetStore((s) => s.duties);
   const localOffers = useMeetGreetStore((s) => s.dutyOffers);
@@ -46,7 +45,6 @@ export default function DutyDetailPage() {
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [helperName, setHelperName] = useState("Guest");
-  const [helperNameEdited, setHelperNameEdited] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const localDuty = useMemo(
@@ -119,18 +117,21 @@ export default function DutyDetailPage() {
     };
   }, [supabase, remoteReady, dutyId, reload]);
 
-  useEffect(() => {
-    if (!helperNameEdited && defaultDisplayName) setHelperName(defaultDisplayName);
-  }, [defaultDisplayName, helperNameEdited]);
-
-  async function handleOffer(input: { pitch: string; rewardAmount: number }) {
+  async function handleOffer(input: {
+    pitch: string;
+    rewardAmount: number;
+    helperName: string;
+  }) {
     if (!dutyId) return;
+    const postingName = input.helperName.trim() || "anon";
+    setStoredDutyHelperName(postingName);
+
     setBusy(true);
     try {
       if (remoteReady && supabase) {
         await createDutyOfferRemote(supabase, {
           dutyId,
-          helperName,
+          helperName: postingName,
           pitch: input.pitch,
           rewardAmount: input.rewardAmount,
         });
@@ -141,7 +142,7 @@ export default function DutyDetailPage() {
 
       const id = createOfferLocal({
         dutyId,
-        helperName,
+        helperName: postingName,
         pitch: input.pitch,
         rewardAmount: input.rewardAmount,
       });
@@ -152,7 +153,7 @@ export default function DutyDetailPage() {
       const vid = getVisitorId();
       if (vid) {
         useProfileStore.getState().upsertLocalPublicProfile(vid, {
-          displayName: helperName.trim() || "anon",
+          displayName: postingName,
           chakra: useProfileStore.getState().getLocalPublicProfile(vid)?.chakra ?? 0,
         });
       }
@@ -340,10 +341,7 @@ export default function DutyDetailPage() {
           <input
             id="duty-helper-name"
             value={helperName}
-            onChange={(e) => {
-              setHelperNameEdited(true);
-              setHelperName(e.target.value);
-            }}
+            onChange={(e) => setHelperName(e.target.value)}
             className="w-full max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
@@ -352,7 +350,6 @@ export default function DutyDetailPage() {
       <DutyOfferModal
         open={offerOpen}
         disabled={busy}
-        helperName={helperName}
         onClose={() => setOfferOpen(false)}
         onSubmit={(input) => void handleOffer(input)}
       />

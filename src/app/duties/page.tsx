@@ -6,18 +6,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateDutyModal } from "@/components/CreateDutyModal";
 import { DutyCard } from "@/components/DutyCard";
 import { useSupabase } from "@/components/SupabaseProvider";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { unknownErrorMessage } from "@/lib/error-message";
+import {
+  getStoredDutyAuthorName,
+  setStoredDutyAuthorName,
+} from "@/lib/duty-names";
 import { createDutyRemote, fetchDuties } from "@/lib/supabase/duty-remote";
 import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
 import { dutiesWithOffers, useMeetGreetStore } from "@/lib/store";
 import type { DutyWithOffers } from "@/lib/types/duty";
-import { getVisitorId } from "@/lib/visitor";
 
 export default function DutiesPage() {
   const router = useRouter();
   const { supabase, remoteReady } = useSupabase();
-  const { defaultDisplayName } = useUserProfile();
 
   const localDuties = useMeetGreetStore((s) => s.duties);
   const localOffers = useMeetGreetStore((s) => s.dutyOffers);
@@ -28,8 +29,7 @@ export default function DutiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [authorName, setAuthorName] = useState("Guest");
-  const [authorNameEdited, setAuthorNameEdited] = useState(false);
+  const [authorName, setAuthorName] = useState("");
 
   const localList = useMemo(
     () => dutiesWithOffers(localDuties, localOffers),
@@ -77,10 +77,18 @@ export default function DutiesPage() {
   }, [supabase, remoteReady, reload]);
 
   useEffect(() => {
-    if (!authorNameEdited && defaultDisplayName) setAuthorName(defaultDisplayName);
-  }, [defaultDisplayName, authorNameEdited]);
+    setAuthorName(getStoredDutyAuthorName());
+  }, []);
 
-  async function handleCreate(input: { title: string; description: string }) {
+  async function handleCreate(input: {
+    title: string;
+    description: string;
+    authorName: string;
+  }) {
+    const postingName = input.authorName.trim() || "anon";
+    setStoredDutyAuthorName(postingName);
+    setAuthorName(postingName);
+
     setBusy(true);
     try {
       if (remoteReady && supabase) {
@@ -92,7 +100,7 @@ export default function DutiesPage() {
         const duty = await createDutyRemote(supabase, {
           title: input.title,
           description: input.description,
-          authorName,
+          authorName: postingName,
         });
         setCreateOpen(false);
         await reload();
@@ -103,7 +111,7 @@ export default function DutiesPage() {
       const id = createDutyLocal({
         title: input.title,
         description: input.description,
-        authorName,
+        authorName: postingName,
       });
       if (!id) {
         alert("Could not post duty.");
@@ -158,17 +166,22 @@ export default function DutiesPage() {
 
       <div className="space-y-1">
         <label className="text-xs font-semibold text-foreground" htmlFor="duty-author-name">
-          Your name on duties
+          Default name on duties
         </label>
         <input
           id="duty-author-name"
           value={authorName}
           onChange={(e) => {
-            setAuthorNameEdited(true);
-            setAuthorName(e.target.value);
+            const next = e.target.value;
+            setAuthorName(next);
+            setStoredDutyAuthorName(next);
           }}
+          placeholder="anon"
           className="w-full max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
         />
+        <p className="text-[11px] text-subtle">
+          Used when you post — you can change it in the post form too.
+        </p>
       </div>
 
       <ul className="flex flex-col gap-3">
@@ -195,7 +208,6 @@ export default function DutiesPage() {
       <CreateDutyModal
         open={createOpen}
         disabled={busy}
-        authorName={authorName}
         onClose={() => setCreateOpen(false)}
         onSubmit={(input) => void handleCreate(input)}
       />

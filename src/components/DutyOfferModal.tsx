@@ -1,29 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  getStoredDutyHelperName,
+  setStoredDutyHelperName,
+} from "@/lib/duty-names";
 
 type DutyOfferModalProps = {
   open: boolean;
   disabled?: boolean;
-  helperName: string;
   onClose: () => void;
-  onSubmit: (input: { pitch: string; rewardAmount: number }) => void;
+  onSubmit: (input: {
+    pitch: string;
+    rewardAmount: number;
+    helperName: string;
+  }) => void;
 };
 
 export function DutyOfferModal({
   open,
   disabled,
-  helperName,
   onClose,
   onSubmit,
 }: DutyOfferModalProps) {
   const [pitch, setPitch] = useState("");
   const [rewardAmount, setRewardAmount] = useState("");
+  const [helperName, setHelperName] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setPitch("");
     setRewardAmount("");
+    setHelperName(getStoredDutyHelperName());
   }, [open]);
 
   if (!open) return null;
@@ -37,9 +45,12 @@ export function DutyOfferModal({
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          const trimmedName = helperName.trim() || "anon";
+          setStoredDutyHelperName(trimmedName);
           onSubmit({
             pitch,
             rewardAmount: Number(rewardAmount),
+            helperName: trimmedName,
           });
         }}
         className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-xl"
@@ -53,9 +64,16 @@ export function DutyOfferModal({
           Say you&apos;re in — and how much you&apos;d like for doing it.
         </p>
 
-        <p className="mt-3 text-xs text-subtle">
-          As <strong className="text-foreground">{helperName || "Guest"}</strong>
-        </p>
+        <label className="mt-3 block space-y-1">
+          <span className="text-xs font-semibold text-foreground">Your name on this offer</span>
+          <input
+            value={helperName}
+            onChange={(e) => setHelperName(e.target.value)}
+            placeholder="anon"
+            maxLength={80}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
+          />
+        </label>
 
         <label className="mt-4 block space-y-1">
           <span className="text-xs font-semibold text-foreground">Your pitch</span>

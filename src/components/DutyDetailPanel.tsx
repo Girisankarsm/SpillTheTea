@@ -5,7 +5,7 @@ import {
   formatMoney,
   type DutyWithOffers,
 } from "@/lib/types/duty";
-import { PublicPersonName } from "@/components/PublicPersonName";
+import { DutyPersonLabel } from "@/components/DutyPersonLabel";
 
 type DutyDetailPanelProps = {
   duty: DutyWithOffers;
@@ -88,11 +88,10 @@ export function DutyDetailPanel({
         </p>
         <p className="mt-3 text-xs text-subtle">
           Posted by{" "}
-          <PublicPersonName
+          <DutyPersonLabel
+            name={duty.authorName}
             userId={duty.authorUserId}
             visitorId={duty.authorVisitorId}
-            fallbackName={duty.authorName}
-            usePostingName
           />
         </p>
 
@@ -156,11 +155,10 @@ export function DutyDetailPanel({
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="text-sm font-bold text-foreground">Assigned helper</h2>
           <p className="mt-2 text-sm text-foreground">
-            <PublicPersonName
+            <DutyPersonLabel
+              name={assignedOffer.helperName}
               userId={assignedOffer.helperUserId}
               visitorId={assignedOffer.helperVisitorId}
-              fallbackName={assignedOffer.helperName}
-              usePostingName
             />
             {" · "}
             {formatMoney(assignedOffer.rewardAmount, assignedOffer.currency)}
@@ -184,11 +182,10 @@ export function DutyDetailPanel({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm">
-                    <PublicPersonName
+                    <DutyPersonLabel
+                      name={offer.helperName}
                       userId={offer.helperUserId}
                       visitorId={offer.helperVisitorId}
-                      fallbackName={offer.helperName}
-                      usePostingName
                     />
                   </p>
                   <p className="text-sm font-semibold text-brand">
