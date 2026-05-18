@@ -16,44 +16,42 @@ function isNavActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function navLinkClass(active: boolean, desktop: boolean): string {
+  const base = [
+    "rounded-md font-semibold transition-all duration-200",
+    desktop
+      ? "shrink-0 px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm"
+      : "flex items-center justify-center px-1 py-2 text-center text-xs",
+  ].join(" ");
+
+  if (active) {
+    return [
+      base,
+      "bg-brand text-white shadow-sm opacity-100 scale-[1.02]",
+    ].join(" ");
+  }
+
+  return [
+    base,
+    "text-subtle opacity-40 hover:bg-brand-soft/60 hover:text-foreground hover:opacity-80",
+  ].join(" ");
+}
+
 type MainNavProps = {
   variant: "desktop" | "mobile";
 };
 
 export function MainNav({ variant }: MainNavProps) {
   const pathname = usePathname();
-
-  if (variant === "desktop") {
-    return (
-      <nav
-        className="hidden items-center gap-0.5 sm:flex"
-        aria-label="Main navigation"
-      >
-        {links.map((link) => {
-          const active = isNavActive(link.href, pathname);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={[
-                "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
-                active
-                  ? "bg-brand-soft text-brand"
-                  : "text-subtle hover:bg-brand-soft hover:text-foreground",
-              ].join(" ")}
-              aria-current={active ? "page" : undefined}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
+  const desktop = variant === "desktop";
 
   return (
     <nav
-      className="grid grid-cols-5 gap-0.5 border-t border-border px-1 py-1.5 sm:hidden"
+      className={
+        desktop
+          ? "hidden items-center gap-0.5 sm:flex"
+          : "grid grid-cols-5 gap-0.5 border-t border-border px-1 py-1.5 sm:hidden"
+      }
       aria-label="Main navigation"
     >
       {links.map((link) => {
@@ -62,15 +60,10 @@ export function MainNav({ variant }: MainNavProps) {
           <Link
             key={link.href}
             href={link.href}
-            className={[
-              "flex items-center justify-center rounded-md px-1 py-2 text-center text-xs font-semibold transition",
-              active
-                ? "bg-brand-soft text-brand"
-                : "text-subtle hover:bg-brand-soft hover:text-foreground",
-            ].join(" ")}
+            className={navLinkClass(active, desktop)}
             aria-current={active ? "page" : undefined}
           >
-            {link.shortLabel}
+            {desktop ? link.label : link.shortLabel}
           </Link>
         );
       })}
