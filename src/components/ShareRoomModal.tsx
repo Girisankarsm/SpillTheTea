@@ -123,12 +123,12 @@ export function ShareRoomModal({
               <p className="py-8 text-center text-xs text-subtle">Making QR…</p>
             )}
             <p className="text-center text-[11px] text-subtle">
-              Scan to open this tea room
+              Scan to open this topic
             </p>
           </div>
 
           <label className="block text-xs font-semibold text-foreground">
-            Room link
+            Topic link
             <input
               readOnly
               value={roomUrl}

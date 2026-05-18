@@ -1,15 +1,40 @@
 import Link from "next/link";
 import { AppLogo } from "@/components/AppLogo";
 
-const steps = [
-  { n: "1", label: "Open a room", detail: "Browse or start one." },
-  { n: "2", label: "Post", detail: "Text, reply, or drop a GIF." },
-  { n: "3", label: "Chat", detail: "Anonymous. Your rules." },
+const features = [
+  {
+    id: "tea",
+    emoji: "🍵",
+    title: "Tea",
+    flow: "Pick a topic → post anonymously → discuss in replies (like Reddit) → DM someone from a post",
+    href: "/topics",
+  },
+  {
+    id: "duties",
+    emoji: "🤝",
+    title: "Duties",
+    flow: "Post a small favor → helpers offer a reward → pick one → chat → pay via UPI/cash",
+    href: "/duties",
+  },
+  {
+    id: "rides",
+    emoji: "🚗",
+    title: "Ride pooling",
+    flow: "Post pickup & drop → drivers offer → pick a driver → share live location → chat or call",
+    href: "/rides",
+  },
+  {
+    id: "map",
+    emoji: "🗺️",
+    title: "Map",
+    flow: "See open topics near you on the map",
+    href: "/explore",
+  },
 ] as const;
 
 export default function Home() {
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col items-center justify-center gap-8 px-4 py-10 text-center sm:gap-10 sm:py-16">
+    <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col items-center justify-center gap-8 px-4 py-10 text-center sm:max-w-2xl sm:gap-10 sm:py-16">
       <div className="space-y-4">
         <div className="mx-auto">
           <AppLogo heightPx={180} priority className="shadow-md" />
@@ -17,7 +42,10 @@ export default function Home() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           SpillTheTea
         </h1>
-        <p className="text-sm text-subtle">Anonymous convo rooms. That&apos;s it.</p>
+        <p className="text-sm leading-relaxed text-subtle">
+          Anonymous posts and discussions under topics — plus duties, ride pooling, and
+          private chat.
+        </p>
       </div>
 
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
@@ -25,7 +53,7 @@ export default function Home() {
           href="/topics"
           className="rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white hover:opacity-90"
         >
-          Browse rooms
+          Browse Tea
         </Link>
         <Link
           href="/duties"
@@ -43,25 +71,34 @@ export default function Home() {
           href="/topics"
           className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
         >
-          Start a room
+          Start a topic
         </Link>
       </div>
 
-      <div className="w-full space-y-3 border-t border-border pt-8">
-        <p className="text-xs font-bold uppercase tracking-wide text-subtle">
+      <div className="w-full space-y-4 border-t border-border pt-8 text-left">
+        <p className="text-center text-xs font-bold uppercase tracking-wide text-subtle">
           How it works
         </p>
-        <ol className="grid gap-4 sm:grid-cols-3 sm:gap-3">
-          {steps.map((step) => (
-            <li key={step.n} className="flex flex-col items-center gap-1">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
-                {step.n}
-              </span>
-              <span className="text-sm font-bold text-foreground">{step.label}</span>
-              <span className="text-xs text-subtle">{step.detail}</span>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {features.map((feature) => (
+            <li key={feature.id}>
+              <Link
+                href={feature.href}
+                className="block rounded-xl border border-border bg-surface p-4 transition hover:border-brand/40 hover:bg-brand-soft/30"
+              >
+                <p className="text-sm font-bold text-foreground">
+                  <span aria-hidden>{feature.emoji} </span>
+                  {feature.title}
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-subtle">{feature.flow}</p>
+              </Link>
             </li>
           ))}
-        </ol>
+        </ul>
+        <p className="text-center text-[11px] text-subtle">
+          Rewards for duties and rides are recorded in the app — you pay the person directly
+          (UPI/cash).
+        </p>
       </div>
     </div>
   );

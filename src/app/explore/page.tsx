@@ -211,10 +211,10 @@ export default function ExplorePage() {
           Tea on the map
         </h1>
         <p className="mx-auto max-w-xl text-sm leading-relaxed text-subtle sm:mx-0">
-          Pin a convo near you — yellow tea bubbles are open rooms, fire bubbles
-          are the hottest. Tap one to spill. No map? Browse{" "}
+          Pin a topic near you — yellow bubbles are open discussions, fire bubbles are
+          the hottest. Tap one to join. No map? Browse{" "}
           <Link href="/topics" className="font-bold text-brand hover:underline">
-            tea rooms
+            Tea
           </Link>
           .
         </p>
@@ -232,7 +232,7 @@ export default function ExplorePage() {
         <section className="space-y-3">
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-center text-xs font-semibold text-subtle sm:text-left">
-              🍵 tea rooms · 🔥 trending
+              🍵 topics · 🔥 trending
             </p>
             <button
               type="button"
@@ -256,14 +256,14 @@ export default function ExplorePage() {
             />
           </div>
           <p className="text-center text-xs text-subtle sm:text-left">
-            Pan the map — new tea rooms drop where you’re looking. Blue dot is you.
+            Pan the map — new topics appear where you’re looking. Blue dot is you.
           </p>
         </section>
 
         <aside className="mx-auto flex w-full max-w-md flex-col gap-6 lg:mx-0 lg:max-w-none">
           <div className="rounded-xl border border-border bg-surface p-4">
             <h2 className="text-center text-sm font-bold text-foreground sm:text-left">
-              Busiest tea rooms
+              Hottest topics
             </h2>
             <ol className="mt-3 space-y-2">
               {ranked.slice(0, 8).map((t, i) => {
@@ -307,7 +307,7 @@ export default function ExplorePage() {
               SpillTheTea
             </h2>
             <p className="mt-1 text-center text-xs text-subtle sm:text-left">
-              Name the convo — anonymous chat, any topic. Optional map pin at center.
+              Name the topic — anonymous posts and replies. Optional map pin at center.
             </p>
             <label className="mt-3 block text-xs font-semibold text-foreground">
               What&apos;s the tea?
@@ -323,7 +323,7 @@ export default function ExplorePage() {
               disabled={remoteReady && (!supabase || rxLoading)}
               className={`${yellowButtonMdClass} mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50`}
             >
-              Open tea room
+              Open topic
             </button>
           </form>
         </aside>

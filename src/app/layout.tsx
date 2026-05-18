@@ -12,9 +12,9 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "SpillTheTea — Anonymous Convo Rooms",
+  title: "SpillTheTea — Anonymous Topics & Discussions",
   description:
-    "Open anonymous chat rooms about any topic. Pick a nickname, join the conversation, and talk with people who showed up for the same tea.",
+    "Post anonymously under topics and discuss in replies — like Reddit. Plus duties, ride pooling, and private chat.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

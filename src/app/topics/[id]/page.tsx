@@ -139,7 +139,7 @@ export default function TopicChatPage() {
       }
       setRemoteTopic(meta.topic);
     } catch (e) {
-      setRemoteErr(unknownErrorMessage(e, "Could not refresh room."));
+      setRemoteErr(unknownErrorMessage(e, "Could not refresh topic."));
     }
   }, [supabase, id]);
 
@@ -573,7 +573,7 @@ export default function TopicChatPage() {
     if (!topic || !id) return;
     if (
       !window.confirm(
-        `Close "${topic.title}"? Everyone loses this convo.`,
+        `Close "${topic.title}"? Everyone loses this topic.`,
       )
     ) {
       return;
@@ -584,7 +584,7 @@ export default function TopicChatPage() {
         await deleteTopicRemote(supabase, id);
         router.push("/topics");
       } catch (err) {
-        alert(unknownErrorMessage(err, "Could not close tea room."));
+        alert(unknownErrorMessage(err, "Could not close topic."));
       }
       return;
     }
@@ -592,7 +592,7 @@ export default function TopicChatPage() {
     if (deleteTopicLocal(id, currentUserId)) {
       router.push("/topics");
     } else {
-      alert("Only whoever started this room (or the app admin) can close it.");
+      alert("Only whoever started this topic (or the app admin) can close it.");
     }
   }
 
@@ -627,7 +627,7 @@ export default function TopicChatPage() {
           href="/topics"
           className="inline-flex w-fit rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90"
         >
-          All tea rooms
+          All topics
         </Link>
       </div>
     );
@@ -644,7 +644,7 @@ export default function TopicChatPage() {
           href="/topics"
           className="inline-flex w-fit rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90"
         >
-          All tea rooms
+          All topics
         </Link>
       </div>
     );
@@ -658,7 +658,7 @@ export default function TopicChatPage() {
             href="/topics"
             className="text-sm font-semibold text-brand hover:underline"
           >
-            ← Tea rooms
+            ← Tea
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {topic.title}
@@ -692,7 +692,7 @@ export default function TopicChatPage() {
               onClick={() => void removeRoom()}
               className="rounded-lg border border-danger-border bg-danger-bg px-3 py-1.5 text-xs font-bold text-danger-text hover:opacity-90"
             >
-              Close room
+              Close topic
             </button>
           ) : null}
         </div>

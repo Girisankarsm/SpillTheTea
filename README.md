@@ -2,16 +2,16 @@
 
 **Live app:** [https://spill-the-tea-lilac.vercel.app/](https://spill-the-tea-lilac.vercel.app/)
 
-Anonymous convo rooms, a map of open tea rooms, small paid favors (“duties”), ride pooling, polls, and profiles — sign in with Google to use the app.
+Anonymous posts and discussions under topics, a map of open topics, small paid favors (“duties”), ride pooling, polls, and profiles — sign in with Google to use the app.
 
 ## Features
 
-- **Tea rooms** — open anonymous chat rooms, replies, GIFs, images, share/QR, polls
-- **Map** — browse and start rooms on a map (yellow = open, fire = trending)
+- **Tea** — pick a topic, post anonymously, discuss in replies (like Reddit), GIFs, images, share/QR, polls
+- **Map** — browse and start topics on a map (yellow = open, fire = trending)
 - **Duties** — post favors, helpers offer with a reward, pick one, complete, reward in-app
-- **Ride pooling** — post pickup → drop, drivers offer, pick → complete → reward
-- **Private chats** — DM someone from a tea room; duty & ride private chat after match
-- **Live messaging** — tea rooms, DMs, duty chat, and ride chat update in realtime
+- **Ride pooling** — post pickup → drop, drivers offer, pick → live location → chat or call
+- **Private chats** — DM someone from a post; duty & ride private chat after match
+- **Live messaging** — topics, DMs, duty chat, and ride chat update in realtime
 - **Push notifications** — alerts for private chats, duty chat, and ride chat (PWA + Web Push)
 - **Chakra** — reputation earned from completed duties
 - **Profiles** — anonymous display name and profile photo
@@ -56,7 +56,7 @@ Optional:
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_APP_ADMIN_USER_IDS` | Comma-separated user UUIDs who can close any tea room |
+| `NEXT_PUBLIC_APP_ADMIN_USER_IDS` | Comma-separated user UUIDs who can close any topic |
 | `NEXT_PUBLIC_APP_ADMIN_VISITOR_IDS` | Local demo admin visitor IDs |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for push delivery (Settings → API) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Web Push VAPID public key |

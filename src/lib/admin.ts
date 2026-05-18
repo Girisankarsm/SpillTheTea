@@ -23,7 +23,7 @@ export function isAppAdmin(ctx: {
   return false;
 }
 
-/** Only the room creator or app admin (developer) may close a tea room. */
+/** Only the topic creator or app admin (developer) may close a topic. */
 export function canDeleteTopic(
   topic: { createdByVisitorId?: string; createdByUserId?: string },
   ctx: { visitorId: string | null; userId: string | null },

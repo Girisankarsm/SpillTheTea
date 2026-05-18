@@ -55,7 +55,7 @@ export default function TopicsDirectoryPage() {
       setRxErr(null);
       setCurrentUserId(await getCurrentUserId(supabase));
     } catch (e) {
-      setRxErr(unknownErrorMessage(e, "Could not load tea rooms."));
+      setRxErr(unknownErrorMessage(e, "Could not load topics."));
     } finally {
       setRxLoading(false);
     }
@@ -101,7 +101,7 @@ export default function TopicsDirectoryPage() {
   async function removeRoom(topicId: string, title: string) {
     if (
       !window.confirm(
-        `Close "${title}"? This deletes the convo for everyone.`,
+        `Close "${title}"? This deletes the topic for everyone.`,
       )
     ) {
       return;
@@ -112,13 +112,13 @@ export default function TopicsDirectoryPage() {
         await deleteTopicRemote(supabase, topicId);
         await reload();
       } catch (e) {
-        alert(unknownErrorMessage(e, "Could not close tea room."));
+        alert(unknownErrorMessage(e, "Could not close topic."));
       }
       return;
     }
 
     if (!deleteTopicLocal(topicId, currentUserId)) {
-      alert("Only the person who started this room (or the app admin) can close it.");
+      alert("Only the person who started this topic (or the app admin) can close it.");
     }
   }
 
@@ -137,7 +137,7 @@ export default function TopicsDirectoryPage() {
         setNewTeaTitle("");
         router.push(`/topics/${tid}`);
       } catch (err) {
-        alert(unknownErrorMessage(err, "Could not start tea room."));
+        alert(unknownErrorMessage(err, "Could not start topic."));
       }
       return;
     }
@@ -151,11 +151,11 @@ export default function TopicsDirectoryPage() {
     <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-10">
       <header className="space-y-3">
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Tea rooms
+          Tea
         </h1>
         <p className="text-sm leading-relaxed text-subtle">
-          Anonymous convo rooms about anything. Open one, pick a nickname, and talk.
-          Only the person who started a room (or the app admin) can close it.
+          Pick a topic, post anonymously, and discuss in replies — like Reddit. DM someone
+          from any post. Only the topic starter (or app admin) can close a topic.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
@@ -190,7 +190,7 @@ export default function TopicsDirectoryPage() {
       >
         <h2 className="text-sm font-bold text-foreground">SpillTheTea</h2>
         <p className="mt-1 text-xs text-subtle">
-          Start an anonymous convo room about anything — no map needed.
+          Start a topic — post anonymously and discuss in replies. No map needed.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
@@ -204,7 +204,7 @@ export default function TopicsDirectoryPage() {
             disabled={remoteReady && (!supabase || rxLoading)}
             className={`${yellowButtonMdClass} w-full shrink-0 sm:w-auto`}
           >
-            Open room
+            Start topic
           </button>
         </div>
       </form>
@@ -234,7 +234,7 @@ export default function TopicsDirectoryPage() {
                       onClick={() => void removeRoom(t.id, t.title)}
                       className="w-full rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm font-bold text-danger-text hover:opacity-90 sm:w-auto"
                     >
-                      Close room
+                      Close topic
                     </button>
                   ) : null}
                   <button
@@ -248,7 +248,7 @@ export default function TopicsDirectoryPage() {
                     href={`/topics/${t.id}`}
                     className={`${yellowButtonSmClass} w-full sm:w-auto`}
                   >
-                    Open chat
+                    Join discussion
                   </Link>
                 </div>
               </article>
@@ -259,7 +259,7 @@ export default function TopicsDirectoryPage() {
 
       {ranked.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-5 py-8 text-center">
-          <p className="text-sm text-subtle">No tea rooms yet.</p>
+          <p className="text-sm text-subtle">No topics yet.</p>
           <Link
             href="/explore#spill-tea"
             className={`${yellowButtonSmClass} mt-4 gap-1`}
