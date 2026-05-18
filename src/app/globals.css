@@ -237,3 +237,28 @@ body {
     opacity: 0;
   }
 }
+
+.snap-tea-pin--ride .snap-tea-pin__bubble {
+  background: linear-gradient(145deg, #dbeafe 0%, #93c5fd 55%, #3b82f6 100%);
+  font-size: 1.2rem;
+}
+
+.snap-tea-pin--ride .snap-tea-pin__tail {
+  background: #93c5fd;
+}
+
+.snap-hotspot {
+  animation: snap-hotspot-pulse 2.4s ease-out infinite;
+}
+
+@keyframes snap-hotspot-pulse {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
