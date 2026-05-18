@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppLogo } from "@/components/AppShell";
+import { AppLogo } from "@/components/AppLogo";
 
 const steps = [
   { n: "1", label: "Open a room", detail: "Browse or start one." },

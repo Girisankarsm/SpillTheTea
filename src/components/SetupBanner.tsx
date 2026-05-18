@@ -1,22 +1,13 @@
 "use client";
 
 import { useSupabase } from "@/components/SupabaseProvider";
+import { isGoogleSignedIn } from "@/lib/supabase/auth";
 
 export function SetupBanner() {
-  const { configured, remoteReady, supabase, authReady } = useSupabase();
+  const { configured, remoteReady, supabase, authReady, session } = useSupabase();
 
   if (!configured) {
-    return (
-      <div className="border-b border-border bg-accent-soft px-4 py-2.5 text-center text-xs leading-snug text-foreground">
-        <span className="font-semibold">Demo mode</span>
-        {" · "}
-        Add Supabase URL + anon key, run{" "}
-        <code className="rounded bg-surface px-1 py-0.5 text-[11px] ring-1 ring-border">
-          001_initial.sql
-        </code>
-        , enable anonymous sign-in.
-      </div>
-    );
+    return null;
   }
 
   if (!supabase || !authReady) {
@@ -28,6 +19,10 @@ export function SetupBanner() {
   }
 
   if (remoteReady) {
+    return null;
+  }
+
+  if (!isGoogleSignedIn(session)) {
     return null;
   }
 

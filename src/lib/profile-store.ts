@@ -16,7 +16,6 @@ export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
       displayName: "",
-      bio: "",
       avatarUrl: undefined,
       chakra: 0,
       updatedAt: undefined,

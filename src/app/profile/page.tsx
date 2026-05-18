@@ -1,28 +1,57 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ChakraBadge } from "@/components/ChakraBadge";
+import { useEffect, useRef, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { readFileAsDataUrl } from "@/lib/message-thread";
 import { useProfileStore } from "@/lib/profile-store";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { uploadProfileAvatar } from "@/lib/supabase/profile-media";
 import { getVisitorId } from "@/lib/visitor";
 
 export default function ProfilePage() {
-  const { session, configured } = useSupabase();
+  const { session, configured, supabase, remoteReady } = useSupabase();
   const { profile, saveProfile, loading, signedIn } = useUserProfile();
   const upsertLocalPublicProfile = useProfileStore((s) => s.upsertLocalPublicProfile);
 
+  const fileRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile.displayName);
-    setBio(profile.bio);
-  }, [profile.displayName, profile.bio]);
+    setAvatarUrl(profile.avatarUrl);
+  }, [profile.displayName, profile.avatarUrl]);
+
+  useEffect(() => {
+    if (!pendingFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
+
+  function handleFilePick(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Pick an image file for your profile photo.");
+      return;
+    }
+    setPendingFile(file);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function removePhoto() {
+    setPendingFile(null);
+    setAvatarUrl(undefined);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +59,28 @@ export default function ProfilePage() {
     setSaved(false);
     try {
       const trimmedName = displayName.trim();
-      await saveProfile({ displayName: trimmedName, bio, avatarUrl: profile.avatarUrl });
+      let nextAvatarUrl = avatarUrl;
+
+      if (pendingFile) {
+        if (remoteReady && supabase && session?.user?.id && signedIn) {
+          nextAvatarUrl = await uploadProfileAvatar(
+            supabase,
+            pendingFile,
+            session.user.id,
+          );
+        } else {
+          nextAvatarUrl = await readFileAsDataUrl(pendingFile);
+        }
+      }
+
+      await saveProfile({
+        displayName: trimmedName,
+        avatarUrl: nextAvatarUrl,
+      });
+
+      setAvatarUrl(nextAvatarUrl);
+      setPendingFile(null);
+
       const vid = getVisitorId();
       if (vid) {
         upsertLocalPublicProfile(vid, {
@@ -38,6 +88,7 @@ export default function ProfilePage() {
           chakra: profile.chakra ?? 0,
         });
       }
+
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -47,6 +98,7 @@ export default function ProfilePage() {
     }
   }
 
+  const shownAvatar = previewUrl ?? avatarUrl;
   const initial = (displayName || "?").slice(0, 1).toUpperCase();
 
   return (
@@ -62,31 +114,65 @@ export default function ProfilePage() {
           Your profile
         </h1>
         <p className="text-sm text-subtle">
-          Others only see your <strong>anonymous name</strong> and{" "}
-          <strong>chakra</strong> — never your email or Google name.
+          Set your anonymous name and photo. Others see your name and chakra
+          only — not your email or Google account.
         </p>
       </header>
 
-      <div className="flex items-center gap-4 rounded-xl border border-border bg-surface p-4">
-        <ChakraBadge chakra={profile.chakra ?? 0} size="sm" showLabel={false} />
-        <div className="min-w-0">
-          <p className="truncate font-bold text-foreground">
-            {displayName || "Pick an anonymous name"}
-          </p>
-          <p className="text-xs text-subtle">
-            {signedIn && isGoogleSignedIn(session)
-              ? "Signed in — email stays private."
-              : configured
-                ? "Sign in with Google to sync across devices."
-                : "Saved on this device only."}
-          </p>
-        </div>
-      </div>
-
       <form
         onSubmit={(e) => void handleSave(e)}
-        className="space-y-4 rounded-xl border border-border bg-surface p-4"
+        className="space-y-5 rounded-xl border border-border bg-surface p-4"
       >
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+          <div className="relative shrink-0">
+            {shownAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={shownAvatar}
+                alt=""
+                className="h-24 w-24 rounded-full border-2 border-border object-cover"
+              />
+            ) : (
+              <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-border bg-brand-soft text-2xl font-bold text-brand">
+                {initial}
+              </span>
+            )}
+            <span className="absolute -bottom-1 -right-1 rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              {profile.chakra ?? 0} chakra
+            </span>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-2">
+            <p className="text-xs font-semibold text-foreground">Profile photo</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/*"
+              className="hidden"
+              onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-brand-soft"
+              >
+                {shownAvatar ? "Change photo" : "Add photo"}
+              </button>
+              {shownAvatar ? (
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-subtle hover:text-danger-text"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+            <p className="text-[11px] text-subtle">JPG, PNG, or GIF · max 5 MB</p>
+          </div>
+        </div>
+
         <label className="block text-xs font-semibold text-foreground">
           Anonymous public name
           <input
@@ -98,21 +184,14 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
         </label>
-        <p className="text-[11px] text-subtle">
-          This is the only name people see on duties and your public profile.
-        </p>
 
-        <label className="block text-xs font-semibold text-foreground">
-          Bio <span className="font-normal text-subtle">(private — only you see this)</span>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Notes for yourself…"
-            maxLength={200}
-            rows={3}
-            className="mt-1 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
-          />
-        </label>
+        <p className="text-[11px] text-subtle">
+          {signedIn && isGoogleSignedIn(session)
+            ? "Signed in — email stays private."
+            : configured
+              ? "Sign in with Google to sync across devices."
+              : "Saved on this device only."}
+        </p>
 
         <button
           type="submit"

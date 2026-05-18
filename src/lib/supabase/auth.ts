@@ -16,7 +16,7 @@ export async function signInWithGoogle(
     data: { session },
   } = await client.auth.getSession();
 
-  // linkIdentity() needs "Manual linking" enabled in Supabase. Plain OAuth works everywhere.
+  // Google OAuth replaces any stale anonymous session from older app versions.
   if (session?.user?.is_anonymous) {
     await client.auth.signOut();
   }
@@ -36,11 +36,15 @@ export async function signInWithGoogle(
   return { error: null };
 }
 
+export async function signOutUser(client: SupabaseClient): Promise<void> {
+  await client.auth.signOut();
+}
+
+/** @deprecated Use signOutUser — anonymous sessions are no longer used. */
 export async function signOutAndContinueAnonymous(
   client: SupabaseClient,
 ): Promise<void> {
-  await client.auth.signOut();
-  await client.auth.signInAnonymously();
+  await signOutUser(client);
 }
 
 export function isGoogleSignedIn(session: {

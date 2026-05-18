@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { isGoogleSignedIn } from "@/lib/supabase/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 type Ctx = {
@@ -44,14 +45,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       } = await sb.auth.getSession();
       if (cancelled) return;
 
-      let next = existing;
-      if (!next) {
-        const { data, error } = await sb.auth.signInAnonymously();
-        if (error) console.error("[meet-greet] Anonymous sign-in:", error.message);
-        next = data.session ?? null;
-      }
-
-      if (!cancelled) setSession(next);
+      if (!cancelled) setSession(existing);
       if (!cancelled) setAuthReady(true);
     }
 
@@ -92,7 +86,10 @@ export function useSupabase(): Ctx & {
   const ctx = useContext(SupabaseContext);
   const configured = useMemo(() => isSupabaseConfigured(), []);
   const remoteReady = Boolean(
-    configured && ctx.supabase && ctx.authReady && ctx.session,
+    configured &&
+      ctx.supabase &&
+      ctx.authReady &&
+      isGoogleSignedIn(ctx.session),
   );
 
   return useMemo(
@@ -106,13 +103,18 @@ export function useSupabase(): Ctx & {
 }
 
 export function useEnsureRemoteAuth(): () => Promise<void> {
-  const { supabase } = useSupabase();
+  const { supabase, session } = useSupabase();
 
   return useCallback(async () => {
     if (!supabase) return;
     const {
-      data: { session },
+      data: { session: current },
     } = await supabase.auth.getSession();
-    if (!session) await supabase.auth.signInAnonymously();
-  }, [supabase]);
+    if (!current || !isGoogleSignedIn(current)) {
+      throw new Error("Sign in with Google to continue.");
+    }
+    if (!session) {
+      throw new Error("Sign in with Google to continue.");
+    }
+  }, [supabase, session]);
 }

@@ -9,7 +9,7 @@ import {
   googleProfile,
   isGoogleSignedIn,
   signInWithGoogle,
-  signOutAndContinueAnonymous,
+  signOutUser,
 } from "@/lib/supabase/auth";
 
 function GoogleMark() {
@@ -45,8 +45,8 @@ export function AuthMenu() {
 
   const signedIn = isGoogleSignedIn(session);
   const google = googleProfile(session);
-  const showName = defaultDisplayName || google?.name || "You";
-  const avatarUrl = profile.avatarUrl ?? google?.avatarUrl ?? null;
+  const showName = defaultDisplayName || "You";
+  const avatarUrl = profile.avatarUrl ?? null;
 
   async function handleGoogleSignIn() {
     if (!supabase || busy) return;
@@ -63,7 +63,7 @@ export function AuthMenu() {
     if (!supabase || busy) return;
     setBusy(true);
     try {
-      await signOutAndContinueAnonymous(supabase);
+      await signOutUser(supabase);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not sign out.");
     } finally {
@@ -77,7 +77,7 @@ export function AuthMenu() {
     );
   }
 
-  if (signedIn || defaultDisplayName) {
+  if (signedIn) {
     return (
       <div className="group relative">
         <Link

@@ -49,7 +49,6 @@ export function useUserProfile() {
     if (remoteReady && signedIn && remoteProfile) return remoteProfile;
     return {
       displayName: local.displayName,
-      bio: local.bio,
       avatarUrl: local.avatarUrl,
       chakra: local.chakra ?? 0,
       updatedAt: local.updatedAt,
@@ -62,8 +61,8 @@ export function useUserProfile() {
     async (input: Partial<UserProfile>) => {
       const next: UserProfile = {
         displayName: input.displayName?.trim() ?? profile.displayName,
-        bio: input.bio?.trim() ?? profile.bio,
-        avatarUrl: input.avatarUrl ?? profile.avatarUrl,
+        avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : profile.avatarUrl,
+        chakra: profile.chakra ?? 0,
       };
 
       if (!next.displayName.trim()) {

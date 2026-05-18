@@ -3,7 +3,6 @@ import type { PublicUserProfile, UserProfile } from "@/lib/types/profile";
 
 type ProfileRow = {
   display_name: string;
-  bio: string;
   avatar_url: string | null;
   chakra: number | null;
   updated_at: string;
@@ -12,7 +11,6 @@ type ProfileRow = {
 function rowToProfile(row: ProfileRow): UserProfile {
   return {
     displayName: row.display_name,
-    bio: row.bio ?? "",
     avatarUrl: row.avatar_url ?? undefined,
     chakra: Number(row.chakra ?? 0),
     updatedAt: new Date(row.updated_at).getTime(),
@@ -32,7 +30,7 @@ export async function fetchProfileRemote(
 ): Promise<UserProfile | null> {
   const { data, error } = await client
     .from("profiles")
-    .select("display_name, bio, avatar_url, chakra, updated_at")
+    .select("display_name, avatar_url, chakra, updated_at")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -67,13 +65,13 @@ export async function upsertProfileRemote(
       {
         user_id: userId,
         display_name: profile.displayName.trim(),
-        bio: profile.bio.trim(),
+        bio: "",
         avatar_url: profile.avatarUrl ?? null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
     )
-    .select("display_name, bio, avatar_url, chakra, updated_at")
+    .select("display_name, avatar_url, chakra, updated_at")
     .single();
 
   if (error) throw error;
@@ -96,7 +94,6 @@ export async function awardChakraRemote(
 export function emptyProfileSeed(): UserProfile {
   return {
     displayName: "anon",
-    bio: "",
     chakra: 0,
   };
 }
