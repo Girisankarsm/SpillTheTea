@@ -51,6 +51,8 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .leaflet-container {

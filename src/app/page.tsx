@@ -9,7 +9,7 @@ const steps = [
 
 export default function Home() {
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col items-center justify-center gap-10 px-4 py-16 text-center">
+    <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col items-center justify-center gap-8 px-4 py-10 text-center sm:gap-10 sm:py-16">
       <div className="space-y-4">
         <div className="mx-auto">
           <AppLogo heightPx={180} priority className="shadow-md" />

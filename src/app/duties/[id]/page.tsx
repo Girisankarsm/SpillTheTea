@@ -314,7 +314,7 @@ export default function DutyDetailPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
+    <div className="mx-auto w-full min-w-0 max-w-3xl px-4 py-6 sm:py-10">
       <Link href="/duties" className="text-sm font-semibold text-brand hover:underline">
         ← Duties
       </Link>

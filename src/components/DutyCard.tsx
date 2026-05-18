@@ -18,7 +18,7 @@ export function DutyCard({ duty, isAuthor = false }: DutyCardProps) {
 
   return (
     <article className="rounded-xl border border-border bg-surface p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
@@ -42,7 +42,7 @@ export function DutyCard({ duty, isAuthor = false }: DutyCardProps) {
         </div>
         <Link
           href={`/duties/${duty.id}`}
-          className="shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90"
+          className="flex w-full shrink-0 items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
         >
           View
         </Link>

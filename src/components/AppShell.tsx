@@ -6,13 +6,16 @@ import { InstallBanner } from "@/components/InstallBanner";
 import { SetupBanner } from "@/components/SetupBanner";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/topics", label: "Tea rooms" },
-  { href: "/duties", label: "Duties" },
-  { href: "/explore", label: "Map" },
+  { href: "/", label: "Home", shortLabel: "Home" },
+  { href: "/topics", label: "Tea rooms", shortLabel: "Rooms" },
+  { href: "/duties", label: "Duties", shortLabel: "Duties" },
+  { href: "/explore", label: "Map", shortLabel: "Map" },
 ] as const;
 
 export { AppLogo } from "@/components/AppLogo";
+
+const navLinkClass =
+  "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-semibold text-subtle transition hover:bg-brand-soft hover:text-foreground sm:px-3 sm:py-2 sm:text-sm";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,30 +26,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <InstallBanner />
         <SetupBanner />
-        <header>
-          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+        <header className="mx-auto max-w-6xl px-3 sm:px-4">
+          <div className="flex h-12 items-center justify-between gap-3 sm:h-14">
             <Link
               href="/"
-              className="flex min-w-0 items-center gap-3 text-[17px] font-semibold tracking-tight text-foreground"
+              className="flex min-w-0 items-center gap-2 text-[17px] font-semibold tracking-tight text-foreground"
             >
-              <AppLogo heightPx={36} priority />
-              <span className="truncate">SpillTheTea</span>
+              <AppLogo heightPx={32} priority className="sm:h-9 sm:w-9" />
+              <span className="hidden truncate sm:inline">SpillTheTea</span>
             </Link>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <nav className="flex flex-wrap items-center gap-1 text-sm font-semibold">
-                {links.map((l) => (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className="rounded-md px-3 py-2 text-subtle transition hover:bg-brand-soft hover:text-foreground dark:hover:bg-brand-soft"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </nav>
-              <AuthMenu />
-            </div>
+
+            <nav
+              className="hidden items-center gap-0.5 sm:flex"
+              aria-label="Main navigation"
+            >
+              {links.map((l) => (
+                <Link key={l.href} href={l.href} className={navLinkClass}>
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+
+            <AuthMenu />
           </div>
+
+          <nav
+            className="flex gap-0.5 overflow-x-auto border-t border-border py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden"
+            aria-label="Main navigation"
+          >
+            {links.map((l) => (
+              <Link key={l.href} href={l.href} className={navLinkClass}>
+                {l.shortLabel}
+              </Link>
+            ))}
+          </nav>
         </header>
       </div>
       <HeaderSpacer />

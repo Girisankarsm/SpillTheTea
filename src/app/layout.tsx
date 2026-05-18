@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
+      <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
         <SupabaseProvider>
           <AppShellOrPlain>{children}</AppShellOrPlain>
         </SupabaseProvider>
