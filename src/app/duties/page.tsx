@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateDutyModal } from "@/components/CreateDutyModal";
@@ -9,7 +8,6 @@ import { useSupabase } from "@/components/SupabaseProvider";
 import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
 import { unknownErrorMessage } from "@/lib/error-message";
 import {
-  getStoredDutyAuthorName,
   setStoredDutyAuthorName,
 } from "@/lib/duty-names";
 import { createDutyRemote, fetchDuties } from "@/lib/supabase/duty-remote";
