@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DutyChatPanel } from "@/components/DutyChatPanel";
 import { DutyDetailPanel } from "@/components/DutyDetailPanel";
 import { DutyOfferModal } from "@/components/DutyOfferModal";
 import { useSupabase } from "@/components/SupabaseProvider";
@@ -54,6 +55,16 @@ export default function DutyDetailPage() {
 
   const duty = remoteReady ? remoteDuty : localDuty;
   const viewerKey = getVisitorId();
+  const assignedOffer = duty?.offers.find((offer) => offer.id === duty.assignedOfferId);
+  const canUseDutyChat =
+    remoteReady &&
+    !!supabase &&
+    !!currentUserId &&
+    !!duty?.authorUserId &&
+    !!assignedOffer?.helperUserId &&
+    duty.status !== "open" &&
+    (duty.authorUserId === currentUserId ||
+      assignedOffer.helperUserId === currentUserId);
 
   const reload = useCallback(async () => {
     if (!supabase || !remoteReady || !dutyId) return;
@@ -332,6 +343,20 @@ export default function DutyDetailPage() {
           onCancel={() => void handleCancel()}
         />
       </div>
+
+      {canUseDutyChat && duty && assignedOffer ? (
+        <div className="mt-6">
+          <DutyChatPanel
+            dutyId={duty.id}
+            supabase={supabase!}
+            currentUserId={currentUserId!}
+            authorUserId={duty.authorUserId!}
+            authorName={duty.authorName}
+            helperUserId={assignedOffer.helperUserId!}
+            helperName={assignedOffer.helperName}
+          />
+        </div>
+      ) : null}
 
       {!remoteReady ? (
         <div className="mt-6 space-y-1">
