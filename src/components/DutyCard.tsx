@@ -7,9 +7,10 @@ import {
 
 type DutyCardProps = {
   duty: DutyWithOffers;
+  isAuthor?: boolean;
 };
 
-export function DutyCard({ duty }: DutyCardProps) {
+export function DutyCard({ duty, isAuthor = false }: DutyCardProps) {
   const pendingOffers = duty.offers.filter((offer) => offer.status === "pending").length;
   const lowestOffer = duty.offers
     .filter((offer) => offer.status === "pending")
@@ -31,10 +32,10 @@ export function DutyCard({ duty }: DutyCardProps) {
           <p className="line-clamp-2 text-sm text-subtle">{duty.description}</p>
           <p className="text-xs text-subtle">
             by {duty.authorName}
-            {pendingOffers > 0
+            {isAuthor && pendingOffers > 0
               ? ` · ${pendingOffers} offer${pendingOffers === 1 ? "" : "s"}`
               : ""}
-            {lowestOffer
+            {isAuthor && lowestOffer
               ? ` · from ${formatMoney(lowestOffer.rewardAmount, lowestOffer.currency)}`
               : ""}
           </p>

@@ -15,6 +15,17 @@ import { createDutyRemote, fetchDuties } from "@/lib/supabase/duty-remote";
 import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
 import { dutiesWithOffers, useMeetGreetStore } from "@/lib/store";
 import type { DutyWithOffers } from "@/lib/types/duty";
+import { getVisitorId } from "@/lib/visitor";
+
+function isDutyAuthor(
+  duty: DutyWithOffers,
+  viewerUserId: string | null,
+  viewerKey: string | null,
+): boolean {
+  if (viewerUserId && duty.authorUserId) return duty.authorUserId === viewerUserId;
+  if (viewerKey && duty.authorVisitorId) return duty.authorVisitorId === viewerKey;
+  return false;
+}
 
 export default function DutiesPage() {
   const router = useRouter();
@@ -30,6 +41,7 @@ export default function DutiesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authorName, setAuthorName] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const localList = useMemo(
     () => dutiesWithOffers(localDuties, localOffers),
@@ -37,12 +49,14 @@ export default function DutiesPage() {
   );
 
   const duties = remoteReady ? remoteDuties : localList;
+  const viewerKey = getVisitorId();
 
   const reload = useCallback(async () => {
     if (!supabase || !remoteReady) return;
     setLoading(true);
     try {
       setRemoteDuties(await fetchDuties(supabase));
+      setCurrentUserId(await getCurrentUserId(supabase));
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load duties."));
@@ -187,7 +201,10 @@ export default function DutiesPage() {
       <ul className="flex flex-col gap-3">
         {duties.map((duty) => (
           <li key={duty.id}>
-            <DutyCard duty={duty} />
+            <DutyCard
+              duty={duty}
+              isAuthor={isDutyAuthor(duty, currentUserId, viewerKey)}
+            />
           </li>
         ))}
       </ul>

@@ -95,7 +95,7 @@ export function DutyDetailPanel({
           />
         </p>
 
-        {duty.status === "rewarded" && duty.rewardPaidAmount != null ? (
+        {author && duty.status === "rewarded" && duty.rewardPaidAmount != null ? (
           <p className="mt-3 rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand">
             Rewarded {formatMoney(duty.rewardPaidAmount, duty.currency)} through the app
           </p>
@@ -151,7 +151,7 @@ export function DutyDetailPanel({
         </div>
       </section>
 
-      {assignedOffer && duty.status !== "open" ? (
+      {(author || helper) && assignedOffer && duty.status !== "open" ? (
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="text-sm font-bold text-foreground">Assigned helper</h2>
           <p className="mt-2 text-sm text-foreground">
