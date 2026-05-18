@@ -1,5 +1,7 @@
 "use client";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { DutyChatPanel } from "@/components/DutyChatPanel";
 import {
   dutyStatusLabel,
   formatMoney,
@@ -18,6 +20,11 @@ type DutyDetailPanelProps = {
   onComplete: () => void;
   onReward: () => void;
   onCancel: () => void;
+  chat?: {
+    dutyId: string;
+    supabase: SupabaseClient;
+    currentUserId: string;
+  } | null;
 };
 
 function isAuthor(
@@ -65,12 +72,19 @@ export function DutyDetailPanel({
   onComplete,
   onReward,
   onCancel,
+  chat,
 }: DutyDetailPanelProps) {
   const author = isAuthor(duty, viewerKey, viewerUserId);
   const helper = isAssignedHelper(duty, viewerKey, viewerUserId);
   const alreadyOffered = hasPendingOffer(duty, viewerKey, viewerUserId);
   const assignedOffer = duty.offers.find((offer) => offer.id === duty.assignedOfferId);
   const pendingOffers = duty.offers.filter((offer) => offer.status === "pending");
+  const showPrivateChat =
+    !!chat &&
+    (author || helper) &&
+    !!assignedOffer?.helperUserId &&
+    !!duty.authorUserId &&
+    duty.status !== "open";
 
   return (
     <div className="space-y-6">
@@ -152,7 +166,20 @@ export function DutyDetailPanel({
         </div>
       </section>
 
-      {(author || helper) && assignedOffer && duty.status !== "open" ? (
+      {showPrivateChat && assignedOffer && chat ? (
+        <DutyChatPanel
+          dutyId={chat.dutyId}
+          supabase={chat.supabase}
+          currentUserId={chat.currentUserId}
+          authorUserId={duty.authorUserId!}
+          authorName={duty.authorName}
+          helperUserId={assignedOffer.helperUserId!}
+          helperName={assignedOffer.helperName}
+          helperRewardAmount={assignedOffer.rewardAmount}
+          helperCurrency={assignedOffer.currency}
+          helperPitch={assignedOffer.pitch}
+        />
+      ) : (author || helper) && assignedOffer && duty.status !== "open" ? (
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="text-sm font-bold text-foreground">Assigned helper</h2>
           <p className="mt-2 text-sm text-foreground">
