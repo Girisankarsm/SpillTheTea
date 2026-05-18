@@ -9,6 +9,7 @@ const links = [
   { href: "/", label: "Home", shortLabel: "Home" },
   { href: "/topics", label: "Tea rooms", shortLabel: "Rooms" },
   { href: "/duties", label: "Duties", shortLabel: "Duties" },
+  { href: "/rides", label: "Rides", shortLabel: "Rides" },
   { href: "/explore", label: "Map", shortLabel: "Map" },
 ] as const;
 
@@ -54,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav
-            className="grid grid-cols-4 gap-0.5 border-t border-border px-1 py-1.5 sm:hidden"
+            className="grid grid-cols-5 gap-0.5 border-t border-border px-1 py-1.5 sm:hidden"
             aria-label="Main navigation"
           >
             {links.map((l) => (

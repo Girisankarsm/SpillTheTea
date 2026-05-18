@@ -34,6 +34,12 @@ export default function Home() {
           Duties
         </Link>
         <Link
+          href="/rides"
+          className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
+        >
+          Ride pooling
+        </Link>
+        <Link
           href="/topics"
           className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
         >
