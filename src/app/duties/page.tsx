@@ -39,7 +39,6 @@ export default function DutiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [authorName, setAuthorName] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const localList = useMemo(
@@ -89,10 +88,6 @@ export default function DutiesPage() {
     };
   }, [supabase, remoteReady, reload]);
 
-  useEffect(() => {
-    setAuthorName(getStoredDutyAuthorName());
-  }, []);
-
   async function handleCreate(input: {
     title: string;
     description: string;
@@ -100,7 +95,6 @@ export default function DutiesPage() {
   }) {
     const postingName = input.authorName.trim() || "anon";
     setStoredDutyAuthorName(postingName);
-    setAuthorName(postingName);
 
     setBusy(true);
     try {
@@ -176,31 +170,6 @@ export default function DutiesPage() {
           Demo mode — duties save on this device. Sign in with Supabase for live sync.
         </p>
       ) : null}
-
-      <div className="mx-auto w-full max-w-sm rounded-lg border border-border bg-surface/60 px-3 py-2.5 sm:mx-0">
-        <div className="flex items-center gap-2.5">
-          <label
-            className="shrink-0 text-[11px] font-medium text-subtle"
-            htmlFor="duty-author-name"
-          >
-            Default name
-          </label>
-          <input
-            id="duty-author-name"
-            value={authorName}
-            onChange={(e) => {
-              const next = e.target.value;
-              setAuthorName(next);
-              setStoredDutyAuthorName(next);
-            }}
-            placeholder="anon"
-            className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-brand"
-          />
-        </div>
-        <p className="mt-1.5 text-center text-[10px] leading-snug text-subtle sm:text-left">
-          Used when you post — editable in the post form too.
-        </p>
-      </div>
 
       <ul className="flex flex-col gap-3">
         {duties.map((duty) => (
