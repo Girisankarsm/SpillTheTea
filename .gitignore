@@ -38,6 +38,7 @@ supabase/migrations/
 
 # markdown (local docs only — not published to GitHub)
 *.md
+!README.md
 
 # vercel
 .vercel
