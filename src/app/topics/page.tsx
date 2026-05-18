@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { CreateTopicPanel } from "@/components/CreateTopicPanel";
+import { CreateTopicPanel, type CreateTopicPayload } from "@/components/CreateTopicPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -16,6 +16,12 @@ import {
   rankTopicsByMessages,
   sendMessageRemote,
 } from "@/lib/supabase/meet-greet-remote";
+import { readFileAsDataUrl } from "@/lib/message-thread";
+import {
+  normalizeMediaUrlInput,
+  uploadMessageMedia,
+} from "@/lib/supabase/message-media";
+import { createPollRemote } from "@/lib/supabase/poll-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { yellowButtonSmClass } from "@/lib/ui";
 import { roomShareUrl } from "@/lib/share-room";
@@ -35,10 +41,9 @@ export default function TopicsDirectoryPage() {
   const localMessages = useMeetGreetStore((s) => s.messages);
   const createTopicLocal = useMeetGreetStore((s) => s.createTopic);
   const sendMessageLocal = useMeetGreetStore((s) => s.sendMessage);
+  const createPollLocal = useMeetGreetStore((s) => s.createPoll);
   const deleteTopicLocal = useMeetGreetStore((s) => s.deleteTopic);
 
-  const [newTeaTitle, setNewTeaTitle] = useState("");
-  const [newTeaBody, setNewTeaBody] = useState("");
   const [posting, setPosting] = useState(false);
 
   const [rxTopics, setRxTopics] = useState<Awaited<
@@ -129,45 +134,132 @@ export default function TopicsDirectoryPage() {
     }
   }
 
-  async function spillTea() {
-    const title = newTeaTitle.trim();
-    const body = newTeaBody.trim();
-    if (!title || posting) return;
+  async function spillTea(payload: CreateTopicPayload) {
+    if (posting) return;
 
+    const authorName = defaultDisplayName?.trim() || "anon";
     setPosting(true);
     try {
       if (remoteReady && supabase) {
         const tid = await createTopicRemote(supabase, {
-          title,
+          title: payload.title,
           lat: 0,
           lng: 0,
         });
-        if (body) {
+
+        if (payload.kind === "text" && payload.body) {
           await sendMessageRemote(supabase, {
             topicId: tid,
-            authorName: defaultDisplayName?.trim() || "anon",
-            body,
+            authorName,
+            body: payload.body,
           });
         }
-        setNewTeaTitle("");
-        setNewTeaBody("");
+
+        if (payload.kind === "link") {
+          const linkBody = payload.body
+            ? `${payload.body}\n\n${payload.linkUrl}`
+            : payload.linkUrl;
+          await sendMessageRemote(supabase, {
+            topicId: tid,
+            authorName,
+            body: linkBody,
+          });
+        }
+
+        if (payload.kind === "media") {
+          let mediaUrl: string | undefined;
+          let mediaType: "image" | "gif" | undefined;
+
+          if (payload.mediaFile) {
+            const uploaded = await uploadMessageMedia(
+              supabase,
+              payload.mediaFile,
+              tid,
+            );
+            mediaUrl = uploaded.url;
+            mediaType = uploaded.mediaType;
+          } else if (payload.gifUrl) {
+            const normalized = normalizeMediaUrlInput(payload.gifUrl);
+            if (!normalized) throw new Error("Invalid GIF URL.");
+            mediaUrl = normalized.url;
+            mediaType = normalized.mediaType;
+          }
+
+          await sendMessageRemote(supabase, {
+            topicId: tid,
+            authorName,
+            body: payload.body,
+            mediaUrl,
+            mediaType,
+          });
+        }
+
+        if (payload.kind === "poll") {
+          await createPollRemote(supabase, {
+            topicId: tid,
+            authorName,
+            question: payload.pollQuestion,
+            options: payload.pollOptions,
+          });
+        }
+
         router.push(`/topics/${tid}`);
         return;
       }
 
-      const id = createTopicLocal({ title, lat: 0, lng: 0 });
-      if (body) {
+      const id = createTopicLocal({ title: payload.title, lat: 0, lng: 0 });
+
+      if (payload.kind === "text" && payload.body) {
+        sendMessageLocal({ topicId: id, authorName, body: payload.body });
+      }
+
+      if (payload.kind === "link") {
+        const linkBody = payload.body
+          ? `${payload.body}\n\n${payload.linkUrl}`
+          : payload.linkUrl;
+        sendMessageLocal({ topicId: id, authorName, body: linkBody });
+      }
+
+      if (payload.kind === "media") {
+        let mediaUrl: string | undefined;
+        let mediaType: "image" | "gif" | undefined;
+
+        if (payload.mediaFile) {
+          mediaUrl = await readFileAsDataUrl(payload.mediaFile);
+          mediaType =
+            payload.mediaFile.type === "image/gif" ||
+            payload.mediaFile.name.toLowerCase().endsWith(".gif")
+              ? "gif"
+              : "image";
+        } else if (payload.gifUrl) {
+          const normalized = normalizeMediaUrlInput(payload.gifUrl);
+          if (!normalized) throw new Error("Invalid GIF URL.");
+          mediaUrl = normalized.url;
+          mediaType = normalized.mediaType;
+        }
+
         sendMessageLocal({
           topicId: id,
-          authorName: defaultDisplayName?.trim() || "anon",
-          body,
+          authorName,
+          body: payload.body,
+          mediaUrl,
+          mediaType,
         });
       }
-      setNewTeaTitle("");
-      setNewTeaBody("");
+
+      if (payload.kind === "poll") {
+        createPollLocal({
+          topicId: id,
+          authorName,
+          question: payload.pollQuestion,
+          options: payload.pollOptions,
+        });
+      }
+
       router.push(`/topics/${id}`);
     } catch (err) {
       alert(unknownErrorMessage(err, "Could not start topic."));
+      throw err;
     } finally {
       setPosting(false);
     }
@@ -202,11 +294,7 @@ export default function TopicsDirectoryPage() {
       </header>
 
       <CreateTopicPanel
-        title={newTeaTitle}
-        body={newTeaBody}
-        onTitleChange={setNewTeaTitle}
-        onBodyChange={setNewTeaBody}
-        onSubmit={() => void spillTea()}
+        onSubmit={spillTea}
         disabled={remoteReady && (!supabase || rxLoading)}
         submitting={posting}
       />
