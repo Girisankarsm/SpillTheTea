@@ -204,12 +204,12 @@ export default function ExplorePage() {
     remoteReady ? (topicActivity[topicId] ?? 0) : topicMessageCount(topicId, localMessages);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
-      <header className="space-y-3">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-8">
+      <header className="space-y-3 text-center sm:text-left">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Tea on the map
         </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-subtle">
+        <p className="mx-auto max-w-xl text-sm leading-relaxed text-subtle sm:mx-0">
           Pin a convo near you — yellow tea bubbles are open rooms, fire bubbles
           are the hottest. Tap one to spill. No map? Browse{" "}
           <Link href="/topics" className="font-bold text-brand hover:underline">
@@ -229,22 +229,22 @@ export default function ExplorePage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-subtle">
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-center text-xs font-semibold text-subtle sm:text-left">
               🍵 tea rooms · 🔥 trending
             </p>
             <button
               type="button"
               onClick={locateMe}
-              className="rounded-full bg-[#fffc00] px-4 py-2 text-xs font-extrabold text-stone-900 shadow-[0_2px_0_rgb(0_0_0_0.12)] hover:brightness-95"
+              className="w-full rounded-full bg-[#fffc00] px-4 py-2.5 text-xs font-extrabold text-stone-900 shadow-[0_2px_0_rgb(0_0_0_0.12)] hover:brightness-95 sm:w-auto"
             >
               📍 Find me
             </button>
           </div>
           {locStatus ? (
-            <p className="text-xs text-subtle">{locStatus}</p>
+            <p className="text-center text-xs text-subtle sm:text-left">{locStatus}</p>
           ) : null}
-          <div className="h-[min(72vh,580px)] min-h-[340px] overflow-hidden rounded-[1.5rem] bg-sky-200 p-0">
+          <div className="mx-auto h-[min(72vh,580px)] min-h-[340px] w-full max-w-3xl overflow-hidden rounded-[1.5rem] bg-sky-200 p-0 lg:max-w-none">
             <ExploreMap
               topics={topics}
               topicActivity={topicActivity}
@@ -254,14 +254,14 @@ export default function ExplorePage() {
               userLocate={userPin}
             />
           </div>
-          <p className="text-xs text-subtle">
+          <p className="text-center text-xs text-subtle sm:text-left">
             Pan the map — new tea rooms drop where you’re looking. Blue dot is you.
           </p>
         </section>
 
-        <aside className="flex flex-col gap-6">
+        <aside className="mx-auto flex w-full max-w-md flex-col gap-6 lg:mx-0 lg:max-w-none">
           <div className="rounded-xl border border-border bg-surface p-4">
-            <h2 className="text-sm font-bold text-foreground">
+            <h2 className="text-center text-sm font-bold text-foreground sm:text-left">
               Busiest tea rooms
             </h2>
             <ol className="mt-3 space-y-2">
@@ -302,10 +302,10 @@ export default function ExplorePage() {
             onSubmit={(e) => void submitTopic(e)}
             className="scroll-mt-24 rounded-xl border border-border bg-surface p-4"
           >
-            <h2 className="text-sm font-bold text-foreground">
+            <h2 className="text-center text-sm font-bold text-foreground sm:text-left">
               SpillTheTea
             </h2>
-            <p className="mt-1 text-xs text-subtle">
+            <p className="mt-1 text-center text-xs text-subtle sm:text-left">
               Name the convo — anonymous chat, any topic. Optional map pin at center.
             </p>
             <label className="mt-3 block text-xs font-semibold text-foreground">
