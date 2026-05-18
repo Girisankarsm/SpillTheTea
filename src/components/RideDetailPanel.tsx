@@ -7,6 +7,7 @@ import {
   type RideWithOffers,
 } from "@/lib/types/ride";
 import { RideChatPanel } from "@/components/RideChatPanel";
+import { PayHelperPanel } from "@/components/PayHelperPanel";
 import { RideLiveTrackingPanel } from "@/components/RideLiveTrackingPanel";
 import { RideRouteSummary } from "@/components/RideRouteSummary";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -80,6 +81,12 @@ export function RideDetailPanel({
     (rider || driver) &&
     !!matchedOffer &&
     ["matched", "completed"].includes(ride.status);
+
+  const showPayment =
+    !!matchedOffer &&
+    ride.status !== "open" &&
+    ride.status !== "rewarded" &&
+    matchedOffer.rewardAmount > 0;
 
   return (
     <div className="space-y-6">
@@ -172,6 +179,19 @@ export function RideDetailPanel({
           ) : null}
         </div>
       </section>
+
+      {showPayment && matchedOffer ? (
+        <PayHelperPanel
+          supabase={chat?.supabase}
+          payeeUserId={matchedOffer.driverUserId}
+          payeeName={matchedOffer.driverName}
+          amount={matchedOffer.rewardAmount}
+          currency={matchedOffer.currency}
+          payerView={rider}
+          payeeView={driver}
+          contextLabel="Ride"
+        />
+      ) : null}
 
       {showLiveTracking && chat && matchedOffer ? (
         <RideLiveTrackingPanel
@@ -272,8 +292,8 @@ export function RideDetailPanel({
 
       {rider && ride.status === "completed" ? (
         <p className="rounded-lg border border-border bg-brand-soft px-4 py-3 text-sm text-foreground">
-          Driver marked the drop complete. Tap <strong>Send reward</strong> to record
-          payment — then pay via UPI/cash.
+          Driver marked the drop complete. Pay via UPI/GPay, phone, or cash above — then
+          tap <strong>Send reward</strong> to record it in the app.
         </p>
       ) : null}
     </div>

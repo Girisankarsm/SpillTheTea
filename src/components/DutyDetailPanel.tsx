@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DutyChatPanel } from "@/components/DutyChatPanel";
+import { PayHelperPanel } from "@/components/PayHelperPanel";
 import {
   dutyStatusLabel,
   formatMoney,
@@ -86,6 +87,12 @@ export function DutyDetailPanel({
     !!duty.authorUserId &&
     duty.status !== "open";
 
+  const showPayment =
+    !!assignedOffer &&
+    duty.status !== "open" &&
+    duty.status !== "rewarded" &&
+    assignedOffer.rewardAmount > 0;
+
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-border bg-surface p-5">
@@ -165,6 +172,19 @@ export function DutyDetailPanel({
           ) : null}
         </div>
       </section>
+
+      {showPayment && assignedOffer ? (
+        <PayHelperPanel
+          supabase={chat?.supabase}
+          payeeUserId={assignedOffer.helperUserId}
+          payeeName={assignedOffer.helperName}
+          amount={assignedOffer.rewardAmount}
+          currency={assignedOffer.currency}
+          payerView={author}
+          payeeView={helper}
+          contextLabel="Duty"
+        />
+      ) : null}
 
       {showPrivateChat && assignedOffer && chat ? (
         <DutyChatPanel
@@ -251,8 +271,8 @@ export function DutyDetailPanel({
 
       {author && duty.status === "completed" ? (
         <p className="rounded-lg border border-border bg-brand-soft px-4 py-3 text-sm text-foreground">
-          Helper marked this done. Tap <strong>Send reward</strong> to record payment in the
-          app — then pay them via UPI/cash.
+          Helper marked this done. Pay via UPI/GPay, phone, or cash above — then tap{" "}
+          <strong>Send reward</strong> to record it in the app.
         </p>
       ) : null}
     </div>

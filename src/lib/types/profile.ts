@@ -3,6 +3,8 @@ export type UserProfile = {
   avatarUrl?: string;
   chakra?: number;
   updatedAt?: number;
+  paymentUpi?: string;
+  paymentPhone?: string;
 };
 
 /** What others see — anonymous name + chakra only. */

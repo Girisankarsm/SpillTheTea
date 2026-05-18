@@ -17,6 +17,8 @@ export default function ProfilePage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
+  const [paymentUpi, setPaymentUpi] = useState("");
+  const [paymentPhone, setPaymentPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -26,7 +28,9 @@ export default function ProfilePage() {
   useEffect(() => {
     setDisplayName(profile.displayName);
     setAvatarUrl(profile.avatarUrl);
-  }, [profile.displayName, profile.avatarUrl]);
+    setPaymentUpi(profile.paymentUpi ?? "");
+    setPaymentPhone(profile.paymentPhone ?? "");
+  }, [profile.displayName, profile.avatarUrl, profile.paymentUpi, profile.paymentPhone]);
 
   useEffect(() => {
     if (!pendingFile) {
@@ -76,6 +80,8 @@ export default function ProfilePage() {
       await saveProfile({
         displayName: trimmedName,
         avatarUrl: nextAvatarUrl,
+        paymentUpi: paymentUpi.trim() || undefined,
+        paymentPhone: paymentPhone.trim() || undefined,
       });
 
       setAvatarUrl(nextAvatarUrl);
@@ -184,6 +190,35 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
           />
         </label>
+
+        <div className="space-y-3 rounded-lg border border-border bg-background p-3">
+          <p className="text-xs font-bold text-foreground">Get paid (duties & rides)</p>
+          <p className="text-[11px] text-subtle">
+            Add UPI or phone so posters can pay you via GPay/PhonePe or call you. Cash
+            always works too.
+          </p>
+          <label className="block text-xs font-semibold text-foreground">
+            UPI ID
+            <input
+              value={paymentUpi}
+              onChange={(e) => setPaymentUpi(e.target.value)}
+              placeholder="e.g. name@paytm or 98xxxx@ybl"
+              maxLength={100}
+              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
+            />
+          </label>
+          <label className="block text-xs font-semibold text-foreground">
+            Phone (10 digits)
+            <input
+              value={paymentPhone}
+              onChange={(e) => setPaymentPhone(e.target.value)}
+              placeholder="e.g. 9876543210"
+              inputMode="tel"
+              maxLength={15}
+              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
+            />
+          </label>
+        </div>
 
         <p className="text-[11px] text-subtle">
           {signedIn && isGoogleSignedIn(session)

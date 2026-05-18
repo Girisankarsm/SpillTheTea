@@ -52,6 +52,8 @@ export function useUserProfile() {
       avatarUrl: local.avatarUrl,
       chakra: local.chakra ?? 0,
       updatedAt: local.updatedAt,
+      paymentUpi: local.paymentUpi,
+      paymentPhone: local.paymentPhone,
     };
   }, [remoteReady, signedIn, remoteProfile, local]);
 
@@ -63,6 +65,10 @@ export function useUserProfile() {
         displayName: input.displayName?.trim() ?? profile.displayName,
         avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : profile.avatarUrl,
         chakra: profile.chakra ?? 0,
+        paymentUpi:
+          input.paymentUpi !== undefined ? input.paymentUpi : profile.paymentUpi,
+        paymentPhone:
+          input.paymentPhone !== undefined ? input.paymentPhone : profile.paymentPhone,
       };
 
       if (!next.displayName.trim()) {
