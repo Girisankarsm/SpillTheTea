@@ -6,6 +6,7 @@ import {
 } from "@/lib/types/ride";
 import { RideRouteSummary } from "@/components/RideRouteSummary";
 import { formatDistanceKm } from "@/lib/geo";
+import { formatRideVehicle } from "@/lib/types/ride-vehicle";
 import { yellowButtonMdClass } from "@/lib/ui";
 
 type RideCardProps = {
@@ -38,6 +39,10 @@ export function RideCard({ ride, isRider = false, distanceKm }: RideCardProps) {
             dropLabel={ride.dropLabel}
             compact
           />
+
+          <p className="text-xs font-semibold text-foreground">
+            {formatRideVehicle(ride.vehiclePreference, ride.vehicleDetail)}
+          </p>
 
           {ride.notes ? (
             <p className="line-clamp-2 text-sm text-subtle">{ride.notes}</p>

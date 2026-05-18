@@ -118,6 +118,8 @@ export default function RidesPage() {
     dropLat?: number;
     dropLng?: number;
     notes: string;
+    vehiclePreference: string;
+    vehicleDetail: string;
     maxReward?: number;
   }) {
     setStoredRideRiderName(input.riderName);

@@ -10,7 +10,9 @@ import {
   setStoredRideRiderName,
 } from "@/lib/ride-names";
 import type { PlaceSuggestion } from "@/lib/types/place-search";
+import type { RideVehiclePreference } from "@/lib/types/ride-vehicle";
 import { yellowButtonMdClass } from "@/lib/ui";
+import { VehicleTypePicker } from "@/components/VehicleTypePicker";
 
 const RideLocationPickerMap = dynamic(
   () =>
@@ -40,6 +42,8 @@ type CreateRideModalProps = {
     dropLat?: number;
     dropLng?: number;
     notes: string;
+    vehiclePreference: string;
+    vehicleDetail: string;
     maxReward?: number;
   }) => void;
 };
@@ -54,6 +58,8 @@ export function CreateRideModal({
   const [pickupLabel, setPickupLabel] = useState("");
   const [dropLabel, setDropLabel] = useState("");
   const [notes, setNotes] = useState("");
+  const [vehiclePreference, setVehiclePreference] = useState<RideVehiclePreference>("any");
+  const [vehicleDetail, setVehicleDetail] = useState("");
   const [maxReward, setMaxReward] = useState("");
   const [pickup, setPickup] = useState<MapPoint | null>(null);
   const [drop, setDrop] = useState<MapPoint | null>(null);
@@ -69,6 +75,8 @@ export function CreateRideModal({
     setPickupLabel("");
     setDropLabel("");
     setNotes("");
+    setVehiclePreference("any");
+    setVehicleDetail("");
     setMaxReward("");
     setPickup(null);
     setDrop(null);
@@ -170,6 +178,8 @@ export function CreateRideModal({
             dropLat: drop?.lat,
             dropLng: drop?.lng,
             notes,
+            vehiclePreference,
+            vehicleDetail,
             maxReward: budget != null && Number.isFinite(budget) ? budget : undefined,
           });
         }}
@@ -253,6 +263,28 @@ export function CreateRideModal({
               flyTo={mapFlyTo}
             />
           </div>
+
+          <div className="mt-4">
+            <VehicleTypePicker
+              label="What vehicle do you need?"
+              value={vehiclePreference}
+              onChange={setVehiclePreference}
+              allowAny
+            />
+          </div>
+
+          <label className="mt-3 block space-y-1">
+            <span className="text-xs font-semibold text-foreground">
+              Vehicle details (optional)
+            </span>
+            <input
+              value={vehicleDetail}
+              onChange={(e) => setVehicleDetail(e.target.value)}
+              placeholder="e.g. need AC car, 2 people with bags…"
+              maxLength={200}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand"
+            />
+          </label>
 
           <label className="mt-4 block space-y-1">
             <span className="text-xs font-semibold text-foreground">Your name</span>

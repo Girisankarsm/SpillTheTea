@@ -99,6 +99,8 @@ export default function RideDetailPage() {
   async function handleOffer(input: {
     driverName: string;
     pitch: string;
+    vehicleType: string;
+    vehicleDetail: string;
     rewardAmount: number;
   }) {
     if (!rideId) return;
@@ -110,6 +112,8 @@ export default function RideDetailPage() {
         rideId,
         driverName: input.driverName,
         pitch: input.pitch,
+        vehicleType: input.vehicleType,
+        vehicleDetail: input.vehicleDetail,
         rewardAmount: input.rewardAmount,
       });
       setOfferOpen(false);

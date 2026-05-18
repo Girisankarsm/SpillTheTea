@@ -13,6 +13,8 @@ export type RideRequest = {
   dropLat?: number;
   dropLng?: number;
   notes: string;
+  vehiclePreference: string;
+  vehicleDetail: string;
   maxReward?: number;
   currency: string;
   status: RideStatus;
@@ -28,6 +30,8 @@ export type RideOffer = {
   driverName: string;
   driverUserId?: string;
   pitch: string;
+  vehicleType: string;
+  vehicleDetail: string;
   rewardAmount: number;
   currency: string;
   status: RideOfferStatus;
@@ -47,6 +51,8 @@ export type CreateRideInput = {
   dropLat?: number;
   dropLng?: number;
   notes?: string;
+  vehiclePreference?: string;
+  vehicleDetail?: string;
   maxReward?: number;
   currency?: string;
 };
@@ -55,6 +61,8 @@ export type CreateRideOfferInput = {
   rideId: string;
   driverName: string;
   pitch: string;
+  vehicleType?: string;
+  vehicleDetail?: string;
   rewardAmount: number;
   currency?: string;
 };

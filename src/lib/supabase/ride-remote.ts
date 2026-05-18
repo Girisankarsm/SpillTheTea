@@ -21,6 +21,8 @@ type RideRow = {
   drop_lat: number | null;
   drop_lng: number | null;
   notes: string;
+  vehicle_preference: string;
+  vehicle_detail: string;
   max_reward: number | null;
   currency: string;
   status: RideStatus;
@@ -36,6 +38,8 @@ type OfferRow = {
   driver_name: string;
   user_id: string;
   pitch: string;
+  vehicle_type: string;
+  vehicle_detail: string;
   reward_amount: number;
   currency: string;
   status: RideOffer["status"];
@@ -43,10 +47,10 @@ type OfferRow = {
 };
 
 const RIDE_SELECT =
-  "id, rider_name, user_id, pickup_label, pickup_lat, pickup_lng, drop_label, drop_lat, drop_lng, notes, max_reward, currency, status, matched_offer_id, reward_paid_amount, rewarded_at, created_at";
+  "id, rider_name, user_id, pickup_label, pickup_lat, pickup_lng, drop_label, drop_lat, drop_lng, notes, vehicle_preference, vehicle_detail, max_reward, currency, status, matched_offer_id, reward_paid_amount, rewarded_at, created_at";
 
 const OFFER_SELECT =
-  "id, ride_id, driver_name, user_id, pitch, reward_amount, currency, status, created_at";
+  "id, ride_id, driver_name, user_id, pitch, vehicle_type, vehicle_detail, reward_amount, currency, status, created_at";
 
 function mapRide(row: RideRow): RideRequest {
   return {
@@ -60,6 +64,8 @@ function mapRide(row: RideRow): RideRequest {
     dropLat: row.drop_lat ?? undefined,
     dropLng: row.drop_lng ?? undefined,
     notes: row.notes || "",
+    vehiclePreference: row.vehicle_preference || "any",
+    vehicleDetail: row.vehicle_detail || "",
     maxReward: row.max_reward != null ? Number(row.max_reward) : undefined,
     currency: row.currency || "INR",
     status: row.status,
@@ -78,6 +84,8 @@ function mapOffer(row: OfferRow): RideOffer {
     driverName: row.driver_name || "Guest",
     driverUserId: row.user_id,
     pitch: row.pitch || "",
+    vehicleType: row.vehicle_type || "car",
+    vehicleDetail: row.vehicle_detail || "",
     rewardAmount: Number(row.reward_amount),
     currency: row.currency || "INR",
     status: row.status,
@@ -176,6 +184,8 @@ export async function createRideRemote(
       drop_lat: input.dropLat ?? null,
       drop_lng: input.dropLng ?? null,
       notes: input.notes?.trim() ?? "",
+      vehicle_preference: input.vehiclePreference?.trim() || "any",
+      vehicle_detail: input.vehicleDetail?.trim() ?? "",
       max_reward:
         input.maxReward != null && Number.isFinite(input.maxReward)
           ? input.maxReward
@@ -219,6 +229,8 @@ export async function createRideOfferRemote(
       driver_name: input.driverName.trim() || "Guest",
       user_id: user.id,
       pitch: input.pitch.trim(),
+      vehicle_type: input.vehicleType?.trim() || "car",
+      vehicle_detail: input.vehicleDetail?.trim() ?? "",
       reward_amount: rewardAmount,
       currency: input.currency ?? "INR",
     })

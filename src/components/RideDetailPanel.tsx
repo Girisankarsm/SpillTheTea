@@ -10,6 +10,7 @@ import { RideChatPanel } from "@/components/RideChatPanel";
 import { RideLiveTrackingPanel } from "@/components/RideLiveTrackingPanel";
 import { RideRouteSummary } from "@/components/RideRouteSummary";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { formatRideVehicle } from "@/lib/types/ride-vehicle";
 
 type RideDetailPanelProps = {
   ride: RideWithOffers;
@@ -95,6 +96,15 @@ export function RideDetailPanel({
         <div className="mt-4">
           <RideRouteSummary pickupLabel={ride.pickupLabel} dropLabel={ride.dropLabel} />
         </div>
+
+        <p className="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-subtle">
+            Rider needs
+          </span>
+          <span className="mt-0.5 block font-semibold">
+            {formatRideVehicle(ride.vehiclePreference, ride.vehicleDetail)}
+          </span>
+        </p>
 
         {ride.notes ? (
           <p className="mt-3 text-sm text-subtle">{ride.notes}</p>
@@ -194,6 +204,9 @@ export function RideDetailPanel({
             {" · "}
             {formatMoney(matchedOffer.rewardAmount, matchedOffer.currency)}
           </p>
+          <p className="mt-1 text-sm text-subtle">
+            {formatRideVehicle(matchedOffer.vehicleType, matchedOffer.vehicleDetail)}
+          </p>
           {matchedOffer.pitch ? (
             <p className="mt-2 text-sm text-subtle">{matchedOffer.pitch}</p>
           ) : null}
@@ -214,6 +227,9 @@ export function RideDetailPanel({
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm font-bold text-foreground">
                     🚗 {offer.driverName}
+                  </p>
+                  <p className="text-sm font-semibold text-brand">
+                    {formatRideVehicle(offer.vehicleType, offer.vehicleDetail)}
                   </p>
                   <p className="text-sm font-semibold text-brand">
                     Wants {formatMoney(offer.rewardAmount, offer.currency)}
