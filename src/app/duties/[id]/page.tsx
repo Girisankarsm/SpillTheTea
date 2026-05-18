@@ -266,11 +266,13 @@ export default function DutyDetailPage() {
   async function handleCancel() {
     if (!dutyId || !duty) return;
     const message =
-      duty.status === "completed"
-        ? "Remove this duty? It will be deleted even though the helper marked it complete."
-        : duty.status === "assigned"
-          ? "Remove this duty? The assigned helper will no longer see it."
-          : "Remove this duty? It will be deleted from the list.";
+      duty.status === "rewarded"
+        ? "Remove this duty from your list? The reward was already recorded."
+        : duty.status === "completed"
+          ? "Remove this duty? It will be deleted even though the helper marked it complete."
+          : duty.status === "assigned"
+            ? "Remove this duty? The assigned helper will no longer see it."
+            : "Remove this duty? It will be deleted from the list.";
     if (!window.confirm(message)) return;
     setBusy(true);
     try {

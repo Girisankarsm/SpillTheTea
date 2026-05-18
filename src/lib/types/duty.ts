@@ -66,6 +66,6 @@ export function dutyStatusLabel(status: DutyStatus): string {
   }
 }
 
-export function canAuthorRemoveDuty(status: DutyStatus): boolean {
-  return status === "open" || status === "assigned" || status === "completed";
+export function canAuthorRemoveDuty(_status: DutyStatus): boolean {
+  return true;
 }
