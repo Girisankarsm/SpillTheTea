@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { canDeleteTopic } from "@/lib/admin";
+import type { TopicPreview } from "@/lib/tea-feed";
 import type { ChatMessage, SendMessageInput, Topic } from "@/lib/types";
 
 type TopicFeedRow = {
@@ -44,6 +45,41 @@ export function rankTopicsByMessages(
   return [...topics].sort(
     (a, b) => (topicActivity[b.id] ?? 0) - (topicActivity[a.id] ?? 0),
   );
+}
+
+export async function fetchTopicPreviewsRemote(
+  client: SupabaseClient,
+  topicIds: string[],
+): Promise<Record<string, TopicPreview>> {
+  if (topicIds.length === 0) return {};
+
+  const { data, error } = await client
+    .from("messages")
+    .select("topic_id, author_name, body, media_url, media_type, created_at")
+    .in("topic_id", topicIds)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  const out: Record<string, TopicPreview> = {};
+  for (const row of data ?? []) {
+    const topicId = row.topic_id as string;
+    if (out[topicId]) continue;
+
+    const mediaType =
+      row.media_type === "gif" || row.media_type === "image"
+        ? row.media_type
+        : undefined;
+
+    out[topicId] = {
+      authorName: ((row.author_name as string) || "anon").trim(),
+      body: (row.body as string) || "",
+      mediaUrl: (row.media_url as string | null) ?? undefined,
+      mediaType,
+    };
+  }
+
+  return out;
 }
 
 export async function createTopicRemote(

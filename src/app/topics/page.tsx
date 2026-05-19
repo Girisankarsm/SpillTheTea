@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateTopicPanel, type CreateTopicPayload } from "@/components/CreateTopicPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
+import { TeaFeedCard } from "@/components/TeaFeedCard";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { canDeleteTopic } from "@/lib/admin";
+import type { TopicSort } from "@/lib/message-upvotes";
 import {
   createTopicRemote,
   deleteTopicRemote,
   fetchExploreFeeds,
+  fetchTopicPreviewsRemote,
   getCurrentUserId,
-  rankTopicsByMessages,
   sendMessageRemote,
 } from "@/lib/supabase/meet-greet-remote";
 import { readFileAsDataUrl } from "@/lib/message-thread";
@@ -23,13 +25,13 @@ import {
 } from "@/lib/supabase/message-media";
 import { createPollRemote } from "@/lib/supabase/poll-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
-import { yellowButtonSmClass } from "@/lib/ui";
 import { roomShareUrl } from "@/lib/share-room";
 import {
-  trendingTopics,
-  topicMessageCount,
-  useMeetGreetStore,
-} from "@/lib/store";
+  buildLocalTopicPreviews,
+  sortTopicsForFeed,
+  type TopicPreview,
+} from "@/lib/tea-feed";
+import { topicMessageCount, useMeetGreetStore } from "@/lib/store";
 import { getVisitorId } from "@/lib/visitor";
 
 export default function TopicsDirectoryPage() {
@@ -46,11 +48,14 @@ export default function TopicsDirectoryPage() {
 
   const [posting, setPosting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [sort, setSort] = useState<TopicSort>("hot");
 
   const [rxTopics, setRxTopics] = useState<Awaited<
     ReturnType<typeof fetchExploreFeeds>
   >["topics"]>([]);
   const [rxActivity, setRxActivity] = useState<Record<string, number>>({});
+  const [rxJoinCounts, setRxJoinCounts] = useState<Record<string, number>>({});
+  const [rxPreviews, setRxPreviews] = useState<Record<string, TopicPreview>>({});
   const [rxLoading, setRxLoading] = useState(false);
   const [rxErr, setRxErr] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -65,8 +70,15 @@ export default function TopicsDirectoryPage() {
       const feed = await fetchExploreFeeds(supabase);
       setRxTopics(feed.topics);
       setRxActivity(feed.topicActivity);
+      setRxJoinCounts(feed.topicJoinCounts);
       setRxErr(null);
       setCurrentUserId(await getCurrentUserId(supabase));
+
+      const previews = await fetchTopicPreviewsRemote(
+        supabase,
+        feed.topics.map((t) => t.id),
+      );
+      setRxPreviews(previews);
     } catch (e) {
       setRxErr(unknownErrorMessage(e, "Could not load topics."));
     } finally {
@@ -104,12 +116,39 @@ export default function TopicsDirectoryPage() {
     };
   }, [supabase, remoteReady, reload]);
 
-  const ranked = remoteReady
-    ? rankTopicsByMessages(rxTopics, rxActivity)
-    : trendingTopics(localTopics, localMessages);
+  const topics = remoteReady ? rxTopics : localTopics;
+  const activity = useMemo(() => {
+    if (remoteReady) return rxActivity;
+    const counts: Record<string, number> = {};
+    for (const topic of localTopics) {
+      counts[topic.id] = topicMessageCount(topic.id, localMessages);
+    }
+    return counts;
+  }, [remoteReady, rxActivity, localTopics, localMessages]);
 
-  const msgCount = (topicId: string) =>
-    remoteReady ? (rxActivity[topicId] ?? 0) : topicMessageCount(topicId, localMessages);
+  const previews = useMemo(() => {
+    if (remoteReady) return rxPreviews;
+    return buildLocalTopicPreviews(
+      localMessages,
+      localTopics.map((t) => t.id),
+    );
+  }, [remoteReady, rxPreviews, localMessages, localTopics]);
+
+  const sorted = useMemo(
+    () => sortTopicsForFeed(topics, activity, sort),
+    [topics, activity, sort],
+  );
+
+  const msgCount = (topicId: string) => activity[topicId] ?? 0;
+
+  function sortButtonClass(active: boolean): string {
+    return [
+      "rounded-md px-2.5 py-1 text-xs font-bold transition",
+      active
+        ? "bg-brand text-white"
+        : "text-subtle hover:bg-brand-soft hover:text-foreground",
+    ].join(" ");
+  }
 
   async function removeRoom(topicId: string, title: string) {
     if (
@@ -267,19 +306,13 @@ export default function TopicsDirectoryPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-10">
-      <header className="space-y-3">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Tea
-        </h1>
-        <p className="text-sm leading-relaxed text-subtle">
-          Pick a topic, post anonymously, and discuss in replies — like Reddit. DM someone
-          from any post. Only the topic starter (or app admin) can close a topic.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="mx-auto flex w-full min-w-0 max-w-[640px] flex-col gap-4 px-4 py-4 sm:py-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Tea</h1>
+        <div className="flex items-center gap-2">
           <Link
             href="/explore"
-            className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-subtle hover:border-brand hover:text-foreground sm:w-auto"
+            className="inline-flex items-center justify-center rounded-full border border-border bg-background px-3 py-1.5 text-xs font-bold text-subtle hover:border-brand hover:text-foreground"
           >
             Map
           </Link>
@@ -287,20 +320,12 @@ export default function TopicsDirectoryPage() {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
+              className="inline-flex items-center justify-center rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
             >
-              + Create post
+              + Create
             </button>
           ) : null}
         </div>
-        {remoteReady && rxLoading ? (
-          <p className="text-xs font-semibold text-brand">Refreshing…</p>
-        ) : null}
-        {rxErr ? (
-          <p className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-xs text-danger-text">
-            {rxErr}
-          </p>
-        ) : null}
       </header>
 
       {createOpen ? (
@@ -312,58 +337,63 @@ export default function TopicsDirectoryPage() {
         />
       ) : null}
 
-      <ul className="flex flex-col gap-3">
-        {ranked.map((t) => {
-          const msgs = msgCount(t.id);
+      <div className="flex items-center justify-between gap-3 border-b border-border py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
+          Sort
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSort("hot")}
+            className={sortButtonClass(sort === "hot")}
+          >
+            Hot
+          </button>
+          <button
+            type="button"
+            onClick={() => setSort("new")}
+            className={sortButtonClass(sort === "new")}
+          >
+            New
+          </button>
+        </div>
+      </div>
+
+      {remoteReady && rxLoading ? (
+        <p className="text-xs font-semibold text-brand">Refreshing…</p>
+      ) : null}
+      {rxErr ? (
+        <p className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-xs text-danger-text">
+          {rxErr}
+        </p>
+      ) : null}
+
+      <div className="flex flex-col gap-3">
+        {sorted.map((t) => {
           const visitorId = getVisitorId();
           const deletable = canDeleteTopic(t, {
             visitorId,
             userId: currentUserId,
           });
           return (
-            <li key={t.id}>
-              <article className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <h2 className="text-lg font-bold text-foreground">{t.title}</h2>
-                  <p className="text-xs text-subtle">
-                    {msgs} messages
-                    {remoteReady ? "" : " · this device"}
-                  </p>
-                </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-                  {deletable ? (
-                    <button
-                      type="button"
-                      onClick={() => void removeRoom(t.id, t.title)}
-                      className="w-full rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm font-bold text-danger-text hover:opacity-90 sm:w-auto"
-                    >
-                      Close topic
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setShareRoom({ id: t.id, title: t.title })}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground hover:bg-brand-soft sm:w-auto"
-                  >
-                    Share
-                  </button>
-                  <Link
-                    href={`/topics/${t.id}`}
-                    className={`${yellowButtonSmClass} w-full sm:w-auto`}
-                  >
-                    Join discussion
-                  </Link>
-                </div>
-              </article>
-            </li>
+            <TeaFeedCard
+              key={t.id}
+              topic={t}
+              messageCount={msgCount(t.id)}
+              joinCount={remoteReady ? rxJoinCounts[t.id] : undefined}
+              preview={previews[t.id]}
+              deletable={deletable}
+              onClose={() => void removeRoom(t.id, t.title)}
+              onShare={() => setShareRoom({ id: t.id, title: t.title })}
+            />
           );
         })}
-      </ul>
+      </div>
 
-      {ranked.length === 0 ? (
-        <p className="text-center text-sm text-subtle">
-          No topics yet — tap <strong className="text-foreground">+ Create post</strong> to
-          start one.
+      {sorted.length === 0 ? (
+        <p className="py-8 text-center text-sm text-subtle">
+          No posts yet — tap <strong className="text-foreground">+ Create</strong> to
+          start the feed.
         </p>
       ) : null}
 
