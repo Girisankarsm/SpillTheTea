@@ -8,7 +8,6 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import {
   googleProfile,
   isGoogleSignedIn,
-  signInWithGoogle,
   signOutUser,
 } from "@/lib/supabase/auth";
 
@@ -49,16 +48,10 @@ export function AuthMenu() {
   const showName = defaultDisplayName || "You";
   const avatarUrl = profile.avatarUrl?.trim() || null;
 
-  async function handleGoogleSignIn() {
-    if (!supabase || busy) return;
-    setBusy(true);
-    try {
-      const { error } = await signInWithGoogle(supabase, pathname || "/");
-      if (error) alert(error.message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const loginHref =
+    pathname && pathname !== "/login"
+      ? `/login?next=${encodeURIComponent(pathname)}`
+      : "/login";
 
   async function handleSignOut() {
     if (!supabase || busy) return;
@@ -126,15 +119,13 @@ export function AuthMenu() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => void handleGoogleSignIn()}
-      disabled={busy}
-      className="flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-sm hover:bg-stone-50 disabled:opacity-50 dark:bg-surface dark:text-foreground dark:hover:bg-background"
+    <Link
+      href={loginHref}
+      className="flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-sm hover:bg-stone-50 dark:bg-surface dark:text-foreground dark:hover:bg-background"
     >
       <GoogleMark />
       <span className="hidden sm:inline">Sign in with Google</span>
       <span className="sm:hidden">Google</span>
-    </button>
+    </Link>
   );
 }

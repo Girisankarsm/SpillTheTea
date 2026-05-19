@@ -7,6 +7,7 @@ import { AppLogo } from "@/components/AppLogo";
 import { LegalFooterLinks } from "@/components/LegalFooterLinks";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { APP_DISCLAIMER } from "@/lib/disclaimer";
+import { setLegalAcceptanceCookie } from "@/lib/legal-acceptance";
 import { PRIVACY_POLICY_PATH, TERMS_OF_SERVICE_PATH } from "@/lib/legal";
 import { signInWithGoogle } from "@/lib/supabase/auth";
 
@@ -33,6 +34,25 @@ function GoogleMark() {
   );
 }
 
+function LegalDocLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-bold text-brand hover:underline"
+    >
+      {children}
+    </Link>
+  );
+}
+
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
   if (raw.startsWith("/login") || raw.startsWith("/auth/callback")) return "/";
@@ -43,15 +63,20 @@ export function LoginScreen() {
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get("next"));
   const authFailed = searchParams.get("auth") === "failed";
+  const legalRequired = searchParams.get("auth") === "legal";
 
   const { supabase, authReady, configured } = useSupabase();
-  const [accepted, setAccepted] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const canSignIn = acceptedTerms && acceptedPrivacy;
+
   async function handleGoogleSignIn() {
-    if (!supabase || !accepted || busy) return;
+    if (!supabase || !canSignIn || busy) return;
     setBusy(true);
     try {
+      setLegalAcceptanceCookie();
       const { error } = await signInWithGoogle(supabase, nextPath);
       if (error) alert(error.message);
     } finally {
@@ -84,40 +109,65 @@ export function LoginScreen() {
           </p>
         ) : null}
 
+        {legalRequired ? (
+          <p className="w-full rounded-lg border border-danger-border bg-danger-bg px-4 py-3 text-xs text-danger-text">
+            Accept the Terms of Service and Privacy Policy before signing in with Google.
+          </p>
+        ) : null}
+
         <p className="rounded-xl border border-border bg-surface px-4 py-3 text-left text-xs leading-relaxed text-subtle">
           {APP_DISCLAIMER}
         </p>
 
-        <label className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left text-sm">
-          <input
-            type="checkbox"
-            checked={accepted}
-            onChange={(e) => setAccepted(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand)]"
-          />
-          <span className="text-foreground">
-            I agree to the{" "}
-            <Link href={TERMS_OF_SERVICE_PATH} className="font-bold text-brand hover:underline">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href={PRIVACY_POLICY_PATH} className="font-bold text-brand hover:underline">
-              Privacy Policy
-            </Link>
-            , and will use SpillTheTea responsibly.
-          </span>
-        </label>
+        <div className="w-full space-y-3 rounded-xl border border-border bg-surface p-4 text-left">
+          <p className="text-xs font-bold uppercase tracking-wide text-subtle">
+            Required before sign-in
+          </p>
+
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand)]"
+            />
+            <span className="text-foreground">
+              I have read and agree to the{" "}
+              <LegalDocLink href={TERMS_OF_SERVICE_PATH}>Terms of Service</LegalDocLink>.
+            </span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={acceptedPrivacy}
+              onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand)]"
+            />
+            <span className="text-foreground">
+              I have read and agree to the{" "}
+              <LegalDocLink href={PRIVACY_POLICY_PATH}>Privacy Policy</LegalDocLink>.
+            </span>
+          </label>
+        </div>
 
         {configured && supabase ? (
-          <button
-            type="button"
-            onClick={() => void handleGoogleSignIn()}
-            disabled={!accepted || busy}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-white px-4 py-3 text-sm font-bold text-stone-800 shadow-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-foreground dark:hover:bg-background"
-          >
-            <GoogleMark />
-            {busy ? "Redirecting…" : "Sign in with Google"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void handleGoogleSignIn()}
+              disabled={!canSignIn || busy}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-white px-4 py-3 text-sm font-bold text-stone-800 shadow-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-foreground dark:hover:bg-background"
+            >
+              <GoogleMark />
+              {busy ? "Redirecting…" : "Sign in with Google"}
+            </button>
+            {!canSignIn ? (
+              <p className="text-xs text-subtle">
+                Check both boxes above to continue with Google.
+              </p>
+            ) : null}
+          </>
         ) : (
           <p className="rounded-lg border border-danger-border bg-danger-bg px-4 py-3 text-xs text-danger-text">
             Add <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
