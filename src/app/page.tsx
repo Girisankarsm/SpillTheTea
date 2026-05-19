@@ -39,7 +39,7 @@ export default function Home() {
           SpillTheTea
         </h1>
         <p className="text-sm text-subtle">
-          Anonymous topics, duties, rides, and chat.
+          Talk, task, and ride near you.
         </p>
       </div>
 

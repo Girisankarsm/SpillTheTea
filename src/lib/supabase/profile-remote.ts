@@ -56,15 +56,15 @@ export async function fetchPublicProfileRemote(
   client: SupabaseClient,
   userId: string,
 ): Promise<PublicUserProfile | null> {
-  const { data, error } = await client
-    .from("profiles_public")
-    .select("display_name, chakra")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error } = await client.rpc("get_public_profile", {
+    p_user_id: userId,
+  });
 
   if (error) throw error;
-  if (!data) return null;
-  return rowToPublic(data as ProfileRow);
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return rowToPublic(row as ProfileRow);
 }
 
 export async function upsertProfileRemote(

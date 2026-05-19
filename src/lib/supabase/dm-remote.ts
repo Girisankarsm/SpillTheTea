@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchPublicProfileRemote } from "@/lib/supabase/profile-remote";
 import type { DmMessage, DmRequest, DmThread, TopicParticipant } from "@/lib/types/dm";
 
 function orderedPair(a: string, b: string): [string, string] {
@@ -22,13 +23,8 @@ async function displayNameForUserInTopic(
   const name = (data?.author_name as string | undefined)?.trim();
   if (name) return name;
 
-  const { data: profile } = await client
-    .from("profiles_public")
-    .select("display_name")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return (profile?.display_name as string | undefined)?.trim() || "Someone";
+  const profile = await fetchPublicProfileRemote(client, userId);
+  return profile?.displayName.trim() || "Someone";
 }
 
 export async function fetchTopicParticipants(
