@@ -43,30 +43,24 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+      <div className="flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
         <Link
           href="/topics"
-          className="rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white hover:opacity-90"
+          className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white hover:opacity-90 sm:w-auto"
         >
           Browse Tea
         </Link>
         <Link
           href="/duties"
-          className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft sm:w-auto"
         >
           Duties
         </Link>
         <Link
           href="/rides"
-          className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft sm:w-auto"
         >
           Ride pooling
-        </Link>
-        <Link
-          href="/topics"
-          className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-bold text-foreground hover:bg-brand-soft"
-        >
-          Start a topic
         </Link>
       </div>
 
