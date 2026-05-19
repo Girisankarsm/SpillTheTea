@@ -1,6 +1,6 @@
 export type UserProfile = {
   displayName: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   chakra?: number;
   updatedAt?: number;
   paymentUpi?: string;

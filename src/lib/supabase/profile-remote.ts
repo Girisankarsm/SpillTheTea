@@ -14,7 +14,7 @@ type ProfileRow = {
 function rowToProfile(row: ProfileRow): UserProfile {
   return {
     displayName: row.display_name,
-    avatarUrl: row.avatar_url ?? undefined,
+    avatarUrl: row.avatar_url,
     chakra: Number(row.chakra ?? 0),
     updatedAt: new Date(row.updated_at).getTime(),
     paymentUpi: row.payment_upi?.trim() || undefined,
@@ -33,11 +33,19 @@ export async function fetchProfileRemote(
   client: SupabaseClient,
   userId: string,
 ): Promise<UserProfile | null> {
-  const { data, error } = await client
+  let { data, error } = await client
     .from("profiles")
     .select("display_name, avatar_url, chakra, updated_at, payment_upi, payment_phone")
     .eq("user_id", userId)
     .maybeSingle();
+
+  if (error?.code === "42703" || error?.message?.includes("payment_")) {
+    ({ data, error } = await client
+      .from("profiles")
+      .select("display_name, avatar_url, chakra, updated_at")
+      .eq("user_id", userId)
+      .maybeSingle());
+  }
 
   if (error) throw error;
   if (!data) return null;
@@ -64,22 +72,33 @@ export async function upsertProfileRemote(
   userId: string,
   profile: UserProfile,
 ): Promise<UserProfile> {
-  const { data, error } = await client
+  const base = {
+    user_id: userId,
+    display_name: profile.displayName.trim(),
+    bio: "",
+    avatar_url: profile.avatarUrl ?? null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const withPayment = {
+    ...base,
+    payment_upi: profile.paymentUpi?.trim() || null,
+    payment_phone: profile.paymentPhone?.trim() || null,
+  };
+
+  let { data, error } = await client
     .from("profiles")
-    .upsert(
-      {
-        user_id: userId,
-        display_name: profile.displayName.trim(),
-        bio: "",
-        avatar_url: profile.avatarUrl ?? null,
-        payment_upi: profile.paymentUpi?.trim() || null,
-        payment_phone: profile.paymentPhone?.trim() || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    )
+    .upsert(withPayment, { onConflict: "user_id" })
     .select("display_name, avatar_url, chakra, updated_at, payment_upi, payment_phone")
     .single();
+
+  if (error?.code === "42703" || error?.message?.includes("payment_")) {
+    ({ data, error } = await client
+      .from("profiles")
+      .upsert(base, { onConflict: "user_id" })
+      .select("display_name, avatar_url, chakra, updated_at")
+      .single());
+  }
 
   if (error) throw error;
   return rowToProfile(data as ProfileRow);

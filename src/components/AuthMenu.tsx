@@ -47,7 +47,7 @@ export function AuthMenu() {
   const signedIn = isGoogleSignedIn(session);
   const google = googleProfile(session);
   const showName = defaultDisplayName || "You";
-  const avatarUrl = profile.avatarUrl ?? null;
+  const avatarUrl = profile.avatarUrl?.trim() || null;
 
   async function handleGoogleSignIn() {
     if (!supabase || busy) return;

@@ -63,7 +63,8 @@ export function useUserProfile() {
     async (input: Partial<UserProfile>) => {
       const next: UserProfile = {
         displayName: input.displayName?.trim() ?? profile.displayName,
-        avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : profile.avatarUrl,
+        avatarUrl:
+          input.avatarUrl !== undefined ? input.avatarUrl : profile.avatarUrl,
         chakra: profile.chakra ?? 0,
         paymentUpi:
           input.paymentUpi !== undefined ? input.paymentUpi : profile.paymentUpi,

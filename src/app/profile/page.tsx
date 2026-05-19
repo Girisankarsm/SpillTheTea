@@ -9,7 +9,7 @@ import { isImageFile } from "@/lib/image-file";
 import { normalizePaymentPhone } from "@/lib/payments/upi";
 import { useProfileStore } from "@/lib/profile-store";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
-import { uploadProfileAvatar } from "@/lib/supabase/profile-media";
+import { uploadProfileAvatarApi, removeProfileAvatarApi } from "@/lib/supabase/profile-media";
 import { getVisitorId } from "@/lib/visitor";
 
 export default function ProfilePage() {
@@ -32,7 +32,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (dirty || pendingFile) return;
     setDisplayName(profile.displayName);
-    setAvatarUrl(profile.avatarUrl);
+    setAvatarUrl(profile.avatarUrl ?? undefined);
     setPaymentUpi(profile.paymentUpi ?? "");
     setPaymentPhone(profile.paymentPhone ?? "");
   }, [profile.displayName, profile.avatarUrl, profile.paymentUpi, profile.paymentPhone, dirty, pendingFile]);
@@ -56,12 +56,56 @@ export default function ProfilePage() {
     setDirty(true);
     setPendingFile(file);
     if (fileRef.current) fileRef.current.value = "";
+    void savePhoto(file);
   }
 
-  function removePhoto() {
+  async function savePhoto(file: File) {
+    setPhotoBusy(true);
+    setSaved(false);
+    try {
+      if (remoteReady && signedIn) {
+        const url = await uploadProfileAvatarApi(file);
+        await saveProfile({ avatarUrl: url });
+        setAvatarUrl(url);
+        setPendingFile(null);
+        setDirty(false);
+        setSaved(true);
+        window.setTimeout(() => setSaved(false), 2000);
+        return;
+      }
+
+      const url = await readFileAsDataUrl(file);
+      await saveProfile({ avatarUrl: url });
+      setAvatarUrl(url);
+      setPendingFile(null);
+      setDirty(false);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not save profile photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
     setDirty(true);
     setPendingFile(null);
-    setAvatarUrl(undefined);
+    setPhotoBusy(true);
+    try {
+      if (remoteReady && signedIn) {
+        await removeProfileAvatarApi();
+      }
+      await saveProfile({ avatarUrl: null });
+      setAvatarUrl(undefined);
+      setDirty(false);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not remove profile photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -80,13 +124,8 @@ export default function ProfilePage() {
       let nextAvatarUrl = avatarUrl;
 
       if (pendingFile) {
-        setPhotoBusy(true);
-        if (remoteReady && supabase && session?.user?.id && signedIn) {
-          nextAvatarUrl = await uploadProfileAvatar(
-            supabase,
-            pendingFile,
-            session.user.id,
-          );
+        if (remoteReady && signedIn) {
+          nextAvatarUrl = await uploadProfileAvatarApi(pendingFile);
         } else {
           nextAvatarUrl = await readFileAsDataUrl(pendingFile);
         }
@@ -94,7 +133,7 @@ export default function ProfilePage() {
 
       await saveProfile({
         displayName: trimmedName,
-        avatarUrl: nextAvatarUrl,
+        avatarUrl: nextAvatarUrl ?? null,
         paymentUpi: trimmedUpi || undefined,
         paymentPhone: trimmedPhone || undefined,
       });
@@ -185,16 +224,23 @@ export default function ProfilePage() {
               {shownAvatar ? (
                 <button
                   type="button"
-                  onClick={removePhoto}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-subtle hover:text-danger-text"
+                  onClick={() => void removePhoto()}
+                  disabled={photoBusy}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-subtle hover:text-danger-text disabled:opacity-50"
                 >
                   Remove
                 </button>
               ) : null}
             </div>
             <p className="text-[11px] text-subtle">
-              JPG, PNG, GIF, or HEIC · max 5 MB · tap Save profile after picking
+              JPG, PNG, GIF, or HEIC · max 5 MB · saves right after you pick
             </p>
+            {photoBusy ? (
+              <p className="text-[11px] font-semibold text-brand">Uploading photo…</p>
+            ) : null}
+            {saved && !photoBusy ? (
+              <p className="text-[11px] font-semibold text-brand">Photo saved ✓</p>
+            ) : null}
           </div>
         </div>
 
