@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
 import {
   APP_NAME,
-  LEGAL_CONTACT,
   LEGAL_LAST_UPDATED,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
@@ -145,21 +144,17 @@ export default function TermsOfServicePage() {
 
         <h2>Disputes and governing law</h2>
         <p>
-          If you have a problem, please contact us first. These Terms are governed by the laws of
-          India, without regard to conflict-of-law rules. Courts in India will have jurisdiction
-          over disputes that cannot be resolved informally, except where local law gives you
+          These Terms are governed by the laws of India, without regard to conflict-of-law rules.
+          Courts in India will have jurisdiction over disputes, except where local law gives you
           rights that cannot be waived.
         </p>
 
-        <h2>Changes and contact</h2>
+        <h2>Changes</h2>
         <p>
           We may update these Terms to reflect changes to the app, the law, or how we operate. If
           we make material changes, we will try to give reasonable notice. Continued use after
           changes means you accept the updated Terms. If you do not agree, stop using the app and
           sign out.
-        </p>
-        <p>
-          Questions? <a href={LEGAL_CONTACT}>Contact us on GitHub</a>.
         </p>
         <p>
           Public URL: <a href={TERMS_OF_SERVICE_URL}>{TERMS_OF_SERVICE_URL}</a>

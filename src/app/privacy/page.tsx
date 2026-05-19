@@ -3,7 +3,6 @@ import { LegalPage } from "@/components/LegalPage";
 import { PRODUCTION_APP_URL } from "@/lib/app-url";
 import {
   APP_NAME,
-  LEGAL_CONTACT,
   LEGAL_LAST_UPDATED,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
@@ -99,10 +98,6 @@ export default function PrivacyPolicyPage() {
           <li>Decline push notifications in your browser settings</li>
           <li>Sign out at any time</li>
         </ul>
-        <p>
-          If you want to delete your account or data, contact us and we will help where we can,
-          subject to legal and safety requirements.
-        </p>
 
         <h2>Security and retention</h2>
         <p>
@@ -111,14 +106,11 @@ export default function PrivacyPolicyPage() {
           resolve disputes.
         </p>
 
-        <h2>Changes and contact</h2>
+        <h2>Changes</h2>
         <p>
           We may update this policy as the app or the law changes. The date at the top shows when
-          it last changed. Continued use after an update means you accept the revised policy.
-        </p>
-        <p>
-          Questions? <a href={LEGAL_CONTACT}>Contact us on GitHub</a>. See also our{" "}
-          <a href={TERMS_OF_SERVICE_URL}>Terms of Service</a>.
+          it last changed. Continued use after an update means you accept the revised policy. See
+          also our <a href={TERMS_OF_SERVICE_URL}>Terms of Service</a>.
         </p>
         <p>
           Public URL: <a href={PRIVACY_POLICY_URL}>{PRIVACY_POLICY_URL}</a>
