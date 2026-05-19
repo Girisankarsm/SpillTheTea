@@ -11,15 +11,12 @@ import {
   type ThreadNode,
 } from "@/lib/message-thread";
 import type { TopicSort } from "@/lib/message-upvotes";
+import { formatRelativeTime } from "@/lib/format-relative-time";
 import type { ChatMessage } from "@/lib/types";
 import type { RoomPoll } from "@/lib/types/poll";
 
 function formatChatTime(ms: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  }).format(new Date(ms));
+  return formatRelativeTime(ms);
 }
 
 function MessageMedia({ message }: { message: ChatMessage }) {
@@ -28,15 +25,13 @@ function MessageMedia({ message }: { message: ChatMessage }) {
   const isGif = message.mediaType === "gif";
 
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-border bg-background">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={message.mediaUrl}
-        alt={isGif ? "GIF attachment" : "Image attachment"}
-        className="max-h-80 w-full object-contain"
-        loading="lazy"
-      />
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={message.mediaUrl}
+      alt={isGif ? "GIF" : "Image"}
+      className="mt-2 max-h-80 max-w-full rounded-lg"
+      loading="lazy"
+    />
   );
 }
 
@@ -65,74 +60,56 @@ function ThreadBranch({
   const upvotes = message.upvoteCount ?? 0;
 
   return (
-    <div className={indent > 0 ? "mt-2 border-l-2 border-brand/30 pl-3" : ""}>
-      <article
-        id={`msg-${message.id}`}
-        className="flex gap-2 rounded-xl border border-border bg-surface px-3 py-3 sm:gap-3"
-        style={indent > 0 ? { marginLeft: `${indent * 4}px` } : undefined}
-      >
-        {onUpvote ? (
-          <button
-            type="button"
-            disabled={upvoteDisabled}
-            onClick={() => onUpvote(message)}
-            className={`flex shrink-0 flex-col items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-              message.myUpvote
-                ? "bg-brand text-white"
-                : "text-subtle hover:bg-brand-soft hover:text-brand"
-            }`}
-            aria-pressed={message.myUpvote ?? false}
-            aria-label={message.myUpvote ? "Remove upvote" : "Upvote"}
-          >
-            <span aria-hidden>▲</span>
-            <span>{upvotes > 0 ? upvotes : ""}</span>
-          </button>
+    <div className={indent > 0 ? "mt-3 border-l-2 border-border pl-3" : ""}>
+      <article id={`msg-${message.id}`} className="py-3">
+        <p className="text-sm font-bold text-foreground">{message.authorName}</p>
+
+        {message.body.trim() ? (
+          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            {message.body}
+          </p>
         ) : null}
 
-        <div className="min-w-0 flex-1">
-          <header className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-sm font-bold text-foreground">
-                {message.authorName}
-              </span>
-              <time
-                suppressHydrationWarning
-                className="text-[11px] text-subtle"
-                dateTime={new Date(message.createdAt).toISOString()}
-              >
-                {formatChatTime(message.createdAt)}
-              </time>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {message.authorUserId &&
-              message.authorUserId !== currentUserId &&
-              onPrivateChat ? (
-                <button
-                  type="button"
-                  onClick={() => onPrivateChat(message)}
-                  className="text-xs font-bold text-subtle hover:text-brand hover:underline"
-                >
-                  Private
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => onReply(message)}
-                className="text-xs font-bold text-brand hover:underline"
-              >
-                Reply
-                {replyCount > 0 ? ` · ${replyCount}` : ""}
-              </button>
-            </div>
-          </header>
+        <MessageMedia message={message} />
 
-          {message.body.trim() ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-              {message.body}
-            </p>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-bold text-subtle">
+          <time
+            suppressHydrationWarning
+            dateTime={new Date(message.createdAt).toISOString()}
+          >
+            {formatChatTime(message.createdAt)}
+          </time>
+          {onUpvote ? (
+            <button
+              type="button"
+              disabled={upvoteDisabled}
+              onClick={() => onUpvote(message)}
+              className={`transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                message.myUpvote ? "text-brand" : "hover:text-brand"
+              }`}
+              aria-pressed={message.myUpvote ?? false}
+            >
+              ▲ {upvotes > 0 ? upvotes : "Upvote"}
+            </button>
           ) : null}
-
-          <MessageMedia message={message} />
+          <button
+            type="button"
+            onClick={() => onReply(message)}
+            className="hover:text-brand"
+          >
+            Reply{replyCount > 0 ? ` · ${replyCount}` : ""}
+          </button>
+          {message.authorUserId &&
+          message.authorUserId !== currentUserId &&
+          onPrivateChat ? (
+            <button
+              type="button"
+              onClick={() => onPrivateChat(message)}
+              className="hover:text-brand"
+            >
+              Private
+            </button>
+          ) : null}
         </div>
       </article>
 
@@ -443,7 +420,7 @@ export function MessageBoard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4">
+      <div className="flex flex-1 flex-col divide-y divide-border overflow-y-auto">
         {feed.length === 0 ? (
           <p className="text-sm text-subtle">
             No posts yet — start the thread, drop a GIF, or start a poll.

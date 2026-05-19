@@ -88,12 +88,12 @@ export function TeaFeedCard({
           ) : null}
 
           {preview?.mediaUrl ? (
-            <Link href={href} className="mt-3 block overflow-hidden rounded-lg border border-border bg-background">
+            <Link href={href} className="mt-3 block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview.mediaUrl}
                 alt=""
-                className="max-h-80 w-full object-contain"
+                className="max-h-80 max-w-full rounded-lg"
                 loading="lazy"
               />
             </Link>
