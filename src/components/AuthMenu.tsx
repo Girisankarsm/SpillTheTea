@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import {
@@ -40,6 +40,37 @@ export function AuthMenu() {
   const { supabase, session, authReady, configured } = useSupabase();
   const { profile, defaultDisplayName } = useUserProfile();
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!menuRef.current?.contains(target)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   if (!configured || !supabase) return null;
 
@@ -55,6 +86,7 @@ export function AuthMenu() {
 
   async function handleSignOut() {
     if (!supabase || busy) return;
+    setMenuOpen(false);
     setBusy(true);
     try {
       await signOutUser(supabase);
@@ -74,10 +106,13 @@ export function AuthMenu() {
 
   if (signedIn) {
     return (
-      <div className="group relative">
-        <Link
-          href="/profile"
+      <div ref={menuRef} className="relative">
+        <button
+          type="button"
           title="Your profile"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          onClick={() => setMenuOpen((open) => !open)}
           className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-surface shadow-sm transition hover:border-brand hover:ring-2 hover:ring-brand/30"
         >
           {avatarUrl ? (
@@ -88,32 +123,38 @@ export function AuthMenu() {
               {showName.slice(0, 1).toUpperCase()}
             </span>
           )}
-        </Link>
+        </button>
 
-        <div className="pointer-events-none invisible absolute right-0 top-[calc(100%+10px)] z-[600] w-52 scale-95 rounded-xl border border-border bg-surface p-3 opacity-0 shadow-lg transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100">
-          <p className="truncate text-sm font-bold text-foreground">{showName}</p>
-          {signedIn && google?.email ? (
-            <p className="mt-0.5 truncate text-xs text-subtle">{google.email}</p>
-          ) : null}
-          <div className="mt-3 flex flex-col gap-1.5">
-            <Link
-              href="/profile"
-              className="rounded-lg bg-brand-soft px-3 py-1.5 text-center text-xs font-bold text-brand hover:opacity-90"
-            >
-              Edit profile
-            </Link>
-            {signedIn ? (
+        {menuOpen ? (
+          <div
+            role="menu"
+            className="absolute right-0 top-[calc(100%+8px)] z-[600] w-52 rounded-xl border border-border bg-surface p-3 shadow-lg"
+          >
+            <p className="truncate text-sm font-bold text-foreground">{showName}</p>
+            {google?.email ? (
+              <p className="mt-0.5 truncate text-xs text-subtle">{google.email}</p>
+            ) : null}
+            <div className="mt-3 flex flex-col gap-1.5">
+              <Link
+                href="/profile"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg bg-brand-soft px-3 py-1.5 text-center text-xs font-bold text-brand hover:opacity-90"
+              >
+                Edit profile
+              </Link>
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => void handleSignOut()}
                 disabled={busy}
                 className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-foreground hover:bg-background disabled:opacity-50"
               >
                 Sign out
               </button>
-            ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     );
   }
