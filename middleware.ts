@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const configured = Boolean(url?.trim() && anonKey?.trim());
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/privacy" || pathname === "/terms") {
     if (!configured) {
       return NextResponse.next({ request });
     }
@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (isAuthenticatedUser(user)) {
+    if (pathname === "/login" && isAuthenticatedUser(user)) {
       const next = request.nextUrl.searchParams.get("next");
       const destination =
         next && next.startsWith("/") && !next.startsWith("//") ? next : "/";

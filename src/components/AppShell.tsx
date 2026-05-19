@@ -3,6 +3,7 @@ import { AppLogo } from "@/components/AppLogo";
 import { AuthMenu } from "@/components/AuthMenu";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { InstallBanner } from "@/components/InstallBanner";
+import { LegalFooterLinks } from "@/components/LegalFooterLinks";
 import { MainNav } from "@/components/MainNav";
 import { PushNotificationManager, PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { SetupBanner } from "@/components/SetupBanner";
@@ -40,6 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <HeaderSpacer />
       <main className="flex flex-1 flex-col">{children}</main>
+      <footer className="border-t border-border bg-surface py-6">
+        <LegalFooterLinks centered className="mx-auto max-w-6xl px-4" />
+      </footer>
     </>
   );
 }

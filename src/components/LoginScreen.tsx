@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { AppLogo } from "@/components/AppLogo";
+import { LegalFooterLinks } from "@/components/LegalFooterLinks";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { APP_DISCLAIMER } from "@/lib/disclaimer";
+import { PRIVACY_POLICY_PATH, TERMS_OF_SERVICE_PATH } from "@/lib/legal";
 import { signInWithGoogle } from "@/lib/supabase/auth";
 
 function GoogleMark() {
@@ -93,7 +96,15 @@ export function LoginScreen() {
             className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand)]"
           />
           <span className="text-foreground">
-            I have read the disclaimer and agree to use SpillTheTea responsibly.
+            I agree to the{" "}
+            <Link href={TERMS_OF_SERVICE_PATH} className="font-bold text-brand hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href={PRIVACY_POLICY_PATH} className="font-bold text-brand hover:underline">
+              Privacy Policy
+            </Link>
+            , and will use SpillTheTea responsibly.
           </span>
         </label>
 
@@ -114,6 +125,8 @@ export function LoginScreen() {
             environment, then redeploy. Google sign-in must be enabled in Supabase.
           </p>
         )}
+
+        <LegalFooterLinks centered />
       </div>
     </div>
   );

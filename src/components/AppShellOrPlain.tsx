@@ -7,7 +7,7 @@ import { InstallBanner } from "@/components/InstallBanner";
 export function AppShellOrPlain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/privacy" || pathname === "/terms") {
     return (
       <div className="flex min-h-dvh flex-col">
         <div className="sticky top-0 z-[600] shrink-0">
