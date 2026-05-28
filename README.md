@@ -27,7 +27,6 @@
 - [Getting started](#getting-started)
 - [Environment variables](#environment-variables)
 - [Supabase setup](#supabase-setup)
-- [Database migrations](#database-migrations)
 - [Authentication](#authentication)
 - [Deploy](#deploy)
 - [Scripts](#scripts)
@@ -109,7 +108,7 @@ Edit `.env.local` — see [Environment variables](#environment-variables).
 
 ### 3. Supabase
 
-Complete [Supabase setup](#supabase-setup) and run [migrations](#database-migrations).
+Complete [Supabase setup](#supabase-setup).
 
 ### 4. Run locally
 
@@ -181,24 +180,6 @@ If confirmation or magic-link emails do not arrive, use **Authentication → Ema
 
 ---
 
-## Database migrations
-
-Run SQL files **in order** in the Supabase SQL Editor: `supabase/migrations/`.
-
-| # | File | Purpose |
-|---|------|---------|
-| 001 | `001_initial.sql` | Core schema |
-| 002–007 | topics, profiles, polls, deletes | Topics & profiles |
-| 008–015 | duties | Duties & offers |
-| 010 | `010_chakra.sql` | Reputation |
-| 013–018 | duty messages, realtime | Chat & live updates |
-| 019–023 | rides | Pooling, messages, vehicles, live location |
-| 021 | `021_push_subscriptions.sql` | Web Push |
-| 024 | `024_message_upvotes.sql` | Upvotes & Hot/New |
-| 025–028 | profiles | Payments & avatar security |
-
----
-
 ## Authentication
 
 | Method | Flow |
@@ -258,7 +239,6 @@ SpillTheTea/
 │   │   └── rides/        # Ride pooling
 │   ├── components/       # UI (LoginScreen, maps, chat, …)
 │   └── lib/              # Supabase auth, store, types
-├── supabase/migrations/  # Postgres migrations
 ├── public/               # PWA manifest, icons, SW
 ├── middleware.ts         # Auth gate for protected routes
 └── env.example           # Environment template
