@@ -54,7 +54,7 @@ export default function DutiesPage() {
     setLoading(true);
     try {
       setRemoteDuties(await fetchDuties(supabase));
-      setCurrentUserId(await getCurrentUserId(supabase));
+      setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load duties."));
@@ -99,7 +99,7 @@ export default function DutiesPage() {
     setBusy(true);
     try {
       if (remoteReady && supabase) {
-        const userId = await getCurrentUserId(supabase);
+        const userId = await getCurrentUserId();
         if (!userId) {
           alert("Sign in to post a duty.");
           return;

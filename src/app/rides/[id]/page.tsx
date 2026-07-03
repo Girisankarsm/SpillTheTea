@@ -42,7 +42,7 @@ export default function RideDetailPage() {
     if (!supabase || !remoteReady || !rideId) return;
     try {
       setRide(await fetchRideById(supabase, rideId));
-      setCurrentUserId(await getCurrentUserId(supabase));
+      setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load ride request."));
@@ -60,7 +60,7 @@ export default function RideDetailPage() {
         if (!cancelled) setLoaded(false);
         try {
           setRide(await fetchRideById(supabase, rideId));
-          setCurrentUserId(await getCurrentUserId(supabase));
+          setCurrentUserId(await getCurrentUserId());
         } catch (e) {
           if (!cancelled) {
             setError(unknownErrorMessage(e, "Could not load ride request."));

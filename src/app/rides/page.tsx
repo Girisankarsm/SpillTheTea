@@ -55,7 +55,7 @@ export default function RidesPage() {
     setLoading(true);
     try {
       setRides(await fetchRides(supabase));
-      setCurrentUserId(await getCurrentUserId(supabase));
+      setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load ride requests."));

@@ -187,7 +187,7 @@ export default function TopicChatPage() {
 
           const msgs = await fetchTopicMessages(supabase, id);
           if (cancelled) return;
-          const userId = await getCurrentUserId(supabase);
+          const userId = await getCurrentUserId();
           if (cancelled) return;
           setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
 
@@ -195,7 +195,7 @@ export default function TopicChatPage() {
           if (cancelled) return;
           setRemotePolls(polls);
 
-          if (!cancelled) setCurrentUserId(await getCurrentUserId(supabase));
+          if (!cancelled) setCurrentUserId(await getCurrentUserId());
         } catch (e) {
           if (!cancelled) {
             setRemoteErr(unknownErrorMessage(e, "Could not load topic."));
@@ -246,7 +246,7 @@ export default function TopicChatPage() {
           void (async () => {
             if (!supabase || !id) return;
             const msgs = await fetchTopicMessages(supabase, id);
-            const userId = await getCurrentUserId(supabase);
+            const userId = await getCurrentUserId();
             setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
           })();
         },

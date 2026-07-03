@@ -63,7 +63,7 @@ export default function DutyDetailPage() {
     if (!supabase || !remoteReady || !dutyId) return;
     try {
       setRemoteDuty(await fetchDutyById(supabase, dutyId));
-      setCurrentUserId(await getCurrentUserId(supabase));
+      setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load duty."));
@@ -84,7 +84,7 @@ export default function DutyDetailPage() {
           const row = await fetchDutyById(supabase, dutyId);
           if (cancelled) return;
           setRemoteDuty(row);
-          setCurrentUserId(await getCurrentUserId(supabase));
+          setCurrentUserId(await getCurrentUserId());
         } catch (e) {
           if (!cancelled) {
             setError(unknownErrorMessage(e, "Could not load duty."));

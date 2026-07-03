@@ -88,7 +88,7 @@ function TopicsDirectoryContent() {
       setRxActivity(feed.topicActivity);
       setRxJoinCounts(feed.topicJoinCounts);
       setRxErr(null);
-      setCurrentUserId(await getCurrentUserId(supabase));
+      setCurrentUserId(await getCurrentUserId());
 
       const previews = await fetchTopicPreviewsRemote(
         supabase,
