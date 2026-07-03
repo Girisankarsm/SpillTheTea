@@ -7,6 +7,12 @@ import { CreateRideModal } from "@/components/CreateRideModal";
 import { RideCard } from "@/components/RideCard";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { distanceKm } from "@/lib/geo";
+import {
+  isNearby,
+  isPlottable,
+  NEARBY_RADIUS_KM,
+  sortByDistance,
+} from "@/lib/explore-map-utils";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { setStoredRideRiderName } from "@/lib/ride-names";
 import { createRideRemote, fetchRides } from "@/lib/supabase/ride-remote";
@@ -42,6 +48,7 @@ export default function RidesPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
+  const [locStatus, setLocStatus] = useState<string | null>("Finding your location…");
 
   const reload = useCallback(async () => {
     if (!supabase || !remoteReady) return;
@@ -62,14 +69,18 @@ export default function RidesPage() {
   }, [reload]);
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setLocStatus("Allow location to see rides near you.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLat(pos.coords.latitude);
         setUserLng(pos.coords.longitude);
+        setLocStatus(null);
       },
-      () => undefined,
-      { enableHighAccuracy: false, timeout: 10000 },
+      () => setLocStatus("Allow location to see rides within 15 km of you."),
+      { enableHighAccuracy: true, timeout: 12_000 },
     );
   }, []);
 
@@ -94,20 +105,45 @@ export default function RidesPage() {
     };
   }, [supabase, remoteReady, reload]);
 
-  const sortedRides = useMemo(() => {
-    if (userLat == null || userLng == null) return rides;
-    return [...rides].sort((a, b) => {
-      const aHas = a.pickupLat != null && a.pickupLng != null;
-      const bHas = b.pickupLat != null && b.pickupLng != null;
-      if (!aHas && !bHas) return b.createdAt - a.createdAt;
-      if (!aHas) return 1;
-      if (!bHas) return -1;
-      return (
-        distanceKm(userLat, userLng, a.pickupLat!, a.pickupLng!) -
-        distanceKm(userLat, userLng, b.pickupLat!, b.pickupLng!)
-      );
-    });
-  }, [rides, userLat, userLng]);
+  const nearbyRides = useMemo(() => {
+    const open = rides.filter((ride) => ride.status === "open");
+
+    if (userLat == null || userLng == null) return open;
+
+    const withCoords = open.filter(
+      (ride) =>
+        ride.pickupLat != null &&
+        ride.pickupLng != null &&
+        isPlottable(ride.pickupLat, ride.pickupLng),
+    );
+
+    const nearby = sortByDistance(
+      withCoords.filter((ride) =>
+        isNearby(ride.pickupLat!, ride.pickupLng!, userLat, userLng),
+      ),
+      userLat,
+      userLng,
+      (ride) => ({ lat: ride.pickupLat!, lng: ride.pickupLng! }),
+    );
+
+    const mineElsewhere = open.filter(
+      (ride) =>
+        isRideRider(ride, currentUserId) &&
+        ride.pickupLat != null &&
+        ride.pickupLng != null &&
+        !isNearby(ride.pickupLat, ride.pickupLng, userLat, userLng),
+    );
+
+    const noCoords = open.filter(
+      (ride) =>
+        !isRideRider(ride, currentUserId) &&
+        (ride.pickupLat == null ||
+          ride.pickupLng == null ||
+          !isPlottable(ride.pickupLat, ride.pickupLng)),
+    );
+
+    return [...nearby, ...mineElsewhere, ...noCoords];
+  }, [rides, userLat, userLng, currentUserId]);
 
   async function handleCreate(input: {
     riderName: string;
@@ -163,6 +199,14 @@ export default function RidesPage() {
           </span>
           Drop me
         </button>
+        {locStatus ? (
+          <p className="text-xs text-subtle">{locStatus}</p>
+        ) : userLat != null && userLng != null ? (
+          <p className="text-xs text-subtle">
+            Showing open rides within {NEARBY_RADIUS_KM} km of you
+            {nearbyRides.length > 0 ? ` · ${nearbyRides.length} listed` : ""}
+          </p>
+        ) : null}
         {remoteReady && loading ? (
           <p className="text-xs font-semibold text-brand">Refreshing…</p>
         ) : null}
@@ -173,12 +217,12 @@ export default function RidesPage() {
         ) : null}
       </header>
 
-      {remoteReady && sortedRides.length > 0 ? (
-        <RidesMap rides={sortedRides} userLat={userLat} userLng={userLng} />
+      {remoteReady && nearbyRides.length > 0 ? (
+        <RidesMap rides={nearbyRides} userLat={userLat} userLng={userLng} />
       ) : null}
 
       <ul className="flex flex-col gap-3">
-        {sortedRides.map((ride) => {
+        {nearbyRides.map((ride) => {
           const dist =
             userLat != null &&
             userLng != null &&
@@ -198,9 +242,13 @@ export default function RidesPage() {
         })}
       </ul>
 
-      {sortedRides.length === 0 && !loading ? (
+      {nearbyRides.length === 0 && !loading ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-5 py-8 text-center">
-          <p className="text-sm text-subtle">No ride requests yet.</p>
+          <p className="text-sm text-subtle">
+            {userLat != null && userLng != null
+              ? `No open rides within ${NEARBY_RADIUS_KM} km of you.`
+              : "No ride requests yet."}
+          </p>
           <button
             type="button"
             onClick={() => setCreateOpen(true)}

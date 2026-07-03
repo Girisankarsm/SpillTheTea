@@ -1,6 +1,5 @@
 "use client";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { DutyChatPanel } from "@/components/DutyChatPanel";
 import { PayHelperPanel } from "@/components/PayHelperPanel";
 import {
@@ -10,6 +9,16 @@ import {
   type DutyWithOffers,
 } from "@/lib/types/duty";
 import { DutyPersonLabel } from "@/components/DutyPersonLabel";
+
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
 
 type DutyDetailPanelProps = {
   duty: DutyWithOffers;
@@ -23,7 +32,7 @@ type DutyDetailPanelProps = {
   onCancel: () => void;
   chat?: {
     dutyId: string;
-    supabase: SupabaseClient;
+    supabase: BackendClient;
     currentUserId: string;
   } | null;
 };

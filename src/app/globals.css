@@ -1,35 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f5f2;
-  --foreground: #1c1917;
-  --surface: #ffffff;
-  --border: #d6d0c8;
-  --subtle: #57534e;
-  --brand: #2d6a4f;
-  --brand-soft: #e8f0eb;
-  --accent: #b45309;
-  --accent-soft: #fff7ed;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
-  --danger-text: #991b1b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1c1917;
-    --foreground: #fafaf9;
-    --surface: #292524;
-    --border: #44403c;
-    --subtle: #a8a29e;
-    --brand: #52b788;
-    --brand-soft: #14532d33;
-    --accent: #ea580c;
-    --accent-soft: #43140766;
-    --danger-bg: #450a0a66;
-    --danger-border: #7f1d1d;
-    --danger-text: #fecaca;
-  }
+  --background: #080808;
+  --foreground: #f8f8f8;
+  --surface: rgba(255, 255, 255, 0.045);
+  --border: rgba(255, 255, 255, 0.1);
+  --subtle: rgba(248, 248, 248, 0.55);
+  --brand: #ffffff;
+  --brand-fg: #000000;
+  --brand-bright: #ffffff;
+  --brand-soft: rgba(255, 255, 255, 0.13);
+  --brand-glow: rgba(255, 255, 255, 0.18);
+  --brand-border: rgba(255, 255, 255, 0.14);
+  --accent: #e8e8e8;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --danger-bg: rgba(127, 29, 29, 0.35);
+  --danger-border: rgba(248, 113, 113, 0.35);
+  --danger-text: #fecaca;
+  --glass-strong: rgba(12, 12, 12, 0.92);
+  --surface-hover: rgba(255, 255, 255, 0.085);
 }
 
 @theme inline {
@@ -39,13 +28,21 @@
   --color-border: var(--border);
   --color-subtle: var(--subtle);
   --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-bright: var(--brand-bright);
   --color-brand-soft: var(--brand-soft);
+  --color-brand-glow: var(--brand-glow);
+  --color-brand-border: var(--brand-border);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-danger-bg: var(--danger-bg);
   --color-danger-border: var(--danger-border);
   --color-danger-text: var(--danger-text);
-  --font-sans: var(--font-nunito);
+  --color-glass-strong: var(--glass-strong);
+  --color-surface-hover: var(--surface-hover);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-bricolage);
+  --font-serif: var(--font-instrument);
 }
 
 body {
@@ -55,18 +52,85 @@ body {
   min-width: 0;
 }
 
-.leaflet-container {
-  font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  background: #c8e6ff;
+.bg-brand {
+  color: var(--brand-fg);
 }
 
-/* Snapchat-style map */
+.font-display {
+  font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-serif-accent {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+}
+
+.glass-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+.glass-card-strong {
+  background: rgba(12, 12, 12, 0.92);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(32px);
+}
+
+.btn-primary-glow {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 4px 22px rgba(255, 255, 255, 0.18);
+  transition: all 0.2s ease;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.btn-primary-glow:hover {
+  background: #e8e8e8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.25);
+}
+
+@keyframes float-card {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-card {
+  animation: float-card 5s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease forwards;
+}
+
+.leaflet-container {
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  background: #0a1020;
+}
+
 .snap-map {
   border-radius: 1.5rem;
   overflow: hidden;
   box-shadow:
-    0 0 0 4px #fff,
-    0 12px 40px rgb(0 0 0 / 0.18);
+    0 0 0 0.5px rgba(96, 165, 250, 0.2),
+    0 24px 60px rgb(0 0 0 / 0.5);
 }
 
 .snap-map .leaflet-control-attribution {
@@ -74,7 +138,7 @@ body {
 }
 
 .snap-map-tiles {
-  filter: saturate(1.2) contrast(0.92) brightness(1.06) hue-rotate(-4deg);
+  filter: saturate(1.1) contrast(0.95) brightness(0.92) hue-rotate(8deg);
 }
 
 .snap-tea-pin-wrap,
@@ -90,7 +154,7 @@ body {
   justify-content: center;
   width: 48px;
   height: 48px;
-  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.25));
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.35));
   animation: snap-pin-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -106,15 +170,17 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 9999px;
-  border: 3px solid #fff;
-  background: linear-gradient(145deg, #fff7b0 0%, #ffe066 55%, #ffc800 100%);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(145deg, #93c5fd 0%, #3b82f6 55%, #1d4ed8 100%);
   font-size: 1.35rem;
   line-height: 1;
-  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.08);
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.08),
+    0 0 18px var(--brand-glow);
 }
 
 .snap-tea-pin--hot .snap-tea-pin__bubble {
-  background: linear-gradient(145deg, #ffd6a5 0%, #ff9f43 55%, #ff6b35 100%);
+  background: linear-gradient(145deg, #bfdbfe 0%, #60a5fa 55%, #2563eb 100%);
   font-size: 1.5rem;
 }
 
@@ -125,14 +191,14 @@ body {
   width: 12px;
   height: 12px;
   transform: translateX(-50%) rotate(45deg);
-  background: #ffc800;
-  border-right: 3px solid #fff;
-  border-bottom: 3px solid #fff;
+  background: #3b82f6;
+  border-right: 3px solid rgba(255, 255, 255, 0.9);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.9);
   border-radius: 0 0 3px 0;
 }
 
 .snap-tea-pin--hot .snap-tea-pin__tail {
-  background: #ff9f43;
+  background: #60a5fa;
 }
 
 .snap-user-pin {
@@ -163,8 +229,8 @@ body {
 .leaflet-popup-content-wrapper:has(.snap-popup-card) {
   padding: 0;
   border-radius: 1rem;
-  border: 3px solid #fff;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+  border: 0.5px solid rgba(96, 165, 250, 0.25);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
   overflow: hidden;
 }
 
@@ -179,33 +245,33 @@ body {
 
 .snap-popup-card {
   padding: 0.85rem 1rem 1rem;
-  background: linear-gradient(160deg, #fffef5 0%, #fff9db 100%);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 14, 24, 0.98) 100%);
 }
 
 .snap-popup-card__title {
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.3;
-  color: #1c1917;
+  color: var(--foreground);
 }
 
 .snap-popup-card__meta {
   margin-top: 0.35rem;
   font-size: 0.72rem;
-  font-weight: 600;
-  color: #78716c;
+  font-weight: 500;
+  color: var(--subtle);
 }
 
 .snap-popup-card__cta {
   display: inline-flex;
   margin-top: 0.65rem;
   border-radius: 9999px;
-  background: linear-gradient(145deg, #fffc00, #f5d000);
+  background: var(--brand);
   padding: 0.4rem 0.85rem;
   font-size: 0.72rem;
-  font-weight: 800;
-  color: #1c1917;
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.12);
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 14px var(--brand-glow);
 }
 
 .snap-popup-card__cta:hover {
@@ -261,4 +327,17 @@ body {
   100% {
     opacity: 0.55;
   }
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
 }

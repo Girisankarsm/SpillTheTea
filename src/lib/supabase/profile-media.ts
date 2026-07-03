@@ -1,5 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { imageContentType, isImageFile } from "@/lib/image-file";
+import { isImageFile } from "@/lib/image-file";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
@@ -52,9 +51,9 @@ export async function removeProfileAvatarApi(): Promise<void> {
 
 /** @deprecated Prefer uploadProfileAvatarApi — uses server upload with service role. */
 export async function uploadProfileAvatar(
-  client: SupabaseClient,
+  _client: unknown,
   file: File,
-  userId: string,
+  _userId: string,
 ): Promise<string> {
   if (!isImageFile(file)) {
     throw new Error("Pick an image file for your profile photo.");
@@ -63,17 +62,10 @@ export async function uploadProfileAvatar(
     throw new Error("Profile photo must be 5 MB or smaller.");
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const path = `${userId}/${Date.now()}.${ext}`;
-
-  const { error } = await client.storage.from("profile-avatars").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: imageContentType(file),
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read profile photo."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
   });
-
-  if (error) throw error;
-
-  const { data } = client.storage.from("profile-avatars").getPublicUrl(path);
-  return data.publicUrl;
 }

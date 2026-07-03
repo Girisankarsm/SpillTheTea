@@ -10,8 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key-for-ci-build
+      MONGODB_URI: mongodb://localhost:27017/spillthetea-ci
+      MONGODB_DB: spillthetea-ci
+      AUTH_SECRET: ci-only-placeholder-secret-change-in-production
 
     steps:
       - uses: actions/checkout@v4

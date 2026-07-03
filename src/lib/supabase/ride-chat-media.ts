@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RideChatMessageType } from "@/lib/types/ride-chat";
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
@@ -46,55 +45,31 @@ export function validateRideAttachment(file: File): void {
 }
 
 export async function uploadRideAttachment(
-  client: SupabaseClient,
-  rideId: string,
+  _client: unknown,
+  _rideId: string,
   file: File,
 ): Promise<{ url: string; messageType: RideChatMessageType; fileName: string }> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("Sign in to send attachments.");
-
   validateRideAttachment(file);
 
   const messageType = classifyRideAttachment(file);
-  const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
-  const path = `${user.id}/${rideId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-
-  const { error } = await client.storage.from("duty-attachments").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type || undefined,
+  const url = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read attachment."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
   });
-
-  if (error) throw error;
-
-  const { data } = client.storage.from("duty-attachments").getPublicUrl(path);
-  return { url: data.publicUrl, messageType, fileName: file.name };
+  return { url, messageType, fileName: file.name };
 }
 
 export async function uploadRideVoice(
-  client: SupabaseClient,
-  rideId: string,
+  _client: unknown,
+  _rideId: string,
   blob: Blob,
 ): Promise<string> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("Sign in to send voice messages.");
-
-  const path = `${user.id}/${rideId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.webm`;
-
-  const { error } = await client.storage.from("duty-voice").upload(path, blob, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: blob.type || "audio/webm",
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read voice message."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(blob);
   });
-
-  if (error) throw error;
-
-  const { data } = client.storage.from("duty-voice").getPublicUrl(path);
-  return data.publicUrl;
 }

@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { useSupabase } from "@/components/SupabaseProvider";
 import {
   ICE_SERVERS,
@@ -19,6 +18,17 @@ import {
   type VoiceCallSignal,
   type VoiceCallStatus,
 } from "@/lib/voice-call/types";
+
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+  send: (payload: unknown) => Promise<unknown>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
 
 type StartCallInput = {
   roomId: string;
@@ -61,11 +71,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
-  const roomChannelRef = useRef<RealtimeChannel | null>(null);
+  const roomChannelRef = useRef<BackendChannel | null>(null);
   const activeCallRef = useRef<ActiveCall | null>(null);
   const statusRef = useRef<VoiceCallStatus>("idle");
   const ringTimeoutRef = useRef<number | null>(null);
-  const supabaseRef = useRef<SupabaseClient | null>(null);
+  const supabaseRef = useRef<BackendClient | null>(null);
   const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {

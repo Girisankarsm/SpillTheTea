@@ -1,4 +1,4 @@
-/** Supabase/RPC errors are often `{ message }` objects, not `Error` instances. */
+/** API errors are often `{ message }` objects, not `Error` instances. */
 export function unknownErrorMessage(e: unknown, fallback: string): string {
   if (e instanceof Error) return e.message;
   if (

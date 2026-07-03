@@ -33,7 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# Supabase SQL migrations — run locally in Supabase Dashboard, not on Vercel
+# Local database exports/migration drafts
 supabase/migrations/
 
 # markdown (local docs only — not published to GitHub)

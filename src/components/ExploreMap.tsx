@@ -83,42 +83,26 @@ function ViewportReporter({
       const c = map.getCenter();
       onMoveEnd(c.lat, c.lng);
     },
-    load() {
-      const c = map.getCenter();
-      onMoveEnd(c.lat, c.lng);
-    },
   });
   return null;
 }
 
 function FocusOnUser({
   userLocate,
-  focusPoints,
+  recenterToken,
 }: {
   userLocate: { lat: number; lng: number } | null;
-  focusPoints: [number, number][];
+  recenterToken: number;
 }) {
   const map = useMap();
 
   useEffect(() => {
     if (!userLocate) return;
 
-    const points: [number, number][] = [
-      [userLocate.lat, userLocate.lng],
-      ...focusPoints,
-    ];
-
-    if (points.length === 1) {
-      map.setView(points[0], 15, { animate: true });
-      return;
-    }
-
-    map.fitBounds(L.latLngBounds(points), {
-      padding: [56, 56],
-      maxZoom: 15,
-      animate: true,
+    map.setView([userLocate.lat, userLocate.lng], 15, {
+      animate: recenterToken > 0,
     });
-  }, [userLocate, focusPoints, map]);
+  }, [userLocate?.lat, userLocate?.lng, recenterToken, map]);
 
   return null;
 }
@@ -128,8 +112,9 @@ type ExploreMapProps = {
   rides?: RideWithOffers[];
   topicActivity?: Record<string, number>;
   hotThreshold: number;
-  onViewportCenter: (lat: number, lng: number) => void;
+  onViewportCenter?: (lat: number, lng: number) => void;
   userLocate?: { lat: number; lng: number } | null;
+  recenterToken?: number;
   showTea?: boolean;
   showRides?: boolean;
   nearbyOnly?: boolean;
@@ -142,6 +127,7 @@ export function ExploreMap({
   hotThreshold,
   onViewportCenter,
   userLocate = null,
+  recenterToken = 0,
   showTea = true,
   showRides = true,
   nearbyOnly = true,
@@ -179,21 +165,6 @@ export function ExploreMap({
     });
   }, [rides, userLocate, nearbyOnly]);
 
-  const focusPoints = useMemo(() => {
-    const points: [number, number][] = [];
-    if (showTea) {
-      for (const topic of plottableTopics) {
-        points.push([topic.lat, topic.lng]);
-      }
-    }
-    if (showRides) {
-      for (const ride of plottableRides) {
-        points.push([ride.pickupLat!, ride.pickupLng!]);
-      }
-    }
-    return points;
-  }, [plottableTopics, plottableRides, showTea, showRides]);
-
   const initialCenter: LatLngExpression = userLocate
     ? [userLocate.lat, userLocate.lng]
     : FALLBACK_CENTER;
@@ -212,8 +183,10 @@ export function ExploreMap({
         url={CARTO_VOYAGER}
         className="snap-map-tiles"
       />
-      <ViewportReporter onMoveEnd={onViewportCenter} />
-      <FocusOnUser userLocate={userLocate} focusPoints={focusPoints} />
+      {onViewportCenter ? (
+        <ViewportReporter onMoveEnd={onViewportCenter} />
+      ) : null}
+      <FocusOnUser userLocate={userLocate} recenterToken={recenterToken} />
 
       {userLocate ? (
         <>

@@ -1,142 +1,56 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PublicUserProfile, UserProfile } from "@/lib/types/profile";
-import type { PayeePaymentInfo } from "@/lib/payments/upi";
 
-type ProfileRow = {
-  display_name: string;
-  avatar_url: string | null;
-  chakra: number | null;
-  updated_at: string;
-  payment_upi: string | null;
-  payment_phone: string | null;
-};
-
-function rowToProfile(row: ProfileRow): UserProfile {
-  return {
-    displayName: row.display_name,
-    avatarUrl: row.avatar_url,
-    chakra: Number(row.chakra ?? 0),
-    updatedAt: new Date(row.updated_at).getTime(),
-    paymentUpi: row.payment_upi?.trim() || undefined,
-    paymentPhone: row.payment_phone?.trim() || undefined,
-  };
+async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+  const data = (await response.json().catch(() => ({}))) as T & { error?: string };
+  if (!response.ok) throw new Error(data.error || "Request failed.");
+  return data;
 }
 
-function rowToPublic(row: Pick<ProfileRow, "display_name" | "chakra">): PublicUserProfile {
-  return {
-    displayName: row.display_name,
-    chakra: Number(row.chakra ?? 0),
-  };
-}
-
-export async function fetchProfileRemote(
-  client: SupabaseClient,
-  userId: string,
-): Promise<UserProfile | null> {
-  let { data, error } = await client
-    .from("profiles")
-    .select("display_name, avatar_url, chakra, updated_at, payment_upi, payment_phone")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error?.code === "42703" || error?.message?.includes("payment_")) {
-    ({ data, error } = await client
-      .from("profiles")
-      .select("display_name, avatar_url, chakra, updated_at")
-      .eq("user_id", userId)
-      .maybeSingle());
-  }
-
-  if (error) throw error;
-  if (!data) return null;
-  return rowToProfile(data as ProfileRow);
+export async function fetchProfileRemote(): Promise<UserProfile | null> {
+  const data = await jsonFetch<{ profile: UserProfile | null }>("/api/profile");
+  return data.profile;
 }
 
 export async function fetchPublicProfileRemote(
-  client: SupabaseClient,
+  _client: unknown,
   userId: string,
 ): Promise<PublicUserProfile | null> {
-  const { data, error } = await client.rpc("get_public_profile", {
-    p_user_id: userId,
-  });
-
-  if (error) throw error;
-
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return null;
-  return rowToPublic(row as ProfileRow);
+  const data = await jsonFetch<{ profile: PublicUserProfile }>(
+    `/api/profile/public/${encodeURIComponent(userId)}`,
+  );
+  return data.profile;
 }
 
 export async function upsertProfileRemote(
-  client: SupabaseClient,
-  userId: string,
+  _client: unknown,
+  _userId: string,
   profile: UserProfile,
 ): Promise<UserProfile> {
-  const base = {
-    user_id: userId,
-    display_name: profile.displayName.trim(),
-    bio: "",
-    avatar_url: profile.avatarUrl ?? null,
-    updated_at: new Date().toISOString(),
-  };
-
-  const withPayment = {
-    ...base,
-    payment_upi: profile.paymentUpi?.trim() || null,
-    payment_phone: profile.paymentPhone?.trim() || null,
-  };
-
-  let { data, error } = await client
-    .from("profiles")
-    .upsert(withPayment, { onConflict: "user_id" })
-    .select("display_name, avatar_url, chakra, updated_at, payment_upi, payment_phone")
-    .single();
-
-  if (error?.code === "42703" || error?.message?.includes("payment_")) {
-    ({ data, error } = await client
-      .from("profiles")
-      .upsert(base, { onConflict: "user_id" })
-      .select("display_name, avatar_url, chakra, updated_at")
-      .single());
-  }
-
-  if (error) throw error;
-  return rowToProfile(data as ProfileRow);
-}
-
-export async function awardChakraRemote(
-  client: SupabaseClient,
-  userId: string,
-  points: number,
-): Promise<void> {
-  const { error } = await client.rpc("award_duty_chakra", {
-    p_user_id: userId,
-    p_points: points,
+  const data = await jsonFetch<{ profile: UserProfile }>("/api/profile", {
+    method: "PUT",
+    body: JSON.stringify(profile),
   });
-  if (error) throw error;
+  return data.profile;
 }
 
-export async function fetchPayeePaymentRemote(
-  client: SupabaseClient,
-  payeeUserId: string,
-  context: { dutyId?: string; rideId?: string },
-): Promise<PayeePaymentInfo> {
-  const { data, error } = await client.rpc("get_payee_payment", {
-    p_payee_user_id: payeeUserId,
-    p_duty_id: context.dutyId ?? null,
-    p_ride_id: context.rideId ?? null,
-  });
-
-  if (error) throw error;
-
-  const row = Array.isArray(data) ? data[0] : data;
-  return {
-    paymentUpi: (row?.payment_upi as string | null)?.trim() || undefined,
-    paymentPhone: (row?.payment_phone as string | null)?.trim() || undefined,
-  };
+export async function awardChakraRemote(): Promise<void> {
+  console.warn("Mongo chakra award flow is not implemented yet.");
 }
 
-/** Placeholder until the user picks an anonymous public name. */
+export async function fetchPayeePaymentRemote(): Promise<{
+  paymentUpi?: string;
+  paymentPhone?: string;
+} | null> {
+  return null;
+}
+
 export function emptyProfileSeed(): UserProfile {
   return {
     displayName: "anon",

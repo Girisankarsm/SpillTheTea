@@ -42,8 +42,8 @@ function ThreadBranch({
   currentUserId,
   onReply,
   onPrivateChat,
-  onUpvote,
-  upvoteDisabled,
+  onHot,
+  hotDisabled,
 }: {
   node: ThreadNode;
   depth: number;
@@ -51,13 +51,13 @@ function ThreadBranch({
   currentUserId?: string | null;
   onReply: (message: ChatMessage) => void;
   onPrivateChat?: (message: ChatMessage) => void;
-  onUpvote?: (message: ChatMessage) => void;
-  upvoteDisabled?: boolean;
+  onHot?: (message: ChatMessage) => void;
+  hotDisabled?: boolean;
 }) {
   const { message, replies } = node;
   const replyCount = countReplies(messages, message.id);
   const indent = Math.min(depth, 4);
-  const upvotes = message.upvoteCount ?? 0;
+  const hotness = message.upvoteCount ?? 0;
 
   return (
     <div className={indent > 0 ? "mt-3 border-l-2 border-border pl-3" : ""}>
@@ -79,17 +79,19 @@ function ThreadBranch({
           >
             {formatChatTime(message.createdAt)}
           </time>
-          {onUpvote ? (
+          {onHot ? (
             <button
               type="button"
-              disabled={upvoteDisabled}
-              onClick={() => onUpvote(message)}
-              className={`transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              disabled={hotDisabled}
+              onClick={() => onHot(message)}
+              className={`inline-flex items-center gap-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 message.myUpvote ? "text-brand" : "hover:text-brand"
               }`}
               aria-pressed={message.myUpvote ?? false}
+              aria-label={message.myUpvote ? "Remove hotness" : "Add hotness"}
             >
-              ▲ {upvotes > 0 ? upvotes : "Upvote"}
+              <span aria-hidden>🔥</span>
+              {hotness > 0 ? hotness : "Hot"}
             </button>
           ) : null}
           <button
@@ -122,8 +124,8 @@ function ThreadBranch({
           currentUserId={currentUserId}
           onReply={onReply}
           onPrivateChat={onPrivateChat}
-          onUpvote={onUpvote}
-          upvoteDisabled={upvoteDisabled}
+          onHot={onHot}
+          hotDisabled={hotDisabled}
         />
       ))}
     </div>
@@ -351,8 +353,8 @@ type MessageBoardProps = {
   onVotePoll: (pollId: string, optionId: string) => void;
   sort: TopicSort;
   onSortChange: (sort: TopicSort) => void;
-  onUpvote?: (message: ChatMessage) => void;
-  upvoteDisabled?: boolean;
+  onHot?: (message: ChatMessage) => void;
+  hotDisabled?: boolean;
 };
 
 export function MessageBoard({
@@ -379,8 +381,8 @@ export function MessageBoard({
   onVotePoll,
   sort,
   onSortChange,
-  onUpvote,
-  upvoteDisabled,
+  onHot,
+  hotDisabled,
 }: MessageBoardProps) {
   const [pollModalOpen, setPollModalOpen] = useState(false);
   const feed = buildRoomFeed(messages, polls, sort);
@@ -454,8 +456,8 @@ export function MessageBoard({
                 currentUserId={currentUserId}
                 onReply={onReply}
                 onPrivateChat={onPrivateChat}
-                onUpvote={onUpvote}
-                upvoteDisabled={upvoteDisabled}
+                onHot={onHot}
+                hotDisabled={hotDisabled}
               />
             );
           })

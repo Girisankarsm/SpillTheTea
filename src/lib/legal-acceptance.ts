@@ -4,8 +4,10 @@ export const LEGAL_ACCEPT_COOKIE = "stt_legal_accept";
 
 export function setLegalAcceptanceCookie(): void {
   if (typeof document === "undefined") return;
+  /** Long enough that “confirm email” clicks still pass the legal gate after signup. */
+  const maxAgeSeconds = 60 * 60 * 24 * 7;
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${LEGAL_ACCEPT_COOKIE}=${LEGAL_ACCEPTANCE_VERSION}; Path=/; Max-Age=900; SameSite=Lax${secure}`;
+  document.cookie = `${LEGAL_ACCEPT_COOKIE}=${LEGAL_ACCEPTANCE_VERSION}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 export function clearLegalAcceptanceCookie(): void {

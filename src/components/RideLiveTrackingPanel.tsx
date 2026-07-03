@@ -3,7 +3,6 @@
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   MapContainer,
   Marker,
@@ -21,12 +20,22 @@ import type { RideWithOffers } from "@/lib/types/ride";
 
 import "leaflet/dist/leaflet.css";
 
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
+
 const CARTO_VOYAGER =
   "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
 type RideLiveTrackingPanelProps = {
   ride: RideWithOffers;
-  supabase: SupabaseClient;
+  supabase: BackendClient;
   currentUserId: string;
   isRider: boolean;
   isDriver: boolean;

@@ -82,8 +82,8 @@ export default function PrivacyPolicyPage() {
 
         <h2>Third-party services</h2>
         <p>
-          We use trusted providers to run the app, including Google (sign-in), Supabase (database
-          and storage), Vercel (hosting), and Giphy (GIF search). Each provider handles data under
+          We use trusted providers to run the app, including MongoDB Atlas (database),
+          Resend (auth email), Vercel (hosting), and Giphy (GIF search). Each provider handles data under
           their own policies when you use their services through us.
         </p>
         <p>

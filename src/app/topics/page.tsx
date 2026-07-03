@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { CreateTopicPanel, type CreateTopicPayload } from "@/components/CreateTopicPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
 import { TeaFeedCard } from "@/components/TeaFeedCard";
@@ -32,10 +32,26 @@ import {
   type TopicPreview,
 } from "@/lib/tea-feed";
 import { topicMessageCount, useMeetGreetStore } from "@/lib/store";
+import { getUserLocation, primeUserLocation } from "@/lib/geolocation";
 import { getVisitorId } from "@/lib/visitor";
 
 export default function TopicsDirectoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-3xl px-4 py-16">
+          <p className="text-sm text-subtle">Loading tea…</p>
+        </div>
+      }
+    >
+      <TopicsDirectoryContent />
+    </Suspense>
+  );
+}
+
+function TopicsDirectoryContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { supabase, remoteReady } = useSupabase();
   const { defaultDisplayName } = useUserProfile();
 
@@ -89,6 +105,22 @@ export default function TopicsDirectoryPage() {
   useEffect(() => {
     queueMicrotask(() => void reload());
   }, [reload]);
+
+  useEffect(() => {
+    queueMicrotask(() => primeUserLocation());
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("create") === "1") {
+      setCreateOpen(true);
+      requestAnimationFrame(() => {
+        document.getElementById("create-tea-panel")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!supabase || !remoteReady) return;
@@ -180,11 +212,15 @@ export default function TopicsDirectoryPage() {
     const authorName = defaultDisplayName?.trim() || "anon";
     setPosting(true);
     try {
+      const location = await getUserLocation();
+      const lat = location?.lat ?? 0;
+      const lng = location?.lng ?? 0;
+
       if (remoteReady && supabase) {
         const tid = await createTopicRemote(supabase, {
           title: payload.title,
-          lat: 0,
-          lng: 0,
+          lat,
+          lng,
         });
 
         if (payload.kind === "text" && payload.body) {
@@ -247,7 +283,7 @@ export default function TopicsDirectoryPage() {
         return;
       }
 
-      const id = createTopicLocal({ title: payload.title, lat: 0, lng: 0 });
+      const id = createTopicLocal({ title: payload.title, lat, lng });
 
       if (payload.kind === "text" && payload.body) {
         sendMessageLocal({ topicId: id, authorName, body: payload.body });
@@ -308,7 +344,7 @@ export default function TopicsDirectoryPage() {
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[640px] flex-col gap-4 px-4 py-4 sm:py-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Tea</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Home</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/explore"
@@ -316,93 +352,34 @@ export default function TopicsDirectoryPage() {
           >
             Map
           </Link>
-          {!createOpen ? (
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center justify-center rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
-            >
-              + Create
-            </button>
-          ) : null}
         </div>
       </header>
 
       {createOpen ? (
-        <CreateTopicPanel
-          onSubmit={spillTea}
-          onClose={() => setCreateOpen(false)}
-          disabled={remoteReady && (!supabase || rxLoading)}
-          submitting={posting}
-        />
-      ) : null}
-
-      <div className="flex items-center justify-between gap-3 border-b border-border py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
-          Sort
-        </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setSort("hot")}
-            className={sortButtonClass(sort === "hot")}
-          >
-            Hot
-          </button>
-          <button
-            type="button"
-            onClick={() => setSort("new")}
-            className={sortButtonClass(sort === "new")}
-          >
-            New
-          </button>
+        <div id="create-tea-panel" className="scroll-mt-24">
+          <CreateTopicPanel
+            onSubmit={spillTea}
+            onClose={() => {
+              setCreateOpen(false);
+              router.replace("/topics");
+            }}
+            disabled={remoteReady && (!supabase || rxLoading)}
+            submitting={posting}
+          />
         </div>
-      </div>
-
-      {remoteReady && rxLoading ? (
-        <p className="text-xs font-semibold text-brand">Refreshing…</p>
       ) : null}
-      {rxErr ? (
-        <p className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-xs text-danger-text">
-          {rxErr}
+
+      <div className="py-8 text-center">
+        <p className="mb-4 text-sm text-subtle">
+          Welcome home! Explore topics and discussions near you.
         </p>
-      ) : null}
-
-      <div className="flex flex-col gap-3">
-        {sorted.map((t) => {
-          const visitorId = getVisitorId();
-          const deletable = canDeleteTopic(t, {
-            visitorId,
-            userId: currentUserId,
-          });
-          return (
-            <TeaFeedCard
-              key={t.id}
-              topic={t}
-              messageCount={msgCount(t.id)}
-              joinCount={remoteReady ? rxJoinCounts[t.id] : undefined}
-              preview={previews[t.id]}
-              deletable={deletable}
-              onClose={() => void removeRoom(t.id, t.title)}
-              onShare={() => setShareRoom({ id: t.id, title: t.title })}
-            />
-          );
-        })}
+        <Link
+          href="/topics/tea"
+          className="inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-bold text-white hover:opacity-90"
+        >
+          📝 Go to Tea
+        </Link>
       </div>
-
-      {sorted.length === 0 ? (
-        <p className="py-8 text-center text-sm text-subtle">
-          No posts yet — tap <strong className="text-foreground">+ Create</strong> to
-          start the feed.
-        </p>
-      ) : null}
-
-      <ShareRoomModal
-        open={shareRoom !== null}
-        onClose={() => setShareRoom(null)}
-        title={shareRoom?.title ?? ""}
-        roomUrl={shareRoom ? roomShareUrl(shareRoom.id) : ""}
-      />
     </div>
   );
 }

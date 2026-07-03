@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildUpiPayUrl,
   normalizePaymentPhone,
@@ -13,8 +12,10 @@ import {
 import { fetchPayeePaymentRemote } from "@/lib/supabase/profile-remote";
 import { formatMoney } from "@/lib/types/duty";
 
+type BackendClient = unknown;
+
 type PayHelperPanelProps = {
-  supabase?: SupabaseClient | null;
+  supabase?: BackendClient | null;
   payeeUserId?: string;
   payeeName: string;
   amount: number;

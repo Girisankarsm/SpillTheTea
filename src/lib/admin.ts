@@ -1,4 +1,4 @@
-/** Comma-separated Supabase auth user ids (app owner / moderators). */
+/** Comma-separated custom auth user ids (app owner / moderators). */
 export function getAdminUserIds(): string[] {
   return (process.env.NEXT_PUBLIC_APP_ADMIN_USER_IDS ?? "")
     .split(",")

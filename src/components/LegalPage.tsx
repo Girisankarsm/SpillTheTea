@@ -39,7 +39,7 @@ export function LegalSection({
 export function LegalPage({ title, summary, children }: LegalPageProps) {
   return (
     <div className="min-h-dvh bg-background">
-      <div className="border-b border-border bg-surface/90 backdrop-blur-sm">
+      <div className="border-b border-border bg-[rgba(7,9,15,0.75)] backdrop-blur-[28px]">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <AppLogo heightPx={28} />
@@ -50,9 +50,9 @@ export function LegalPage({ title, summary, children }: LegalPageProps) {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-        <header className="rounded-2xl border border-border bg-gradient-to-br from-brand/10 via-surface to-surface p-6 sm:p-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-brand">Legal</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <header className="glass-card-strong rounded-[22px] border-brand-border p-6 sm:p-8">
+          <p className="text-xs font-bold tracking-widest text-brand-bright uppercase">Legal</p>
+          <h1 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {title}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-subtle">{summary}</p>

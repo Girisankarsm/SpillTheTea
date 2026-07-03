@@ -10,8 +10,17 @@ import { RideChatPanel } from "@/components/RideChatPanel";
 import { PayHelperPanel } from "@/components/PayHelperPanel";
 import { RideLiveTrackingPanel } from "@/components/RideLiveTrackingPanel";
 import { RideRouteSummary } from "@/components/RideRouteSummary";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatRideVehicle } from "@/lib/types/ride-vehicle";
+
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
 
 type RideDetailPanelProps = {
   ride: RideWithOffers;
@@ -24,7 +33,7 @@ type RideDetailPanelProps = {
   onCancel: () => void;
   chat?: {
     rideId: string;
-    supabase: SupabaseClient;
+    supabase: BackendClient;
     currentUserId: string;
   } | null;
 };

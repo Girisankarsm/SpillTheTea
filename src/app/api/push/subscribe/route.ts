@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ObjectId } from "mongodb";
+import { requireCurrentUser } from "@/lib/auth/server";
+import { mongoCollections } from "@/lib/mongodb/collections";
+
+export const dynamic = "force-dynamic";
 
 type SubscribeBody = {
   endpoint?: string;
@@ -7,17 +11,10 @@ type SubscribeBody = {
 };
 
 export async function POST(request: Request) {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
-  }
-
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) {
+  let user;
+  try {
+    user = await requireCurrentUser();
+  } catch {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -36,36 +33,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing subscription fields." }, { status: 400 });
   }
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
+  const pushSubscriptions = await mongoCollections.pushSubscriptions();
+  await pushSubscriptions.updateOne(
+    { userId: new ObjectId(user.id), endpoint },
     {
-      user_id: user.id,
-      endpoint,
-      p256dh,
-      auth,
-      updated_at: new Date().toISOString(),
+      $set: {
+        keys: { p256dh, auth },
+        updatedAt: new Date(),
+      },
+      $setOnInsert: {
+        userId: new ObjectId(user.id),
+        endpoint,
+        createdAt: new Date(),
+      },
     },
-    { onConflict: "user_id,endpoint" },
+    { upsert: true },
   );
-
-  if (error) {
-    return NextResponse.json({ error: "Could not save subscription." }, { status: 500 });
-  }
 
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: Request) {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
-  }
-
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) {
+  let user;
+  try {
+    user = await requireCurrentUser();
+  } catch {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -81,15 +73,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Missing endpoint." }, { status: 400 });
   }
 
-  const { error } = await supabase
-    .from("push_subscriptions")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("endpoint", endpoint);
-
-  if (error) {
-    return NextResponse.json({ error: "Could not remove subscription." }, { status: 500 });
-  }
+  const pushSubscriptions = await mongoCollections.pushSubscriptions();
+  await pushSubscriptions.deleteOne({ userId: new ObjectId(user.id), endpoint });
 
   return NextResponse.json({ ok: true });
 }

@@ -1,28 +1,22 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { mediaTypeFromUrl } from "@/lib/message-thread";
 
 export async function uploadMessageMedia(
-  client: SupabaseClient,
+  _client: unknown,
   file: File,
-  topicId: string,
+  _topicId: string,
 ): Promise<{ url: string; mediaType: "image" | "gif" }> {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const safeExt = ext.replace(/[^a-z0-9]/g, "") || "jpg";
-  const path = `${topicId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
-
-  const { error } = await client.storage.from("tea-media").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type || undefined,
+  const url = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read media file."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
   });
-
-  if (error) throw error;
-
-  const { data } = client.storage.from("tea-media").getPublicUrl(path);
   const mediaType =
     file.type === "image/gif" || safeExt === "gif" ? "gif" : "image";
 
-  return { url: data.publicUrl, mediaType };
+  return { url, mediaType };
 }
 
 export function normalizeMediaUrlInput(raw: string): {

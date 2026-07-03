@@ -3,16 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { isGoogleSignedIn } from "@/lib/supabase/auth";
-import {
-  emptyProfileSeed,
-  fetchProfileRemote,
-  upsertProfileRemote,
-} from "@/lib/supabase/profile-remote";
 import { profileDisplayName, useProfileStore } from "@/lib/profile-store";
 import type { UserProfile } from "@/lib/types/profile";
 
 export function useUserProfile() {
-  const { supabase, session, remoteReady, authReady } = useSupabase();
+  const { session, authReady } = useSupabase();
   const local = useProfileStore();
   const signedIn = isGoogleSignedIn(session);
 
@@ -20,33 +15,28 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(false);
 
   const reloadRemote = useCallback(async () => {
-    if (!supabase || !session?.user?.id || !signedIn) {
+    if (!session?.user?.id || !signedIn) {
       setRemoteProfile(null);
       return;
     }
     setLoading(true);
     try {
-      let profile = await fetchProfileRemote(supabase, session.user.id);
-      if (!profile) {
-        profile = await upsertProfileRemote(
-          supabase,
-          session.user.id,
-          emptyProfileSeed(),
-        );
-      }
-      setRemoteProfile(profile);
+      const response = await fetch("/api/profile", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load profile.");
+      const data = (await response.json()) as { profile: UserProfile | null };
+      setRemoteProfile(data.profile);
     } finally {
       setLoading(false);
     }
-  }, [supabase, session, signedIn]);
+  }, [session, signedIn]);
 
   useEffect(() => {
-    if (!remoteReady || !authReady) return;
+    if (!signedIn || !authReady) return;
     void reloadRemote();
-  }, [remoteReady, authReady, reloadRemote]);
+  }, [signedIn, authReady, reloadRemote]);
 
   const profile = useMemo((): UserProfile => {
-    if (remoteReady && signedIn && remoteProfile) return remoteProfile;
+    if (signedIn && remoteProfile) return remoteProfile;
     return {
       displayName: local.displayName,
       avatarUrl: local.avatarUrl,
@@ -55,7 +45,7 @@ export function useUserProfile() {
       paymentUpi: local.paymentUpi,
       paymentPhone: local.paymentPhone,
     };
-  }, [remoteReady, signedIn, remoteProfile, local]);
+  }, [signedIn, remoteProfile, local]);
 
   const defaultDisplayName = profileDisplayName(profile);
 
@@ -76,8 +66,20 @@ export function useUserProfile() {
         throw new Error("Pick a display name.");
       }
 
-      if (remoteReady && supabase && session?.user?.id && signedIn) {
-        const saved = await upsertProfileRemote(supabase, session.user.id, next);
+      if (session?.user?.id && signedIn) {
+        const response = await fetch("/api/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(next),
+        });
+        const data = (await response.json()) as {
+          profile?: UserProfile;
+          error?: string;
+        };
+        if (!response.ok || !data.profile) {
+          throw new Error(data.error || "Could not save profile.");
+        }
+        const saved = data.profile;
         setRemoteProfile(saved);
         return saved;
       }
@@ -85,7 +87,7 @@ export function useUserProfile() {
       local.setProfile(next);
       return next;
     },
-    [profile, remoteReady, supabase, session, signedIn, local],
+    [profile, session, signedIn, local],
   );
 
   return {

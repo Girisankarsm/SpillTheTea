@@ -9,7 +9,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3FCF8E?style=flat-square&logo=supabase)](https://supabase.com/)
+[![MongoDB Atlas](https://img.shields.io/badge/MongoDB%20Atlas-Backend-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/atlas)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com/)
 
@@ -26,7 +26,7 @@
 - [Tech stack](#tech-stack)
 - [Getting started](#getting-started)
 - [Environment variables](#environment-variables)
-- [Supabase setup](#supabase-setup)
+- [MongoDB Atlas setup](#mongodb-atlas-setup)
 - [Authentication](#authentication)
 - [Deploy](#deploy)
 - [Scripts](#scripts)
@@ -40,13 +40,13 @@
 
 **SpillTheTea** is a progressive web app for local communities: post and discuss under **Tea** topics (with optional anonymity), explore conversations on a **map**, run small paid **duties**, coordinate **ride pooling**, and chat in real time with **DMs**, duty/ride threads, polls, GIFs, and push notifications.
 
-Sign in with **Google** or **email** (password or magic link). Email sign-ups can require **inbox verification** before the account is fully active.
+Sign in with custom **email/password** auth or a **magic link**. Email sign-ups require inbox verification before the account is fully active.
 
 | | |
 |---|---|
 | **Production** | [https://spilltheteahere.vercel.app/](https://spilltheteahere.vercel.app/) |
 | **Source code** | [https://github.com/Girisankarsm/SpillTheTea](https://github.com/Girisankarsm/SpillTheTea) |
-| **Stack** | Next.js App Router · React · Supabase · Vercel |
+| **Stack** | Next.js App Router · React · MongoDB Atlas · Vercel |
 
 ---
 
@@ -58,7 +58,7 @@ Sign in with **Google** or **email** (password or magic link). Email sign-ups ca
 | **Map** | Browse and start topics geographically (open vs trending markers) |
 | **Duties** | Post favors; helpers offer with a reward; pick, complete, pay in-app |
 | **Ride pooling** | Pickup → drop; driver offers; live location; chat |
-| **Messaging** | Topic boards, private DMs, duty & ride chat — **realtime** via Supabase |
+| **Messaging** | Topic boards, private DMs, duty & ride chat with server-owned APIs |
 | **Push (PWA)** | Web Push for DMs, duty chat, and ride chat |
 | **Chakra** | Reputation from completed duties |
 | **Profiles** | Display name, avatar, optional payment hints (privacy-aware) |
@@ -73,11 +73,11 @@ Sign in with **Google** or **email** (password or magic link). Email sign-ups ca
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, React Server Components where applicable) |
 | UI | [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/) |
 | Language | [TypeScript](https://www.typescriptlang.org/) |
-| Backend | [Supabase](https://supabase.com/) — Auth, Postgres, Realtime, Storage |
+| Backend | [MongoDB Atlas](https://www.mongodb.com/atlas) + Next.js API routes |
 | Maps | [Leaflet](https://leafletjs.com/) / [react-leaflet](https://react-leaflet.js.org/) |
 | State | [Zustand](https://zustand.docs.pmnd.dev/) |
 | Hosting | [Vercel](https://vercel.com/) |
-| Email (auth) | Supabase Auth + optional [Resend](https://resend.com/) SMTP |
+| Email (auth) | Custom auth + [Resend](https://resend.com/) email API |
 
 ---
 
@@ -86,7 +86,7 @@ Sign in with **Google** or **email** (password or magic link). Email sign-ups ca
 ### Prerequisites
 
 - **Node.js** 20+ and **npm**
-- A [Supabase](https://supabase.com/) project
+- A [MongoDB Atlas](https://www.mongodb.com/atlas) cluster
 - (Optional) [Giphy](https://developers.giphy.com/dashboard/) API key for GIF search
 - (Optional) [Resend](https://resend.com/) account for reliable auth emails
 
@@ -106,9 +106,9 @@ cp env.example .env.local
 
 Edit `.env.local` — see [Environment variables](#environment-variables).
 
-### 3. Supabase
+### 3. MongoDB Atlas
 
-Complete [Supabase setup](#supabase-setup).
+Complete [MongoDB Atlas setup](#mongodb-atlas-setup).
 
 ### 4. Run locally
 
@@ -125,12 +125,14 @@ Open [http://localhost:3000](http://localhost:3000). The login page is at `/logi
 | Variable | Required | Description |
 |----------|:--------:|-------------|
 | `NEXT_PUBLIC_APP_URL` | Yes | Public app URL (e.g. `https://spilltheteahere.vercel.app`) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase **anon** (public) key |
+| `MONGODB_URI` | Yes | MongoDB Atlas connection string |
+| `MONGODB_DB` | Yes | Database name (default: `spillthetea`) |
+| `AUTH_SECRET` | Yes | Long random secret for signed session cookies |
+| `RESEND_API_KEY` | Yes* | Sends verification and magic-link emails (*required for real email delivery) |
+| `AUTH_EMAIL_FROM` | Yes* | Verified sender, e.g. `SpillTheTea <noreply@yourdomain.com>` |
 | `GIPHY_API_KEY` | Yes* | GIF search (*required for GIF picker) |
-| `NEXT_PUBLIC_APP_ADMIN_USER_IDS` | No | Comma-separated Supabase user UUIDs — can close any topic |
+| `NEXT_PUBLIC_APP_ADMIN_USER_IDS` | No | Comma-separated custom user IDs — can close any topic |
 | `NEXT_PUBLIC_APP_ADMIN_VISITOR_IDS` | No | Demo/local admin visitor IDs |
-| `SUPABASE_SERVICE_ROLE_KEY` | No | Server-only; push delivery to other users |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | No | Web Push VAPID public key |
 | `VAPID_PRIVATE_KEY` | No | Web Push VAPID private key (never expose to client) |
 | `VAPID_SUBJECT` | No | e.g. `mailto:hello@yourdomain.com` |
@@ -145,38 +147,22 @@ npx web-push generate-vapid-keys
 
 ---
 
-## Supabase setup
+## MongoDB Atlas setup
 
-### URL configuration
+1. Create a MongoDB Atlas project and cluster.
+2. Create a database user with read/write access.
+3. Add your IP address in **Network Access** for local development.
+4. Copy the Atlas connection string into `MONGODB_URI`.
+5. Set `MONGODB_DB=spillthetea` or your preferred database name.
 
-**Authentication → URL Configuration**
+### Auth email with Resend
 
-| Setting | Value |
-|---------|--------|
-| **Site URL** | `https://spilltheteahere.vercel.app` |
-| **Redirect URLs** | `https://spilltheteahere.vercel.app/**`, `http://localhost:3000/**` |
-
-Confirmation and OAuth flows return to `/auth/callback` on your domain.
-
-### Providers
-
-| Provider | Dashboard path | Notes |
-|----------|----------------|-------|
-| **Google** | Authentication → Providers → Google | OAuth client from Google Cloud; callback `https://<project>.supabase.co/auth/v1/callback` |
-| **Email** | Authentication → Providers → Email | Password sign-up / sign-in; enable **Confirm email** for verify-before-login |
-
-### Custom SMTP (recommended for auth email)
-
-If confirmation or magic-link emails do not arrive, use **Authentication → Emails → SMTP** with [Resend](https://resend.com/docs/send-with-supabase-smtp):
+Verification and magic-link emails are sent through the [Resend email API](https://resend.com/docs/api-reference/emails/send):
 
 | Field | Typical value |
 |-------|----------------|
-| Host | `smtp.resend.com` |
-| Port | `465` or `587` (per Resend docs) |
-| Username | `resend` |
-| Password | Your Resend **API key** (`re_...`) |
-| Sender email | Verified address (e.g. `onboarding@resend.dev` or `noreply@yourdomain.com`) |
-| Sender name | `SpillTheTea` |
+| `RESEND_API_KEY` | Your Resend API key (`re_...`) |
+| `AUTH_EMAIL_FROM` | Verified address, e.g. `SpillTheTea <noreply@yourdomain.com>` |
 
 ---
 
@@ -184,17 +170,16 @@ If confirmation or magic-link emails do not arrive, use **Authentication → Ema
 
 | Method | Flow |
 |--------|------|
-| **Google** | OAuth → `/auth/callback` → app |
 | **Email + password** | Sign up → (optional) confirmation email → sign in |
-| **Magic link** | Email OTP link → `/auth/callback` |
+| **Magic link** | Email link → `/api/auth/magic/verify` |
 
-App logic (`src/lib/supabase/auth.ts`):
+App logic:
 
 - Normalizes email (`trim` + lowercase) on sign-up and sign-in.
-- Treats accounts as **pending** until `email_confirmed_at` is set when **Confirm email** is enabled.
+- Treats accounts as **pending** until the verification link is clicked.
 - **Resend confirmation** from the login screen.
 
-Legal acceptance (Terms + Privacy) is required before sign-in; a short-lived cookie is checked on `/auth/callback`.
+Legal acceptance (Terms + Privacy) is required before sign-in and stored with the custom user record.
 
 ---
 
@@ -206,7 +191,7 @@ Legal acceptance (Terms + Privacy) is required before sign-in; a short-lived coo
 | 2 | GitHub Actions merges `develop` → `main` |
 | 3 | Vercel deploys `main` to production |
 
-Set all required env vars in **Vercel → Project → Settings → Environment Variables** (including `SUPABASE_SERVICE_ROLE_KEY` and VAPID keys for push).
+Set all required env vars in **Vercel → Project → Settings → Environment Variables** (including `MONGODB_URI`, `AUTH_SECRET`, `RESEND_API_KEY`, and VAPID keys for push).
 
 **Production domain:** [spilltheteahere.vercel.app](https://spilltheteahere.vercel.app)
 
@@ -232,13 +217,13 @@ SpillTheTea/
 ├── src/
 │   ├── app/              # Next.js App Router (pages, API routes)
 │   │   ├── login/        # Auth UI
-│   │   ├── auth/callback/# OAuth & email link handler
+│   │   ├── api/auth/    # Custom auth routes
 │   │   ├── topics/       # Tea feed & rooms
 │   │   ├── explore/      # Map
 │   │   ├── duties/       # Favors
 │   │   └── rides/        # Ride pooling
 │   ├── components/       # UI (LoginScreen, maps, chat, …)
-│   └── lib/              # Supabase auth, store, types
+│   └── lib/              # MongoDB services, auth, store, types
 ├── public/               # PWA manifest, icons, SW
 ├── middleware.ts         # Auth gate for protected routes
 └── env.example           # Environment template
@@ -252,8 +237,8 @@ SpillTheTea/
 |----------|-----|
 | **GitHub repository** | [github.com/Girisankarsm/SpillTheTea](https://github.com/Girisankarsm/SpillTheTea) |
 | **Live application** | [spilltheteahere.vercel.app](https://spilltheteahere.vercel.app/) |
-| **Supabase** | [supabase.com/dashboard](https://supabase.com/dashboard) |
-| **Resend + Supabase SMTP** | [resend.com/docs/send-with-supabase-smtp](https://resend.com/docs/send-with-supabase-smtp) |
+| **MongoDB Atlas** | [mongodb.com/atlas](https://www.mongodb.com/atlas) |
+| **Resend Email API** | [resend.com/docs/api-reference/emails/send](https://resend.com/docs/api-reference/emails/send) |
 
 ---
 

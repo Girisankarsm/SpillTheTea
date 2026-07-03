@@ -310,7 +310,7 @@ export default function TopicChatPage() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [posting, setPosting] = useState(false);
   const [pollBusy, setPollBusy] = useState(false);
-  const [upvoteBusy, setUpvoteBusy] = useState(false);
+  const [hotBusy, setHotBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
   const [dmInitialThreadId, setDmInitialThreadId] = useState<string | null>(null);
@@ -583,10 +583,10 @@ export default function TopicChatPage() {
     }
   }
 
-  async function handleUpvote(message: ChatMessage) {
-    if (upvoteBusy) return;
+  async function handleHot(message: ChatMessage) {
+    if (hotBusy) return;
 
-    setUpvoteBusy(true);
+    setHotBusy(true);
     try {
       if (remoteReady && supabase) {
         const upvoted = await toggleMessageUpvoteRemote(supabase, message.id);
@@ -607,15 +607,15 @@ export default function TopicChatPage() {
       } else {
         const voterKey = getVisitorId();
         if (!voterKey) {
-          alert("Could not save your upvote in this browser.");
+          alert("Could not save hotness in this browser.");
           return;
         }
         toggleMessageUpvoteLocal(message.id, voterKey);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not save upvote.");
+      alert(err instanceof Error ? err.message : "Could not save hotness.");
     } finally {
-      setUpvoteBusy(false);
+      setHotBusy(false);
     }
   }
 
@@ -816,9 +816,9 @@ export default function TopicChatPage() {
           onVotePoll={(pollId, optionId) => void handleVotePoll(pollId, optionId)}
           sort={sort}
           onSortChange={setSort}
-          onUpvote={(message) => void handleUpvote(message)}
-          upvoteDisabled={
-            upvoteBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
+          onHot={(message) => void handleHot(message)}
+          hotDisabled={
+            hotBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
           }
         />
       )}

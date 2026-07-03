@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import type { PushMessageKind } from "@/lib/push/client";
 import { sendPushForMessage } from "@/lib/push/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireCurrentUser } from "@/lib/auth/server";
+
+export const dynamic = "force-dynamic";
 
 type NotifyBody = {
   kind?: PushMessageKind;
@@ -9,17 +11,10 @@ type NotifyBody = {
 };
 
 export async function POST(request: Request) {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return NextResponse.json({ ok: false }, { status: 503 });
-  }
-
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) {
+  let user;
+  try {
+    user = await requireCurrentUser();
+  } catch {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 

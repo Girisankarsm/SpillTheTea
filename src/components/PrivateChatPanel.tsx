@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DmMessage, DmRequest, DmThread } from "@/lib/types/dm";
 import {
   acceptDmRequest,
@@ -21,10 +20,20 @@ import {
 } from "@/lib/push/client";
 import { VoiceCallButton } from "@/components/VoiceCallButton";
 
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
+
 type PrivateChatPanelProps = {
   open: boolean;
   onClose: () => void;
-  supabase: SupabaseClient;
+  supabase: BackendClient;
   topicId: string;
   currentUserId: string;
   initialThreadId?: string | null;

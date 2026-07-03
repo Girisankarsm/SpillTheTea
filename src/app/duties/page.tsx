@@ -167,7 +167,7 @@ export default function DutiesPage() {
 
       {!remoteReady ? (
         <p className="text-xs text-subtle">
-          Demo mode — duties save on this device. Sign in with Supabase for live sync.
+          Demo mode — duties save on this device. Sign in for MongoDB sync.
         </p>
       ) : null}
 

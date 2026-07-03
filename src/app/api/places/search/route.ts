@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { formatPlaceLabel, dedupePlaces } from "@/lib/place-search";
 import type { PlaceSuggestion } from "@/lib/types/place-search";
 
+export const dynamic = "force-dynamic";
+
 type PhotonFeature = {
   geometry: { coordinates: [number, number] };
   properties: Record<string, string | undefined>;

@@ -113,13 +113,13 @@ export function AuthMenu() {
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           onClick={() => setMenuOpen((open) => !open)}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-surface shadow-sm transition hover:border-brand hover:ring-2 hover:ring-brand/30"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-brand-border bg-brand-soft shadow-[0_0_12px_var(--brand-glow)] transition hover:border-brand-bright hover:ring-2 hover:ring-brand/30"
         >
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="text-xs font-bold text-brand">
+            <span className="text-xs font-bold text-foreground">
               {showName.slice(0, 1).toUpperCase()}
             </span>
           )}
@@ -162,11 +162,11 @@ export function AuthMenu() {
   return (
     <Link
       href={loginHref}
-      className="flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-sm hover:bg-stone-50 dark:bg-surface dark:text-foreground dark:hover:bg-background"
+      className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm transition hover:border-brand-border hover:bg-surface-hover"
     >
       <GoogleMark />
-      <span className="hidden sm:inline">Sign in with Google</span>
-      <span className="sm:hidden">Google</span>
+      <span className="hidden sm:inline">Sign in</span>
+      <span className="sm:hidden">Sign in</span>
     </Link>
   );
 }

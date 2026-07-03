@@ -1,25 +1,39 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { DM_Sans, Inter } from "next/font/google";
+import { AppAmbientBackground } from "@/components/AppAmbientBackground";
 import { AppShellOrPlain } from "@/components/AppShellOrPlain";
 import { SupabaseProvider } from "@/components/SupabaseProvider";
 import { VoiceCallProvider } from "@/components/VoiceCallProvider";
 import "./globals.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const inter = Inter({
+  variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["500", "600", "700"],
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
+
+const instrumentSerif = Inter({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
   title: "SpillTheTea — Anonymous Topics & Discussions",
   description:
-    "Post anonymously under topics and discuss in replies — like Reddit. Plus duties, ride pooling, and private chat.",
+    "Talk, task, and ride near you. Anonymous Tea, duties, ride pooling, and private chat in your neighborhood.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "SpillTheTea",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
   icons: {
     apple: "/icon.png",
@@ -27,10 +41,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2d6a4f" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
-  ],
+  themeColor: "#080808",
 };
 
 export default function RootLayout({
@@ -39,11 +50,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
+    <html
+      lang="en"
+      className={`${dmSans.variable} ${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
+    >
+      <body className="relative flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
+        <AppAmbientBackground />
         <SupabaseProvider>
           <VoiceCallProvider>
-            <AppShellOrPlain>{children}</AppShellOrPlain>
+            <div className="relative z-[1] flex min-h-full flex-1 flex-col">
+              <AppShellOrPlain>{children}</AppShellOrPlain>
+            </div>
           </VoiceCallProvider>
         </SupabaseProvider>
       </body>

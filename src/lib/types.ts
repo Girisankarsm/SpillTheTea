@@ -6,7 +6,7 @@ export type Topic = {
   createdAt: number;
   /** Local/demo mode — browser visitor who created the spot. */
   createdByVisitorId?: string;
-  /** Supabase auth user who created the spot. */
+  /** Authenticated MongoDB user who created the spot. */
   createdByUserId?: string;
 };
 

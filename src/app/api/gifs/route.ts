@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 type GiphyImage = {
   fixed_height?: { url?: string; width?: string; height?: string };
   fixed_height_small?: { url?: string };

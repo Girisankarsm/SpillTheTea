@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { GifPicker } from "@/components/GifPicker";
 import { VoiceCallButton } from "@/components/VoiceCallButton";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -21,9 +20,19 @@ import {
 import { formatMoney } from "@/lib/types/ride";
 import type { RideChatMessage } from "@/lib/types/ride-chat";
 
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
+
 type RideChatPanelProps = {
   rideId: string;
-  supabase: SupabaseClient;
+  supabase: BackendClient;
   currentUserId: string;
   riderUserId: string;
   riderName: string;

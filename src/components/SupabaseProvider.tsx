@@ -1,6 +1,5 @@
 "use client";
 
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import {
   createContext,
   useCallback,
@@ -9,69 +8,154 @@ import {
   useMemo,
   useState,
 } from "react";
-import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+type AppSession = {
+  user: {
+    id: string;
+    email?: string;
+    is_anonymous?: false;
+    app_metadata?: { provider?: string; roles?: string[] };
+    user_metadata?: {
+      full_name?: string;
+      name?: string;
+      avatar_url?: string | null;
+      picture?: string | null;
+    };
+  };
+};
+
+type BackendClient = {
+  auth: {
+    getSession: () => Promise<{ data: { session: AppSession | null } }>;
+    getUser: () => Promise<{ data: { user: AppSession["user"] | null } }>;
+    signOut: () => Promise<void>;
+  };
+  channel: () => {
+    on: () => ReturnType<BackendClient["channel"]>;
+    subscribe: () => ReturnType<BackendClient["channel"]>;
+    send: () => Promise<"ok">;
+  };
+  removeChannel: () => Promise<void>;
+};
 
 type Ctx = {
-  supabase: SupabaseClient | null;
-  session: Session | null;
+  supabase: BackendClient | null;
+  session: AppSession | null;
   authReady: boolean;
+  refreshSession: () => Promise<void>;
 };
 
 const SupabaseContext = createContext<Ctx>({
   supabase: null,
   session: null,
   authReady: false,
+  refreshSession: async () => {},
 });
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const client = useMemo(() => createBrowserSupabaseClient(), []);
-  const needsRemoteAuth = Boolean(client);
+  const [session, setSession] = useState<AppSession | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
-  const [session, setSession] = useState<Session | null>(null);
-  const [authReady, setAuthReady] = useState(() => !needsRemoteAuth);
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!res.ok) throw new Error("Session request failed");
+      const data = (await res.json()) as {
+        user: {
+          id: string;
+          email: string;
+          displayName: string;
+          avatarUrl?: string | null;
+          roles?: string[];
+        } | null;
+      };
+      setSession(
+        data.user
+          ? {
+              user: {
+                id: data.user.id,
+                email: data.user.email,
+                is_anonymous: false,
+                app_metadata: {
+                  provider: "email",
+                  roles: data.user.roles ?? [],
+                },
+                user_metadata: {
+                  full_name: data.user.displayName,
+                  name: data.user.displayName,
+                  avatar_url: data.user.avatarUrl ?? null,
+                  picture: data.user.avatarUrl ?? null,
+                },
+              },
+            }
+          : null,
+      );
+    } catch {
+      setSession(null);
+    } finally {
+      setAuthReady(true);
+    }
+  }, []);
+
+  const client = useMemo<BackendClient>(
+    () => ({
+      auth: {
+        getSession: async () => {
+          const res = await fetch("/api/auth/session", { cache: "no-store" });
+          const data = (await res.json()) as { user: AppSession["user"] | null };
+          return { data: { session: data.user ? { user: data.user } : null } };
+        },
+        getUser: async () => {
+          const res = await fetch("/api/auth/session", { cache: "no-store" });
+          const data = (await res.json()) as { user: AppSession["user"] | null };
+          return { data: { user: data.user } };
+        },
+        signOut: async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          await refreshSession();
+        },
+      },
+      channel: () => {
+        const noop = {
+          on: () => noop,
+          subscribe: () => noop,
+          send: async () => "ok" as const,
+        };
+        return noop;
+      },
+      removeChannel: async () => {},
+    }),
+    [refreshSession],
+  );
 
   useEffect(() => {
-    if (!client) return;
-
-    const sb = client;
-
     let cancelled = false;
-
     async function bootstrap() {
-      const {
-        data: { session: existing },
-      } = await sb.auth.getSession();
-      if (cancelled) return;
-
-      if (!cancelled) setSession(existing);
-      if (!cancelled) setAuthReady(true);
+      try {
+        await refreshSession();
+      } finally {
+        if (cancelled) return;
+      }
     }
-
-    queueMicrotask(() => {
-      void bootstrap();
-    });
-
-    const {
-      data: { subscription },
-    } = sb.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-    });
-
+    void bootstrap();
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
     };
-  }, [client]);
+  }, [refreshSession]);
+
+  useEffect(() => {
+    window.addEventListener("spill-auth-changed", refreshSession);
+    return () => window.removeEventListener("spill-auth-changed", refreshSession);
+  }, [refreshSession]);
 
   const value = useMemo(
     () => ({
       supabase: client,
       session,
       authReady,
+      refreshSession,
     }),
-    [client, session, authReady],
+    [client, session, authReady, refreshSession],
   );
 
   return (
@@ -84,13 +168,8 @@ export function useSupabase(): Ctx & {
   remoteReady: boolean;
 } {
   const ctx = useContext(SupabaseContext);
-  const configured = useMemo(() => isSupabaseConfigured(), []);
-  const remoteReady = Boolean(
-    configured &&
-      ctx.supabase &&
-      ctx.authReady &&
-      isGoogleSignedIn(ctx.session),
-  );
+  const configured = true;
+  const remoteReady = Boolean(configured && ctx.authReady && ctx.session);
 
   return useMemo(
     () => ({
@@ -103,18 +182,11 @@ export function useSupabase(): Ctx & {
 }
 
 export function useEnsureRemoteAuth(): () => Promise<void> {
-  const { supabase, session } = useSupabase();
+  const { session } = useSupabase();
 
   return useCallback(async () => {
-    if (!supabase) return;
-    const {
-      data: { session: current },
-    } = await supabase.auth.getSession();
-    if (!current || !isGoogleSignedIn(current)) {
-      throw new Error("Sign in with Google to continue.");
-    }
     if (!session) {
-      throw new Error("Sign in with Google to continue.");
+      throw new Error("Sign in to continue.");
     }
-  }, [supabase, session]);
+  }, [session]);
 }

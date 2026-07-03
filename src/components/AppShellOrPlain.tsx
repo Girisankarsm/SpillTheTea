@@ -2,21 +2,29 @@
 
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { AuthGuard } from "@/components/AuthGuard";
 import { InstallBanner } from "@/components/InstallBanner";
 
 export function AppShellOrPlain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/login" || pathname === "/privacy" || pathname === "/terms") {
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/privacy" ||
+    pathname === "/terms"
+  ) {
     return (
       <div className="flex min-h-dvh flex-col">
-        <div className="sticky top-0 z-[600] shrink-0">
-          <InstallBanner />
-        </div>
-        <div className="flex flex-1 flex-col">{children}</div>
+        <InstallBanner />
+        <div className="relative z-[1] flex flex-1 flex-col">{children}</div>
       </div>
     );
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AuthGuard>
+      <AppShell>{children}</AppShell>
+    </AuthGuard>
+  );
 }

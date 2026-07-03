@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { GifPicker } from "@/components/GifPicker";
 import { VoiceCallButton } from "@/components/VoiceCallButton";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -21,9 +20,19 @@ import {
 import { formatMoney } from "@/lib/types/duty";
 import type { DutyChatMessage } from "@/lib/types/duty-chat";
 
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel | Promise<BackendChannel>;
+};
+
+type BackendClient = {
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
+};
+
 type DutyChatPanelProps = {
   dutyId: string;
-  supabase: SupabaseClient;
+  supabase: BackendClient;
   currentUserId: string;
   authorUserId: string;
   authorName: string;

@@ -35,9 +35,8 @@ export function TeaFeedCard({
           className="flex w-8 shrink-0 flex-col items-center gap-0.5 pt-1 text-[11px] font-bold text-subtle"
           aria-hidden
         >
-          <span>▲</span>
+          <span aria-hidden>🔥</span>
           <span className="text-foreground">{messageCount > 0 ? messageCount : ""}</span>
-          <span>▼</span>
         </div>
 
         <div className="min-w-0 flex-1 pb-3">

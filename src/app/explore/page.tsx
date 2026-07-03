@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { distanceKm, formatDistanceKm } from "@/lib/geo";
 import {
@@ -139,7 +139,8 @@ export default function ExplorePage() {
     };
   }, [supabase, remoteReady, reloadExplore]);
 
-  const [viewport, setViewport] = useState({ lat: 19.076, lng: 72.8777 });
+  const viewportRef = useRef({ lat: 19.076, lng: 72.8777 });
+  const [recenterToken, setRecenterToken] = useState(0);
   const [topicTitle, setTopicTitle] = useState("");
   const [locStatus, setLocStatus] = useState<string | null>("Finding your location…");
   const [userPin, setUserPin] = useState<{ lat: number; lng: number } | null>(
@@ -159,12 +160,24 @@ export default function ExplorePage() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setUserPin({ lat, lng });
-        setViewport({ lat, lng });
+        viewportRef.current = { lat, lng };
+        setRecenterToken((token) => token + 1);
         setLocStatus(null);
       },
       () => setLocStatus("Could not read location — tap Find me and allow access."),
       { enableHighAccuracy: true, timeout: 12_000 },
     );
+  }, []);
+
+  const handleViewportCenter = useCallback((lat: number, lng: number) => {
+    const prev = viewportRef.current;
+    if (
+      Math.abs(prev.lat - lat) < 0.00005 &&
+      Math.abs(prev.lng - lng) < 0.00005
+    ) {
+      return;
+    }
+    viewportRef.current = { lat, lng };
   }, []);
 
   useEffect(() => {
@@ -224,8 +237,8 @@ export default function ExplorePage() {
     const title = topicTitle.trim();
     if (!title) return;
 
-    const lat = userPin?.lat ?? viewport.lat;
-    const lng = userPin?.lng ?? viewport.lng;
+    const lat = userPin?.lat ?? viewportRef.current.lat;
+    const lng = userPin?.lng ?? viewportRef.current.lng;
 
     if (remoteReady && supabase) {
       try {
@@ -322,8 +335,9 @@ export default function ExplorePage() {
               rides={rides}
               topicActivity={topicActivity}
               hotThreshold={HOT_TOPIC_MESSAGES}
-              onViewportCenter={(lat, lng) => setViewport({ lat, lng })}
+              onViewportCenter={handleViewportCenter}
               userLocate={userPin}
+              recenterToken={recenterToken}
               showTea={showTea}
               showRides={showRides}
               nearbyOnly={Boolean(userPin)}

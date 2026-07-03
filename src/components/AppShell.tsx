@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AppLogo } from "@/components/AppLogo";
 import { AuthMenu } from "@/components/AuthMenu";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { InstallBanner } from "@/components/InstallBanner";
@@ -15,25 +14,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <>
       <div
         id="app-site-header"
-        className="fixed inset-x-0 top-0 z-[500] border-b border-border bg-surface shadow-sm"
+        className="fixed inset-x-0 top-0 z-[500] border-b border-border bg-[rgba(8,8,8,0.80)] backdrop-blur-[28px] backdrop-saturate-120"
       >
         <InstallBanner />
         <PushNotificationPrompt />
         <PushNotificationManager />
         <SetupBanner />
-        <header className="mx-auto max-w-6xl px-3 sm:px-4">
-          <div className="flex h-12 items-center justify-between gap-3 sm:h-14">
+        <header className="mx-auto max-w-[1100px] px-4 sm:px-7">
+          <div className="flex h-[58px] items-center gap-4 sm:gap-8">
             <Link
-              href="/"
-              className="flex min-w-0 items-center gap-2 text-[17px] font-semibold tracking-tight text-foreground"
+              href="/topics"
+              className="font-display flex shrink-0 items-center gap-2 text-[17px] font-semibold tracking-tight text-foreground"
             >
-              <AppLogo heightPx={32} priority className="sm:h-9 sm:w-9" />
-              <span className="hidden truncate sm:inline">SpillTheTea</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white text-[15px] shadow-[0_0_18px_rgba(255,255,255,0.25)]">
+                🍵
+              </span>
+              <span className="hidden sm:inline">SpillTheTea</span>
             </Link>
 
             <MainNav variant="desktop" />
 
-            <AuthMenu />
+            <div className="ml-auto flex items-center gap-2.5">
+              <Link
+                href="/topics?create=1"
+                className="inline-flex rounded-[9px] bg-white px-3 py-2 text-[13px] font-semibold text-black shadow-[0_2px_14px_rgba(255,255,255,0.18)] transition hover:bg-[#e8e8e8] hover:shadow-[0_4px_22px_rgba(255,255,255,0.22)] sm:px-4"
+              >
+                + Post tea
+              </Link>
+              <AuthMenu />
+            </div>
           </div>
 
           <MainNav variant="mobile" />
@@ -41,8 +50,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <HeaderSpacer />
       <main className="flex flex-1 flex-col">{children}</main>
-      <footer className="border-t border-border bg-surface py-6">
-        <LegalFooterLinks centered className="mx-auto max-w-6xl px-4" />
+      <footer className="border-t border-border bg-surface/40 py-6 backdrop-blur-sm">
+        <LegalFooterLinks centered className="mx-auto max-w-[1100px] px-4" />
       </footer>
     </>
   );
