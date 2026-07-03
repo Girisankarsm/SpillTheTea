@@ -12,13 +12,13 @@ export function applyUpvotesToMessages(
   }));
 }
 
-export async function fetchMessageUpvotes(): Promise<{
+export async function fetchMessageUpvotes(..._args: unknown[]): Promise<{
   counts: Record<string, number>;
   mine: Record<string, boolean>;
 }> {
   return { counts: {}, mine: {} };
 }
 
-export async function toggleMessageUpvoteRemote(): Promise<void> {
+export async function toggleMessageUpvoteRemote(..._args: unknown[]): Promise<void> {
   // TODO: back this with /api/messages/:id/upvote after message voting is moved to MongoDB.
 }

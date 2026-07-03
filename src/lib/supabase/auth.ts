@@ -33,7 +33,7 @@ function notifyAuthChanged(): void {
   }
 }
 
-export async function signInWithGoogle(): Promise<{ error: Error | null }> {
+export async function signInWithGoogle(..._args: unknown[]): Promise<{ error: Error | null }> {
   return {
     error: new Error("Google sign-in is not enabled on the MongoDB auth backend yet. Use email and password."),
   };

@@ -25,8 +25,12 @@ type AppSession = {
 };
 
 type BackendChannel = {
-  on: (...args: unknown[]) => BackendChannel;
-  subscribe: () => BackendChannel;
+  on: (
+    type: string,
+    filter: unknown,
+    callback?: (event: { payload?: unknown }) => void,
+  ) => BackendChannel;
+  subscribe: (callback?: (status: string) => void) => BackendChannel;
   send: (payload: unknown) => Promise<"ok">;
 };
 

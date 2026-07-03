@@ -17,7 +17,7 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
-export async function fetchDuties(): Promise<DutyWithOffers[]> {
+export async function fetchDuties(_client?: unknown): Promise<DutyWithOffers[]> {
   const data = await jsonFetch<{ duties: DutyWithOffers[] }>("/api/duties");
   return data.duties;
 }

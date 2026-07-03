@@ -1,14 +1,14 @@
 import type { RideLiveLocation } from "@/lib/types/ride-location";
 
-export async function fetchRideLiveLocations(): Promise<RideLiveLocation[]> {
+export async function fetchRideLiveLocations(..._args: unknown[]): Promise<RideLiveLocation[]> {
   return [];
 }
 
-export async function upsertRideLiveLocation(): Promise<void> {
+export async function upsertRideLiveLocation(..._args: unknown[]): Promise<void> {
   console.warn("Mongo live ride location persistence is not implemented yet.");
 }
 
-export async function setRideLocationSharing(): Promise<void> {
+export async function setRideLocationSharing(..._args: unknown[]): Promise<void> {
   console.warn("Mongo live ride location sharing is not implemented yet.");
 }
 

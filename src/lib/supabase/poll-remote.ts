@@ -1,6 +1,6 @@
 import type { CreatePollInput, RoomPoll } from "@/lib/types/poll";
 
-export async function fetchTopicPolls(): Promise<RoomPoll[]> {
+export async function fetchTopicPolls(..._args: unknown[]): Promise<RoomPoll[]> {
   return [];
 }
 
@@ -13,7 +13,7 @@ export async function createPollRemote(
   return id;
 }
 
-export async function votePollRemote(): Promise<void> {
+export async function votePollRemote(..._args: unknown[]): Promise<void> {
   console.warn("Mongo poll vote persistence is not implemented yet.");
 }
 

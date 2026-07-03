@@ -1,6 +1,6 @@
 import type { DutyChatMessage, DutyChatMessageType } from "@/lib/types/duty-chat";
 
-export async function fetchDutyMessages(): Promise<DutyChatMessage[]> {
+export async function fetchDutyMessages(..._args: unknown[]): Promise<DutyChatMessage[]> {
   return [];
 }
 

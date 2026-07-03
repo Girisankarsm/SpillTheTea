@@ -1,6 +1,6 @@
 import type { RideChatMessage, RideChatMessageType } from "@/lib/types/ride-chat";
 
-export async function fetchRideMessages(): Promise<RideChatMessage[]> {
+export async function fetchRideMessages(..._args: unknown[]): Promise<RideChatMessage[]> {
   return [];
 }
 

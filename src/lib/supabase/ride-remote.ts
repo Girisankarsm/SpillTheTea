@@ -17,7 +17,7 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
-export async function fetchRides(): Promise<RideWithOffers[]> {
+export async function fetchRides(_client?: unknown): Promise<RideWithOffers[]> {
   const data = await jsonFetch<{ rides: RideWithOffers[] }>("/api/rides");
   return data.rides;
 }

@@ -13,7 +13,7 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
-export async function fetchProfileRemote(): Promise<UserProfile | null> {
+export async function fetchProfileRemote(..._args: unknown[]): Promise<UserProfile | null> {
   const data = await jsonFetch<{ profile: UserProfile | null }>("/api/profile");
   return data.profile;
 }
@@ -40,11 +40,11 @@ export async function upsertProfileRemote(
   return data.profile;
 }
 
-export async function awardChakraRemote(): Promise<void> {
+export async function awardChakraRemote(..._args: unknown[]): Promise<void> {
   console.warn("Mongo chakra award flow is not implemented yet.");
 }
 
-export async function fetchPayeePaymentRemote(): Promise<{
+export async function fetchPayeePaymentRemote(..._args: unknown[]): Promise<{
   paymentUpi?: string;
   paymentPhone?: string;
 } | null> {

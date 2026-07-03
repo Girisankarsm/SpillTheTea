@@ -13,8 +13,12 @@ import { RideRouteSummary } from "@/components/RideRouteSummary";
 import { formatRideVehicle } from "@/lib/types/ride-vehicle";
 
 type BackendChannel = {
-  on: (...args: unknown[]) => BackendChannel;
-  subscribe: () => BackendChannel | Promise<BackendChannel>;
+  on: (
+    type: string,
+    filter: unknown,
+    callback?: (event: { payload?: unknown }) => void,
+  ) => BackendChannel;
+  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
 };
 
 type BackendClient = {

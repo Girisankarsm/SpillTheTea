@@ -96,7 +96,7 @@ export async function fetchTopicMeta(
   };
 }
 
-export async function fetchLockedRoomDisplayName(): Promise<string | null> {
+export async function fetchLockedRoomDisplayName(..._args: unknown[]): Promise<string | null> {
   return null;
 }
 
@@ -114,11 +114,11 @@ export async function sendMessageRemote(
   return data.id;
 }
 
-export async function joinTopicRoomRemote(): Promise<void> {
+export async function joinTopicRoomRemote(..._args: unknown[]): Promise<void> {
   // Membership is created when a Mongo-backed topic is created. Explicit joins can be added later.
 }
 
-export async function userJoinedTopicRemote(): Promise<boolean> {
+export async function userJoinedTopicRemote(..._args: unknown[]): Promise<boolean> {
   return true;
 }
 
