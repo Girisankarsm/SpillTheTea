@@ -24,18 +24,20 @@ type AppSession = {
   };
 };
 
+type BackendChannel = {
+  on: (...args: unknown[]) => BackendChannel;
+  subscribe: () => BackendChannel;
+  send: (payload: unknown) => Promise<"ok">;
+};
+
 type BackendClient = {
   auth: {
     getSession: () => Promise<{ data: { session: AppSession | null } }>;
     getUser: () => Promise<{ data: { user: AppSession["user"] | null } }>;
     signOut: () => Promise<void>;
   };
-  channel: () => {
-    on: () => ReturnType<BackendClient["channel"]>;
-    subscribe: () => ReturnType<BackendClient["channel"]>;
-    send: () => Promise<"ok">;
-  };
-  removeChannel: () => Promise<void>;
+  channel: (name: string) => BackendChannel;
+  removeChannel: (channel: BackendChannel) => Promise<void>;
 };
 
 type Ctx = {
@@ -115,15 +117,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           await refreshSession();
         },
       },
-      channel: () => {
-        const noop = {
+      channel: (_name: string) => {
+        const noop: BackendChannel = {
           on: () => noop,
           subscribe: () => noop,
-          send: async () => "ok" as const,
+          send: async () => "ok",
         };
         return noop;
       },
-      removeChannel: async () => {},
+      removeChannel: async (_channel: BackendChannel) => {},
     }),
     [refreshSession],
   );
