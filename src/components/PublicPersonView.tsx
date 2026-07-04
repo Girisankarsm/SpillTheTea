@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChakraBadge } from "@/components/ChakraBadge";
-import { useSupabase } from "@/components/SupabaseProvider";
-import { fetchPublicProfileRemote } from "@/lib/supabase/profile-remote";
+import { useBackend } from "@/components/BackendProvider";
+import { fetchPublicProfileRemote } from "@/lib/backend/profile-remote";
 import { useProfileStore } from "@/lib/profile-store";
 import type { PublicUserProfile } from "@/lib/types/profile";
 
@@ -14,19 +14,19 @@ type PublicPersonViewProps = {
 };
 
 export function PublicPersonView({ userId, visitorId }: PublicPersonViewProps) {
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
   const getLocalPublicProfile = useProfileStore((s) => s.getLocalPublicProfile);
   const [remote, setRemote] = useState<PublicUserProfile | null>(null);
   const [loading, setLoading] = useState(Boolean(userId && remoteReady));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId || !remoteReady || !supabase) return;
+    if (!userId || !remoteReady || !backend) return;
     let cancelled = false;
     setLoading(true);
     void (async () => {
       try {
-        const profile = await fetchPublicProfileRemote(supabase, userId);
+        const profile = await fetchPublicProfileRemote(backend, userId);
         if (!cancelled) {
           setRemote(profile);
           setError(profile ? null : "This person has not set up a public name yet.");
@@ -40,7 +40,7 @@ export function PublicPersonView({ userId, visitorId }: PublicPersonViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [userId, remoteReady, supabase]);
+  }, [userId, remoteReady, backend]);
 
   const local =
     visitorId && !userId ? getLocalPublicProfile(visitorId) : null;

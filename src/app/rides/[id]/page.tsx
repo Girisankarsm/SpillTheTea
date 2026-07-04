@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { RideDetailPanel } from "@/components/RideDetailPanel";
 import { RideOfferModal } from "@/components/RideOfferModal";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { setStoredRideDriverName } from "@/lib/ride-names";
-import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
+import { getCurrentUserId } from "@/lib/backend/meet-greet-remote";
 import {
   cancelRideRemote,
   completeRideRemote,
@@ -16,7 +16,7 @@ import {
   fetchRideById,
   pickRideOfferRemote,
   rewardRideRemote,
-} from "@/lib/supabase/ride-remote";
+} from "@/lib/backend/ride-remote";
 import { formatMoney, type RideWithOffers } from "@/lib/types/ride";
 
 export default function RideDetailPage() {
@@ -24,7 +24,7 @@ export default function RideDetailPage() {
   const router = useRouter();
   const rideId = typeof params?.id === "string" ? params.id : "";
 
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const [ride, setRide] = useState<RideWithOffers | null>(null);
   const [loaded, setLoaded] = useState(!remoteReady);
@@ -34,32 +34,32 @@ export default function RideDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const rideChat =
-    remoteReady && supabase && currentUserId && rideId
-      ? { rideId, supabase, currentUserId }
+    remoteReady && backend && currentUserId && rideId
+      ? { rideId, backend, currentUserId }
       : null;
 
   const reload = useCallback(async () => {
-    if (!supabase || !remoteReady || !rideId) return;
+    if (!backend || !remoteReady || !rideId) return;
     try {
-      setRide(await fetchRideById(supabase, rideId));
+      setRide(await fetchRideById(backend, rideId));
       setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load ride request."));
     }
-  }, [supabase, remoteReady, rideId]);
+  }, [backend, remoteReady, rideId]);
 
   useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => {
-      if (!remoteReady || !supabase || !rideId) {
+      if (!remoteReady || !backend || !rideId) {
         if (!cancelled) setLoaded(true);
         return;
       }
       void (async () => {
         if (!cancelled) setLoaded(false);
         try {
-          setRide(await fetchRideById(supabase, rideId));
+          setRide(await fetchRideById(backend, rideId));
           setCurrentUserId(await getCurrentUserId());
         } catch (e) {
           if (!cancelled) {
@@ -73,11 +73,11 @@ export default function RideDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [remoteReady, supabase, rideId]);
+  }, [remoteReady, backend, rideId]);
 
   useEffect(() => {
-    if (!supabase || !remoteReady || !rideId) return;
-    const channel = supabase
+    if (!backend || !remoteReady || !rideId) return;
+    const channel = backend
       .channel(`ride-${rideId}`)
       .on(
         "postgres_changes",
@@ -92,9 +92,9 @@ export default function RideDetailPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, rideId, reload]);
+  }, [backend, remoteReady, rideId, reload]);
 
   async function handleOffer(input: {
     driverName: string;
@@ -107,8 +107,8 @@ export default function RideDetailPage() {
     setStoredRideDriverName(input.driverName);
     setBusy(true);
     try {
-      if (!supabase) throw new Error("Sign in to offer a ride.");
-      await createRideOfferRemote(supabase, {
+      if (!backend) throw new Error("Sign in to offer a ride.");
+      await createRideOfferRemote(backend, {
         rideId,
         driverName: input.driverName,
         pitch: input.pitch,
@@ -126,11 +126,11 @@ export default function RideDetailPage() {
   }
 
   async function handlePickOffer(offerId: string) {
-    if (!rideId || !supabase) return;
+    if (!rideId || !backend) return;
     if (!window.confirm("Pick this driver for the ride?")) return;
     setBusy(true);
     try {
-      await pickRideOfferRemote(supabase, rideId, offerId);
+      await pickRideOfferRemote(backend, rideId, offerId);
       await reload();
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not pick driver."));
@@ -140,10 +140,10 @@ export default function RideDetailPage() {
   }
 
   async function handleComplete() {
-    if (!rideId || !supabase) return;
+    if (!rideId || !backend) return;
     setBusy(true);
     try {
-      await completeRideRemote(supabase, rideId);
+      await completeRideRemote(backend, rideId);
       await reload();
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not mark complete."));
@@ -153,7 +153,7 @@ export default function RideDetailPage() {
   }
 
   async function handleReward() {
-    if (!rideId || !ride || !supabase) return;
+    if (!rideId || !ride || !backend) return;
     const matched = ride.offers.find((offer) => offer.id === ride.matchedOfferId);
     const amountLabel = matched
       ? formatMoney(matched.rewardAmount, matched.currency)
@@ -169,7 +169,7 @@ export default function RideDetailPage() {
 
     setBusy(true);
     try {
-      await rewardRideRemote(supabase, rideId);
+      await rewardRideRemote(backend, rideId);
       await reload();
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not send reward."));
@@ -179,11 +179,11 @@ export default function RideDetailPage() {
   }
 
   async function handleCancel() {
-    if (!rideId || !ride || !supabase) return;
+    if (!rideId || !ride || !backend) return;
     if (!window.confirm("Remove this ride request?")) return;
     setBusy(true);
     try {
-      await cancelRideRemote(supabase, rideId);
+      await cancelRideRemote(backend, rideId);
       router.replace("/rides");
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not remove ride request."));

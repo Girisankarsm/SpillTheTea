@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { CreateTopicPanel, type CreateTopicPayload } from "@/components/CreateTopicPanel";
 import { ShareRoomModal } from "@/components/ShareRoomModal";
 import { TeaFeedCard } from "@/components/TeaFeedCard";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { canDeleteTopic } from "@/lib/admin";
 import type { TopicSort } from "@/lib/message-upvotes";
@@ -17,13 +17,13 @@ import {
   fetchTopicPreviewsRemote,
   getCurrentUserId,
   sendMessageRemote,
-} from "@/lib/supabase/meet-greet-remote";
+} from "@/lib/backend/meet-greet-remote";
 import { readFileAsDataUrl } from "@/lib/message-thread";
 import {
   normalizeMediaUrlInput,
   uploadMessageMedia,
-} from "@/lib/supabase/message-media";
-import { createPollRemote } from "@/lib/supabase/poll-remote";
+} from "@/lib/backend/message-media";
+import { createPollRemote } from "@/lib/backend/poll-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { roomShareUrl } from "@/lib/share-room";
 import {
@@ -52,7 +52,7 @@ export default function TeaPage() {
 function TeaPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
   const { defaultDisplayName } = useUserProfile();
 
   const localTopics = useMeetGreetStore((s) => s.topics);
@@ -80,10 +80,10 @@ function TeaPageContent() {
   );
 
   const reload = useCallback(async () => {
-    if (!supabase || !remoteReady) return;
+    if (!backend || !remoteReady) return;
     setRxLoading(true);
     try {
-      const feed = await fetchExploreFeeds(supabase);
+      const feed = await fetchExploreFeeds(backend);
       setRxTopics(feed.topics);
       setRxActivity(feed.topicActivity);
       setRxJoinCounts(feed.topicJoinCounts);
@@ -91,7 +91,7 @@ function TeaPageContent() {
       setCurrentUserId(await getCurrentUserId());
 
       const previews = await fetchTopicPreviewsRemote(
-        supabase,
+        backend,
         feed.topics.map((t) => t.id),
       );
       setRxPreviews(previews);
@@ -100,7 +100,7 @@ function TeaPageContent() {
     } finally {
       setRxLoading(false);
     }
-  }, [supabase, remoteReady]);
+  }, [backend, remoteReady]);
 
   useEffect(() => {
     queueMicrotask(() => void reload());
@@ -123,8 +123,8 @@ function TeaPageContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!supabase || !remoteReady) return;
-    const channel = supabase
+    if (!backend || !remoteReady) return;
+    const channel = backend
       .channel("topics-directory")
       .on(
         "postgres_changes",
@@ -144,9 +144,9 @@ function TeaPageContent() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, reload]);
+  }, [backend, remoteReady, reload]);
 
   const topics = remoteReady ? rxTopics : localTopics;
   const activity = useMemo(() => {
@@ -191,9 +191,9 @@ function TeaPageContent() {
       return;
     }
 
-    if (remoteReady && supabase) {
+    if (remoteReady && backend) {
       try {
-        await deleteTopicRemote(supabase, topicId);
+        await deleteTopicRemote(backend, topicId);
         await reload();
       } catch (e) {
         alert(unknownErrorMessage(e, "Could not close topic."));
@@ -216,15 +216,15 @@ function TeaPageContent() {
       const lat = location?.lat ?? 0;
       const lng = location?.lng ?? 0;
 
-      if (remoteReady && supabase) {
-        const tid = await createTopicRemote(supabase, {
+      if (remoteReady && backend) {
+        const tid = await createTopicRemote(backend, {
           title: payload.title,
           lat,
           lng,
         });
 
         if (payload.kind === "text" && payload.body) {
-          await sendMessageRemote(supabase, {
+          await sendMessageRemote(backend, {
             topicId: tid,
             authorName,
             body: payload.body,
@@ -235,7 +235,7 @@ function TeaPageContent() {
           const linkBody = payload.body
             ? `${payload.body}\n\n${payload.linkUrl}`
             : payload.linkUrl;
-          await sendMessageRemote(supabase, {
+          await sendMessageRemote(backend, {
             topicId: tid,
             authorName,
             body: linkBody,
@@ -248,7 +248,7 @@ function TeaPageContent() {
 
           if (payload.mediaFile) {
             const uploaded = await uploadMessageMedia(
-              supabase,
+              backend,
               payload.mediaFile,
               tid,
             );
@@ -261,7 +261,7 @@ function TeaPageContent() {
             mediaType = normalized.mediaType;
           }
 
-          await sendMessageRemote(supabase, {
+          await sendMessageRemote(backend, {
             topicId: tid,
             authorName,
             body: payload.body,
@@ -271,7 +271,7 @@ function TeaPageContent() {
         }
 
         if (payload.kind === "poll") {
-          await createPollRemote(supabase, {
+          await createPollRemote(backend, {
             topicId: tid,
             authorName,
             question: payload.pollQuestion,
@@ -372,7 +372,7 @@ function TeaPageContent() {
               setCreateOpen(false);
               router.replace("/topics/tea");
             }}
-            disabled={remoteReady && (!supabase || rxLoading)}
+            disabled={remoteReady && (!backend || rxLoading)}
             submitting={posting}
           />
         </div>

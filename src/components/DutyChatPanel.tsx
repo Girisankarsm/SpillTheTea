@@ -11,12 +11,12 @@ import {
   maybeShowLocalMessageNotification,
   notifyMessageRecipient,
 } from "@/lib/push/client";
-import { uploadDutyAttachment, uploadDutyVoice } from "@/lib/supabase/duty-chat-media";
+import { uploadDutyAttachment, uploadDutyVoice } from "@/lib/backend/duty-chat-media";
 import {
   fetchDutyMessages,
   mapDutyChatRow,
   sendDutyChatMessage,
-} from "@/lib/supabase/duty-chat-remote";
+} from "@/lib/backend/duty-chat-remote";
 import { formatMoney } from "@/lib/types/duty";
 import type { DutyChatMessage } from "@/lib/types/duty-chat";
 
@@ -36,7 +36,7 @@ type BackendClient = {
 
 type DutyChatPanelProps = {
   dutyId: string;
-  supabase: BackendClient;
+  backend: BackendClient;
   currentUserId: string;
   authorUserId: string;
   authorName: string;
@@ -141,7 +141,7 @@ function DutyChatBubble({ message }: { message: DutyChatMessage }) {
 
 export function DutyChatPanel({
   dutyId,
-  supabase,
+  backend,
   currentUserId,
   authorUserId,
   authorName,
@@ -177,7 +177,7 @@ export function DutyChatPanel({
     setLoading(true);
     try {
       const rows = await fetchDutyMessages(
-        supabase,
+        backend,
         dutyId,
         currentUserId,
         authorUserId,
@@ -192,7 +192,7 @@ export function DutyChatPanel({
       setLoading(false);
     }
   }, [
-    supabase,
+    backend,
     dutyId,
     currentUserId,
     authorUserId,
@@ -206,7 +206,7 @@ export function DutyChatPanel({
   }, [reload]);
 
   useEffect(() => {
-    const channel = supabase
+    const channel = backend
       .channel(`duty-chat-${dutyId}`)
       .on(
         "postgres_changes",
@@ -244,10 +244,10 @@ export function DutyChatPanel({
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
   }, [
-    supabase,
+    backend,
     dutyId,
     currentUserId,
     authorUserId,
@@ -297,9 +297,9 @@ export function DutyChatPanel({
     setSending(true);
     try {
       if (pendingFile) {
-        const uploaded = await uploadDutyAttachment(supabase, dutyId, pendingFile);
+        const uploaded = await uploadDutyAttachment(backend, dutyId, pendingFile);
         const sent = await sendDutyChatMessage(
-          supabase,
+          backend,
           dutyId,
           {
             messageType: uploaded.messageType,
@@ -318,7 +318,7 @@ export function DutyChatPanel({
 
       if (gifUrl) {
         const sent = await sendDutyChatMessage(
-          supabase,
+          backend,
           dutyId,
           {
             messageType: "gif",
@@ -335,7 +335,7 @@ export function DutyChatPanel({
       }
 
       const sent = await sendDutyChatMessage(
-        supabase,
+        backend,
         dutyId,
         {
           messageType: "text",
@@ -364,9 +364,9 @@ export function DutyChatPanel({
           alert("Recording was too short.");
           return;
         }
-        const audioUrl = await uploadDutyVoice(supabase, dutyId, blob);
+        const audioUrl = await uploadDutyVoice(backend, dutyId, blob);
         const sent = await sendDutyChatMessage(
-          supabase,
+          backend,
           dutyId,
           {
             messageType: "voice",

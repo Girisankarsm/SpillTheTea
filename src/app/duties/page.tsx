@@ -4,14 +4,14 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateDutyModal } from "@/components/CreateDutyModal";
 import { DutyCard } from "@/components/DutyCard";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
 import { unknownErrorMessage } from "@/lib/error-message";
 import {
   setStoredDutyAuthorName,
 } from "@/lib/duty-names";
-import { createDutyRemote, fetchDuties } from "@/lib/supabase/duty-remote";
-import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
+import { createDutyRemote, fetchDuties } from "@/lib/backend/duty-remote";
+import { getCurrentUserId } from "@/lib/backend/meet-greet-remote";
 import { dutiesWithOffers, useMeetGreetStore } from "@/lib/store";
 import type { DutyWithOffers } from "@/lib/types/duty";
 import { getVisitorId } from "@/lib/visitor";
@@ -28,7 +28,7 @@ function isDutyAuthor(
 
 export default function DutiesPage() {
   const router = useRouter();
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const localDuties = useMeetGreetStore((s) => s.duties);
   const localOffers = useMeetGreetStore((s) => s.dutyOffers);
@@ -50,10 +50,10 @@ export default function DutiesPage() {
   const viewerKey = getVisitorId();
 
   const reload = useCallback(async () => {
-    if (!supabase || !remoteReady) return;
+    if (!backend || !remoteReady) return;
     setLoading(true);
     try {
-      setRemoteDuties(await fetchDuties(supabase));
+      setRemoteDuties(await fetchDuties(backend));
       setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
@@ -61,15 +61,15 @@ export default function DutiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, remoteReady]);
+  }, [backend, remoteReady]);
 
   useEffect(() => {
     queueMicrotask(() => void reload());
   }, [reload]);
 
   useEffect(() => {
-    if (!supabase || !remoteReady) return;
-    const channel = supabase
+    if (!backend || !remoteReady) return;
+    const channel = backend
       .channel("duties-feed")
       .on(
         "postgres_changes",
@@ -84,9 +84,9 @@ export default function DutiesPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, reload]);
+  }, [backend, remoteReady, reload]);
 
   async function handleCreate(input: {
     title: string;
@@ -98,13 +98,13 @@ export default function DutiesPage() {
 
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
+      if (remoteReady && backend) {
         const userId = await getCurrentUserId();
         if (!userId) {
           alert("Sign in to post a duty.");
           return;
         }
-        const duty = await createDutyRemote(supabase, {
+        const duty = await createDutyRemote(backend, {
           title: input.title,
           description: input.description,
           authorName: postingName,

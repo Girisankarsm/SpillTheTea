@@ -36,7 +36,7 @@ type DutyDetailPanelProps = {
   onCancel: () => void;
   chat?: {
     dutyId: string;
-    supabase: BackendClient;
+    backend: BackendClient;
     currentUserId: string;
   } | null;
 };
@@ -188,7 +188,7 @@ export function DutyDetailPanel({
 
       {showPayment && assignedOffer ? (
         <PayHelperPanel
-          supabase={chat?.supabase}
+          backend={chat?.backend}
           payeeUserId={assignedOffer.helperUserId}
           payeeName={assignedOffer.helperName}
           amount={assignedOffer.rewardAmount}
@@ -203,7 +203,7 @@ export function DutyDetailPanel({
       {showPrivateChat && assignedOffer && chat ? (
         <DutyChatPanel
           dutyId={chat.dutyId}
-          supabase={chat.supabase}
+          backend={chat.backend}
           currentUserId={chat.currentUserId}
           authorUserId={duty.authorUserId!}
           authorName={duty.authorName}

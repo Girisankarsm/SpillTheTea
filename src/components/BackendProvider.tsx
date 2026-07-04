@@ -45,20 +45,20 @@ type BackendClient = {
 };
 
 type Ctx = {
-  supabase: BackendClient | null;
+  backend: BackendClient | null;
   session: AppSession | null;
   authReady: boolean;
   refreshSession: () => Promise<void>;
 };
 
-const SupabaseContext = createContext<Ctx>({
-  supabase: null,
+const BackendContext = createContext<Ctx>({
+  backend: null,
   session: null,
   authReady: false,
   refreshSession: async () => {},
 });
 
-export function SupabaseProvider({ children }: { children: React.ReactNode }) {
+export function BackendProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AppSession | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
@@ -156,7 +156,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      supabase: client,
+      backend: client,
       session,
       authReady,
       refreshSession,
@@ -165,15 +165,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SupabaseContext.Provider value={value}>{children}</SupabaseContext.Provider>
+    <BackendContext.Provider value={value}>{children}</BackendContext.Provider>
   );
 }
 
-export function useSupabase(): Ctx & {
+export function useBackend(): Ctx & {
   configured: boolean;
   remoteReady: boolean;
 } {
-  const ctx = useContext(SupabaseContext);
+  const ctx = useContext(BackendContext);
   const configured = true;
   const remoteReady = Boolean(configured && ctx.authReady && ctx.session);
 
@@ -188,7 +188,7 @@ export function useSupabase(): Ctx & {
 }
 
 export function useEnsureRemoteAuth(): () => Promise<void> {
-  const { session } = useSupabase();
+  const { session } = useBackend();
 
   return useCallback(async () => {
     if (!session) {

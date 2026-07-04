@@ -1,4 +1,4 @@
-import { isAuthenticatedUser } from "@/lib/supabase/session";
+import { isAuthenticatedUser } from "@/lib/backend/session";
 
 /** Match sign-up and login; avoids "wrong password" confusion from casing. */
 export function normalizeEmailForAuth(email: string): string {

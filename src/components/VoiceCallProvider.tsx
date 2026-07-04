@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import {
   ICE_SERVERS,
   roomCallChannel,
@@ -65,7 +65,7 @@ function isVoiceSignal(payload: unknown): payload is VoiceCallSignal {
 }
 
 export function VoiceCallProvider({ children }: { children: ReactNode }) {
-  const { supabase, remoteReady, session } = useSupabase();
+  const { backend, remoteReady, session } = useBackend();
   const userId = session?.user?.id ?? null;
 
   const [status, setStatus] = useState<VoiceCallStatus>("idle");
@@ -79,7 +79,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const activeCallRef = useRef<ActiveCall | null>(null);
   const statusRef = useRef<VoiceCallStatus>("idle");
   const ringTimeoutRef = useRef<number | null>(null);
-  const supabaseRef = useRef<BackendClient | null>(null);
+  const backendRef = useRef<BackendClient | null>(null);
   const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   }, [status]);
 
   useEffect(() => {
-    supabaseRef.current = supabase;
-  }, [supabase]);
+    backendRef.current = backend;
+  }, [backend]);
 
   useEffect(() => {
     userIdRef.current = userId;
@@ -114,7 +114,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       remoteAudioRef.current.srcObject = null;
     }
 
-    const sb = supabaseRef.current;
+    const sb = backendRef.current;
     if (roomChannelRef.current && sb) {
       void sb.removeChannel(roomChannelRef.current);
       roomChannelRef.current = null;
@@ -135,7 +135,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendUserSignal = useCallback(async (toUserId: string, signal: VoiceCallSignal) => {
-    const sb = supabaseRef.current;
+    const sb = backendRef.current;
     if (!sb) return;
     const channel = sb.channel(userCallChannel(toUserId));
     await channel.subscribe();
@@ -292,7 +292,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   }, [handleRoomSignal]);
 
   const attachRoomChannel = useCallback((call: ActiveCall) => {
-    const sb = supabaseRef.current;
+    const sb = backendRef.current;
     if (!sb) return;
 
     if (roomChannelRef.current) {
@@ -325,7 +325,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
   const startCall = useCallback(
     async (input: StartCallInput) => {
-      const sb = supabaseRef.current;
+      const sb = backendRef.current;
       const uid = userIdRef.current;
       if (!sb || !uid) throw new Error("Sign in to call.");
       if (statusRef.current !== "idle") throw new Error("Already in a call.");
@@ -398,9 +398,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   }, [cleanupCall, sendRoomSignal]);
 
   useEffect(() => {
-    if (!supabase || !remoteReady || !userId) return;
+    if (!backend || !remoteReady || !userId) return;
 
-    const channel = supabase
+    const channel = backend
       .channel(userCallChannel(userId))
       .on("broadcast", { event: "voice-signal" }, ({ payload }) => {
         if (!isVoiceSignal(payload) || payload.fromUserId === userId) return;
@@ -429,9 +429,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [sendUserSignal, supabase, remoteReady, userId]);
+  }, [sendUserSignal, backend, remoteReady, userId]);
 
   useEffect(() => {
     return () => {

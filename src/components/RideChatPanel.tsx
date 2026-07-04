@@ -11,12 +11,12 @@ import {
   maybeShowLocalMessageNotification,
   notifyMessageRecipient,
 } from "@/lib/push/client";
-import { uploadRideAttachment, uploadRideVoice } from "@/lib/supabase/ride-chat-media";
+import { uploadRideAttachment, uploadRideVoice } from "@/lib/backend/ride-chat-media";
 import {
   fetchRideMessages,
   mapRideChatRow,
   sendRideChatMessage,
-} from "@/lib/supabase/ride-chat-remote";
+} from "@/lib/backend/ride-chat-remote";
 import { formatMoney } from "@/lib/types/ride";
 import type { RideChatMessage } from "@/lib/types/ride-chat";
 
@@ -36,7 +36,7 @@ type BackendClient = {
 
 type RideChatPanelProps = {
   rideId: string;
-  supabase: BackendClient;
+  backend: BackendClient;
   currentUserId: string;
   riderUserId: string;
   riderName: string;
@@ -141,7 +141,7 @@ function RideChatBubble({ message }: { message: RideChatMessage }) {
 
 export function RideChatPanel({
   rideId,
-  supabase,
+  backend,
   currentUserId,
   riderUserId,
   riderName,
@@ -177,7 +177,7 @@ export function RideChatPanel({
     setLoading(true);
     try {
       const rows = await fetchRideMessages(
-        supabase,
+        backend,
         rideId,
         currentUserId,
         riderUserId,
@@ -192,7 +192,7 @@ export function RideChatPanel({
       setLoading(false);
     }
   }, [
-    supabase,
+    backend,
     rideId,
     currentUserId,
     riderUserId,
@@ -206,7 +206,7 @@ export function RideChatPanel({
   }, [reload]);
 
   useEffect(() => {
-    const channel = supabase
+    const channel = backend
       .channel(`ride-chat-${rideId}`)
       .on(
         "postgres_changes",
@@ -244,10 +244,10 @@ export function RideChatPanel({
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
   }, [
-    supabase,
+    backend,
     rideId,
     currentUserId,
     riderUserId,
@@ -297,9 +297,9 @@ export function RideChatPanel({
     setSending(true);
     try {
       if (pendingFile) {
-        const uploaded = await uploadRideAttachment(supabase, rideId, pendingFile);
+        const uploaded = await uploadRideAttachment(backend, rideId, pendingFile);
         const sent = await sendRideChatMessage(
-          supabase,
+          backend,
           rideId,
           {
             messageType: uploaded.messageType,
@@ -318,7 +318,7 @@ export function RideChatPanel({
 
       if (gifUrl) {
         const sent = await sendRideChatMessage(
-          supabase,
+          backend,
           rideId,
           {
             messageType: "gif",
@@ -335,7 +335,7 @@ export function RideChatPanel({
       }
 
       const sent = await sendRideChatMessage(
-        supabase,
+        backend,
         rideId,
         {
           messageType: "text",
@@ -364,9 +364,9 @@ export function RideChatPanel({
           alert("Recording was too short.");
           return;
         }
-        const audioUrl = await uploadRideVoice(supabase, rideId, blob);
+        const audioUrl = await uploadRideVoice(backend, rideId, blob);
         const sent = await sendRideChatMessage(
-          supabase,
+          backend,
           rideId,
           {
             messageType: "voice",

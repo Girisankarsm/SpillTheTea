@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 
 const DISMISS_KEY = "spillthetea-push-dismissed-v1";
 
@@ -51,10 +51,10 @@ async function subscribeToPush(registration: ServiceWorkerRegistration): Promise
 }
 
 export function usePushNotifications(enabled: boolean) {
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const syncSubscription = useCallback(async () => {
-    if (!enabled || !remoteReady || !supabase) return;
+    if (!enabled || !remoteReady || !backend) return;
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim()) return;
     if (typeof Notification === "undefined") return;
     if (Notification.permission !== "granted") return;
@@ -79,7 +79,7 @@ export function usePushNotifications(enabled: boolean) {
     }
 
     await subscribeToPush(registration);
-  }, [enabled, remoteReady, supabase]);
+  }, [enabled, remoteReady, backend]);
 
   useEffect(() => {
     if (!enabled || !remoteReady) return;
@@ -94,7 +94,7 @@ export function usePushNotifications(enabled: boolean) {
 }
 
 export function PushNotificationPrompt() {
-  const { remoteReady } = useSupabase();
+  const { remoteReady } = useBackend();
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -164,7 +164,7 @@ export function PushNotificationPrompt() {
 }
 
 export function PushNotificationManager() {
-  const { remoteReady } = useSupabase();
+  const { remoteReady } = useBackend();
   usePushNotifications(remoteReady);
   return null;
 }

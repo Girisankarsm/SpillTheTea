@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSupabase } from "@/components/SupabaseProvider";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { useBackend } from "@/components/BackendProvider";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
 
 type LandingAuthLinkProps = {
   href?: string;
@@ -19,7 +19,7 @@ export function LandingAuthLink({
   signedInLabel = "Open app →",
   signedInHref = "/topics",
 }: LandingAuthLinkProps) {
-  const { session, authReady } = useSupabase();
+  const { session, authReady } = useBackend();
   const signedIn = authReady && isGoogleSignedIn(session);
   const target = signedIn ? signedInHref : href;
 

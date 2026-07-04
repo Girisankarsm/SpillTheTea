@@ -1,16 +1,16 @@
 "use client";
 
-import { useSupabase } from "@/components/SupabaseProvider";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { useBackend } from "@/components/BackendProvider";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
 
 export function SetupBanner() {
-  const { configured, remoteReady, supabase, authReady, session } = useSupabase();
+  const { configured, remoteReady, backend, authReady, session } = useBackend();
 
   if (!configured) {
     return null;
   }
 
-  if (!supabase || !authReady) {
+  if (!backend || !authReady) {
     return (
       <div className="border-b border-border bg-background px-4 py-2 text-center text-xs text-subtle">
         Connecting…

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateRideModal } from "@/components/CreateRideModal";
 import { RideCard } from "@/components/RideCard";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { distanceKm } from "@/lib/geo";
 import {
   isNearby,
@@ -15,8 +15,8 @@ import {
 } from "@/lib/explore-map-utils";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { setStoredRideRiderName } from "@/lib/ride-names";
-import { createRideRemote, fetchRides } from "@/lib/supabase/ride-remote";
-import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
+import { createRideRemote, fetchRides } from "@/lib/backend/ride-remote";
+import { getCurrentUserId } from "@/lib/backend/meet-greet-remote";
 import type { RideWithOffers } from "@/lib/types/ride";
 import { yellowButtonMdClass, yellowButtonSmClass } from "@/lib/ui";
 
@@ -38,7 +38,7 @@ function isRideRider(ride: RideWithOffers, userId: string | null): boolean {
 
 export default function RidesPage() {
   const router = useRouter();
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const [rides, setRides] = useState<RideWithOffers[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,10 +51,10 @@ export default function RidesPage() {
   const [locStatus, setLocStatus] = useState<string | null>("Finding your location…");
 
   const reload = useCallback(async () => {
-    if (!supabase || !remoteReady) return;
+    if (!backend || !remoteReady) return;
     setLoading(true);
     try {
-      setRides(await fetchRides(supabase));
+      setRides(await fetchRides(backend));
       setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
@@ -62,7 +62,7 @@ export default function RidesPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, remoteReady]);
+  }, [backend, remoteReady]);
 
   useEffect(() => {
     queueMicrotask(() => void reload());
@@ -85,8 +85,8 @@ export default function RidesPage() {
   }, []);
 
   useEffect(() => {
-    if (!supabase || !remoteReady) return;
-    const channel = supabase
+    if (!backend || !remoteReady) return;
+    const channel = backend
       .channel("rides-feed")
       .on(
         "postgres_changes",
@@ -101,9 +101,9 @@ export default function RidesPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, reload]);
+  }, [backend, remoteReady, reload]);
 
   const nearbyRides = useMemo(() => {
     const open = rides.filter((ride) => ride.status === "open");
@@ -161,11 +161,11 @@ export default function RidesPage() {
     setStoredRideRiderName(input.riderName);
     setBusy(true);
     try {
-      if (!remoteReady || !supabase) {
+      if (!remoteReady || !backend) {
         alert("Sign in to request a ride.");
         return;
       }
-      const ride = await createRideRemote(supabase, input);
+      const ride = await createRideRemote(backend, input);
       setCreateOpen(false);
       await reload();
       router.push(`/rides/${ride.id}`);

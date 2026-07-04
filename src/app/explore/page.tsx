@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { distanceKm, formatDistanceKm } from "@/lib/geo";
 import {
   isNearby,
@@ -16,8 +16,8 @@ import {
   createTopicRemote,
   fetchExploreFeeds,
   rankTopicsByMessages,
-} from "@/lib/supabase/meet-greet-remote";
-import { fetchRides } from "@/lib/supabase/ride-remote";
+} from "@/lib/backend/meet-greet-remote";
+import { fetchRides } from "@/lib/backend/ride-remote";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { yellowButtonMdClass } from "@/lib/ui";
 import type { RideWithOffers } from "@/lib/types/ride";
@@ -49,7 +49,7 @@ const HOT_TOPIC_MESSAGES = 3;
 
 export default function ExplorePage() {
   const router = useRouter();
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const localTopics = useMeetGreetStore((s) => s.topics);
   const localMessages = useMeetGreetStore((s) => s.messages);
@@ -66,12 +66,12 @@ export default function ExplorePage() {
   const [rxErr, setRxErr] = useState<string | null>(null);
 
   const reloadExplore = useCallback(async () => {
-    if (!supabase || !remoteReady) return;
+    if (!backend || !remoteReady) return;
     setRxLoading(true);
     try {
       const [feed, rides] = await Promise.all([
-        fetchExploreFeeds(supabase),
-        fetchRides(supabase),
+        fetchExploreFeeds(backend),
+        fetchRides(backend),
       ]);
       setRxTopics(feed.topics);
       setRxTopicActivity(feed.topicActivity);
@@ -82,7 +82,7 @@ export default function ExplorePage() {
     } finally {
       setRxLoading(false);
     }
-  }, [supabase, remoteReady]);
+  }, [backend, remoteReady]);
 
   useEffect(() => {
     queueMicrotask(() => void reloadExplore());
@@ -103,9 +103,9 @@ export default function ExplorePage() {
   }, []);
 
   useEffect(() => {
-    if (!supabase || !remoteReady) return;
+    if (!backend || !remoteReady) return;
 
-    const channel = supabase
+    const channel = backend
       .channel("explore-sync")
       .on(
         "postgres_changes",
@@ -135,9 +135,9 @@ export default function ExplorePage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, reloadExplore]);
+  }, [backend, remoteReady, reloadExplore]);
 
   const viewportRef = useRef({ lat: 19.076, lng: 72.8777 });
   const [recenterToken, setRecenterToken] = useState(0);
@@ -240,9 +240,9 @@ export default function ExplorePage() {
     const lat = userPin?.lat ?? viewportRef.current.lat;
     const lng = userPin?.lng ?? viewportRef.current.lng;
 
-    if (remoteReady && supabase) {
+    if (remoteReady && backend) {
       try {
-        const tid = await createTopicRemote(supabase, {
+        const tid = await createTopicRemote(backend, {
           title,
           lat,
           lng,
@@ -462,7 +462,7 @@ export default function ExplorePage() {
             </label>
             <button
               type="submit"
-              disabled={remoteReady && (!supabase || rxLoading)}
+              disabled={remoteReady && (!backend || rxLoading)}
               className={`${yellowButtonMdClass} mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50`}
             >
               Post topic

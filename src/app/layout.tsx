@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Inter } from "next/font/google";
 import { AppAmbientBackground } from "@/components/AppAmbientBackground";
 import { AppShellOrPlain } from "@/components/AppShellOrPlain";
-import { SupabaseProvider } from "@/components/SupabaseProvider";
+import { BackendProvider } from "@/components/BackendProvider";
 import { VoiceCallProvider } from "@/components/VoiceCallProvider";
 import "./globals.css";
 
@@ -56,13 +56,13 @@ export default function RootLayout({
     >
       <body className="relative flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
         <AppAmbientBackground />
-        <SupabaseProvider>
+        <BackendProvider>
           <VoiceCallProvider>
             <div className="relative z-[1] flex min-h-full flex-1 flex-col">
               <AppShellOrPlain>{children}</AppShellOrPlain>
             </div>
           </VoiceCallProvider>
-        </SupabaseProvider>
+        </BackendProvider>
       </body>
     </html>
   );

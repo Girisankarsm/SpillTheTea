@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { readFileAsDataUrl } from "@/lib/message-thread";
 import { isImageFile } from "@/lib/image-file";
 import { normalizePaymentPhone } from "@/lib/payments/upi";
 import { useProfileStore } from "@/lib/profile-store";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
-import { uploadProfileAvatarApi, removeProfileAvatarApi } from "@/lib/supabase/profile-media";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
+import { uploadProfileAvatarApi, removeProfileAvatarApi } from "@/lib/backend/profile-media";
 import { getVisitorId } from "@/lib/visitor";
 
 export default function ProfilePage() {
-  const { session, configured, supabase, remoteReady } = useSupabase();
+  const { session, configured, backend, remoteReady } = useBackend();
   const { profile, saveProfile, loading, signedIn } = useUserProfile();
   const upsertLocalPublicProfile = useProfileStore((s) => s.upsertLocalPublicProfile);
 

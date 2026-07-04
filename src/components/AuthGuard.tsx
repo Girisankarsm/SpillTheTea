@@ -2,13 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { useBackend } from "@/components/BackendProvider";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { session, authReady, configured } = useSupabase();
+  const { session, authReady, configured } = useBackend();
 
   useEffect(() => {
     if (!authReady) return;

@@ -14,7 +14,7 @@ import {
   fetchRideLiveLocations,
   mapRideLiveLocationRow,
   upsertRideLiveLocation,
-} from "@/lib/supabase/ride-location-remote";
+} from "@/lib/backend/ride-location-remote";
 import type { RideLiveLocations } from "@/lib/types/ride-location";
 import type { RideWithOffers } from "@/lib/types/ride";
 
@@ -39,7 +39,7 @@ const CARTO_VOYAGER =
 
 type RideLiveTrackingPanelProps = {
   ride: RideWithOffers;
-  supabase: BackendClient;
+  backend: BackendClient;
   currentUserId: string;
   isRider: boolean;
   isDriver: boolean;
@@ -91,7 +91,7 @@ function formatUpdated(ms: number): string {
 
 export function RideLiveTrackingPanel({
   ride,
-  supabase,
+  backend,
   currentUserId,
   isRider,
   isDriver,
@@ -104,19 +104,19 @@ export function RideLiveTrackingPanel({
 
   const reload = useCallback(async () => {
     try {
-      setLocations(await fetchRideLiveLocations(supabase, ride.id));
+      setLocations(await fetchRideLiveLocations(backend, ride.id));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load live locations.");
     }
-  }, [supabase, ride.id]);
+  }, [backend, ride.id]);
 
   useEffect(() => {
     void reload();
   }, [reload]);
 
   useEffect(() => {
-    const channel = supabase
+    const channel = backend
       .channel(`ride-live-${ride.id}`)
       .on(
         "postgres_changes",
@@ -139,9 +139,9 @@ export function RideLiveTrackingPanel({
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, ride.id]);
+  }, [backend, ride.id]);
 
   useEffect(() => {
     const mine = role === "rider" ? locations.rider : locations.driver;
@@ -169,7 +169,7 @@ export function RideLiveTrackingPanel({
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        void upsertRideLiveLocation(supabase, ride.id, role, lat, lng, true).catch(() => {
+        void upsertRideLiveLocation(backend, ride.id, role, lat, lng, true).catch(() => {
           /* ignore transient errors */
         });
       },
@@ -186,7 +186,7 @@ export function RideLiveTrackingPanel({
         watchRef.current = null;
       }
     };
-  }, [sharing, supabase, ride.id, role]);
+  }, [sharing, backend, ride.id, role]);
 
   async function toggleSharing() {
     const next = !sharing;
@@ -199,7 +199,7 @@ export function RideLiveTrackingPanel({
         const lat = current?.lat ?? ride.pickupLat;
         const lng = current?.lng ?? ride.pickupLng;
         if (lat != null && lng != null) {
-          await upsertRideLiveLocation(supabase, ride.id, role, lat, lng, false);
+          await upsertRideLiveLocation(backend, ride.id, role, lat, lng, false);
         }
         await reload();
       } catch (e) {

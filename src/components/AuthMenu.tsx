@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import {
   googleProfile,
   isGoogleSignedIn,
   signOutUser,
-} from "@/lib/supabase/auth";
+} from "@/lib/backend/auth";
 
 function GoogleMark() {
   return (
@@ -37,7 +37,7 @@ function GoogleMark() {
 export function AuthMenu() {
   const pathname = usePathname();
   const router = useRouter();
-  const { supabase, session, authReady, configured } = useSupabase();
+  const { backend, session, authReady, configured } = useBackend();
   const { profile, defaultDisplayName } = useUserProfile();
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,7 +72,7 @@ export function AuthMenu() {
     setMenuOpen(false);
   }, [pathname]);
 
-  if (!configured || !supabase) return null;
+  if (!configured || !backend) return null;
 
   const signedIn = isGoogleSignedIn(session);
   const google = googleProfile(session);
@@ -85,11 +85,11 @@ export function AuthMenu() {
       : "/login";
 
   async function handleSignOut() {
-    if (!supabase || busy) return;
+    if (!backend || busy) return;
     setMenuOpen(false);
     setBusy(true);
     try {
-      await signOutUser(supabase);
+      await signOutUser(backend);
       router.replace("/login");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not sign out.");

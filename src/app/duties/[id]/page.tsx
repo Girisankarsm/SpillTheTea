@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DutyDetailPanel } from "@/components/DutyDetailPanel";
 import { DutyOfferModal } from "@/components/DutyOfferModal";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { setStoredDutyHelperName } from "@/lib/duty-names";
 import { chakraPointsForDuty } from "@/lib/chakra";
@@ -16,8 +16,8 @@ import {
   fetchDutyById,
   pickDutyOfferRemote,
   rewardDutyRemote,
-} from "@/lib/supabase/duty-remote";
-import { getCurrentUserId } from "@/lib/supabase/meet-greet-remote";
+} from "@/lib/backend/duty-remote";
+import { getCurrentUserId } from "@/lib/backend/meet-greet-remote";
 import { getDutyWithOffers, useMeetGreetStore } from "@/lib/store";
 import { useProfileStore } from "@/lib/profile-store";
 import type { DutyWithOffers } from "@/lib/types/duty";
@@ -29,7 +29,7 @@ export default function DutyDetailPage() {
   const router = useRouter();
   const dutyId = typeof params?.id === "string" ? params.id : "";
 
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
 
   const localDuties = useMeetGreetStore((s) => s.duties);
   const localOffers = useMeetGreetStore((s) => s.dutyOffers);
@@ -55,25 +55,25 @@ export default function DutyDetailPage() {
   const duty = remoteReady ? remoteDuty : localDuty;
   const viewerKey = getVisitorId();
   const dutyChat =
-    remoteReady && supabase && currentUserId && dutyId
-      ? { dutyId, supabase, currentUserId }
+    remoteReady && backend && currentUserId && dutyId
+      ? { dutyId, backend, currentUserId }
       : null;
 
   const reload = useCallback(async () => {
-    if (!supabase || !remoteReady || !dutyId) return;
+    if (!backend || !remoteReady || !dutyId) return;
     try {
-      setRemoteDuty(await fetchDutyById(supabase, dutyId));
+      setRemoteDuty(await fetchDutyById(backend, dutyId));
       setCurrentUserId(await getCurrentUserId());
       setError(null);
     } catch (e) {
       setError(unknownErrorMessage(e, "Could not load duty."));
     }
-  }, [supabase, remoteReady, dutyId]);
+  }, [backend, remoteReady, dutyId]);
 
   useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => {
-      if (!remoteReady || !supabase || !dutyId) {
+      if (!remoteReady || !backend || !dutyId) {
         if (!cancelled) setLoaded(true);
         return;
       }
@@ -81,7 +81,7 @@ export default function DutyDetailPage() {
       void (async () => {
         if (!cancelled) setLoaded(false);
         try {
-          const row = await fetchDutyById(supabase, dutyId);
+          const row = await fetchDutyById(backend, dutyId);
           if (cancelled) return;
           setRemoteDuty(row);
           setCurrentUserId(await getCurrentUserId());
@@ -98,11 +98,11 @@ export default function DutyDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [remoteReady, supabase, dutyId]);
+  }, [remoteReady, backend, dutyId]);
 
   useEffect(() => {
-    if (!supabase || !remoteReady || !dutyId) return;
-    const channel = supabase
+    if (!backend || !remoteReady || !dutyId) return;
+    const channel = backend
       .channel(`duty-${dutyId}`)
       .on(
         "postgres_changes",
@@ -117,9 +117,9 @@ export default function DutyDetailPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, remoteReady, dutyId, reload]);
+  }, [backend, remoteReady, dutyId, reload]);
 
   async function handleOffer(input: {
     pitch: string;
@@ -132,8 +132,8 @@ export default function DutyDetailPage() {
 
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await createDutyOfferRemote(supabase, {
+      if (remoteReady && backend) {
+        await createDutyOfferRemote(backend, {
           dutyId,
           helperName: postingName,
           pitch: input.pitch,
@@ -174,8 +174,8 @@ export default function DutyDetailPage() {
     if (!window.confirm("Pick this helper for the duty?")) return;
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await pickDutyOfferRemote(supabase, dutyId, offerId);
+      if (remoteReady && backend) {
+        await pickDutyOfferRemote(backend, dutyId, offerId);
         await reload();
         return;
       }
@@ -191,8 +191,8 @@ export default function DutyDetailPage() {
     if (!dutyId) return;
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await completeDutyRemote(supabase, dutyId);
+      if (remoteReady && backend) {
+        await completeDutyRemote(backend, dutyId);
         await reload();
         return;
       }
@@ -238,8 +238,8 @@ export default function DutyDetailPage() {
 
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await rewardDutyRemote(supabase, dutyId);
+      if (remoteReady && backend) {
+        await rewardDutyRemote(backend, dutyId);
         await reload();
         return;
       }
@@ -269,8 +269,8 @@ export default function DutyDetailPage() {
     if (!window.confirm(message)) return;
     setBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await cancelDutyRemote(supabase, dutyId);
+      if (remoteReady && backend) {
+        await cancelDutyRemote(backend, dutyId);
         router.replace("/duties");
         return;
       }

@@ -9,13 +9,13 @@ import {
   phoneTelUrl,
   type PayeePaymentInfo,
 } from "@/lib/payments/upi";
-import { fetchPayeePaymentRemote } from "@/lib/supabase/profile-remote";
+import { fetchPayeePaymentRemote } from "@/lib/backend/profile-remote";
 import { formatMoney } from "@/lib/types/duty";
 
 type BackendClient = unknown;
 
 type PayHelperPanelProps = {
-  supabase?: BackendClient | null;
+  backend?: BackendClient | null;
   payeeUserId?: string;
   payeeName: string;
   amount: number;
@@ -30,7 +30,7 @@ type PayHelperPanelProps = {
 };
 
 export function PayHelperPanel({
-  supabase,
+  backend,
   payeeUserId,
   payeeName,
   amount,
@@ -46,14 +46,14 @@ export function PayHelperPanel({
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!payerView || !supabase || !payeeUserId || (!dutyId && !rideId)) {
+    if (!payerView || !backend || !payeeUserId || (!dutyId && !rideId)) {
       setPayment(null);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
-    void fetchPayeePaymentRemote(supabase, payeeUserId, { dutyId, rideId })
+    void fetchPayeePaymentRemote(backend, payeeUserId, { dutyId, rideId })
       .then((info) => {
         if (!cancelled) setPayment(info);
       })
@@ -67,7 +67,7 @@ export function PayHelperPanel({
     return () => {
       cancelled = true;
     };
-  }, [payerView, supabase, payeeUserId, dutyId, rideId]);
+  }, [payerView, backend, payeeUserId, dutyId, rideId]);
 
   const upiId = payment?.paymentUpi ? normalizeUpiId(payment.paymentUpi) : null;
   const phone = payment?.paymentPhone

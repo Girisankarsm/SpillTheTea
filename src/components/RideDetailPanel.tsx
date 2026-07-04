@@ -37,7 +37,7 @@ type RideDetailPanelProps = {
   onCancel: () => void;
   chat?: {
     rideId: string;
-    supabase: BackendClient;
+    backend: BackendClient;
     currentUserId: string;
   } | null;
 };
@@ -195,7 +195,7 @@ export function RideDetailPanel({
 
       {showPayment && matchedOffer ? (
         <PayHelperPanel
-          supabase={chat?.supabase}
+          backend={chat?.backend}
           payeeUserId={matchedOffer.driverUserId}
           payeeName={matchedOffer.driverName}
           amount={matchedOffer.rewardAmount}
@@ -210,7 +210,7 @@ export function RideDetailPanel({
       {showLiveTracking && chat && matchedOffer ? (
         <RideLiveTrackingPanel
           ride={ride}
-          supabase={chat.supabase}
+          backend={chat.backend}
           currentUserId={chat.currentUserId}
           isRider={rider}
           isDriver={driver}
@@ -220,7 +220,7 @@ export function RideDetailPanel({
       {showPrivateChat && matchedOffer && chat ? (
         <RideChatPanel
           rideId={chat.rideId}
-          supabase={chat.supabase}
+          backend={chat.backend}
           currentUserId={chat.currentUserId}
           riderUserId={ride.riderUserId!}
           riderName={ride.riderName}

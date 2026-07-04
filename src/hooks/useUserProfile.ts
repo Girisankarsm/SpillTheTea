@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { useBackend } from "@/components/BackendProvider";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
 import { profileDisplayName, useProfileStore } from "@/lib/profile-store";
 import type { UserProfile } from "@/lib/types/profile";
 
 export function useUserProfile() {
-  const { session, authReady } = useSupabase();
+  const { session, authReady } = useBackend();
   const local = useProfileStore();
   const signedIn = isGoogleSignedIn(session);
 

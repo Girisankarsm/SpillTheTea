@@ -11,13 +11,13 @@ import type { ChatMessage, Topic } from "@/lib/types";
 import type { RoomPoll } from "@/lib/types/poll";
 import { enrichPollVotes } from "@/lib/feed";
 import { applyLocalUpvotesToMessages, type TopicSort } from "@/lib/message-upvotes";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { canDeleteTopic } from "@/lib/admin";
-import { isGoogleSignedIn } from "@/lib/supabase/auth";
+import { isGoogleSignedIn } from "@/lib/backend/auth";
 import {
   fetchDmRequests,
   findThreadWithUser,
-} from "@/lib/supabase/dm-remote";
+} from "@/lib/backend/dm-remote";
 import { readFileAsDataUrl } from "@/lib/message-thread";
 import {
   deleteTopicRemote,
@@ -26,21 +26,21 @@ import {
   fetchTopicMeta,
   getCurrentUserId,
   sendMessageRemote,
-} from "@/lib/supabase/meet-greet-remote";
+} from "@/lib/backend/meet-greet-remote";
 import {
   createPollRemote,
   fetchTopicPolls,
   votePollRemote,
-} from "@/lib/supabase/poll-remote";
+} from "@/lib/backend/poll-remote";
 import {
   normalizeMediaUrlInput,
   uploadMessageMedia,
-} from "@/lib/supabase/message-media";
+} from "@/lib/backend/message-media";
 import {
   applyUpvotesToMessages,
   fetchMessageUpvotes,
   toggleMessageUpvoteRemote,
-} from "@/lib/supabase/message-upvote-remote";
+} from "@/lib/backend/message-upvote-remote";
 import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { roomShareUrl } from "@/lib/share-room";
@@ -81,7 +81,7 @@ export default function TopicChatPage() {
   const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
 
-  const { supabase, remoteReady, session } = useSupabase();
+  const { backend, remoteReady, session } = useBackend();
   const { defaultDisplayName } = useUserProfile();
 
   const localTopics = useMeetGreetStore((s) => s.topics);
@@ -129,30 +129,30 @@ export default function TopicChatPage() {
 
   const refreshRemoteUpvotes = useCallback(
     async (messages: ChatMessage[], userId: string | null) => {
-      if (!supabase || messages.length === 0) return messages;
+      if (!backend || messages.length === 0) return messages;
       const upvotes = await fetchMessageUpvotes(
-        supabase,
+        backend,
         messages.map((message) => message.id),
       );
       return applyUpvotesToMessages(messages, upvotes, userId);
     },
-    [supabase],
+    [backend],
   );
 
   const refreshRemotePolls = useCallback(async () => {
-    if (!supabase || !id) return;
+    if (!backend || !id) return;
     try {
-      const polls = await fetchTopicPolls(supabase, id);
+      const polls = await fetchTopicPolls(backend, id);
       setRemotePolls(polls);
     } catch (e) {
       setRemoteErr(unknownErrorMessage(e, "Could not refresh polls."));
     }
-  }, [supabase, id]);
+  }, [backend, id]);
 
   const refreshRemoteRoom = useCallback(async () => {
-    if (!supabase || !id) return;
+    if (!backend || !id) return;
     try {
-      const meta = await fetchTopicMeta(supabase, id);
+      const meta = await fetchTopicMeta(backend, id);
       if (!meta) {
         setRemoteTopic(null);
         return;
@@ -161,13 +161,13 @@ export default function TopicChatPage() {
     } catch (e) {
       setRemoteErr(unknownErrorMessage(e, "Could not refresh topic."));
     }
-  }, [supabase, id]);
+  }, [backend, id]);
 
   useEffect(() => {
     let cancelled = false;
 
     queueMicrotask(() => {
-      if (!remoteReady || !supabase || !id) {
+      if (!remoteReady || !backend || !id) {
         if (!cancelled) setRemoteLoaded(true);
         return;
       }
@@ -176,7 +176,7 @@ export default function TopicChatPage() {
         if (!cancelled) setRemoteLoaded(false);
         if (!cancelled) setRemoteErr(null);
         try {
-          const meta = await fetchTopicMeta(supabase, id);
+          const meta = await fetchTopicMeta(backend, id);
           if (cancelled) return;
           if (!meta) {
             setRemoteTopic(null);
@@ -185,13 +185,13 @@ export default function TopicChatPage() {
           }
           setRemoteTopic(meta.topic);
 
-          const msgs = await fetchTopicMessages(supabase, id);
+          const msgs = await fetchTopicMessages(backend, id);
           if (cancelled) return;
           const userId = await getCurrentUserId();
           if (cancelled) return;
           setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
 
-          const polls = await fetchTopicPolls(supabase, id);
+          const polls = await fetchTopicPolls(backend, id);
           if (cancelled) return;
           setRemotePolls(polls);
 
@@ -209,12 +209,12 @@ export default function TopicChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [remoteReady, supabase, id, refreshRemoteUpvotes]);
+  }, [remoteReady, backend, id, refreshRemoteUpvotes]);
 
   useEffect(() => {
-    if (!remoteReady || !supabase || !id) return;
+    if (!remoteReady || !backend || !id) return;
 
-    const channel = supabase
+    const channel = backend
       .channel(`topic-chat-${id}`)
       .on(
         "postgres_changes",
@@ -244,8 +244,8 @@ export default function TopicChatPage() {
         },
         () => {
           void (async () => {
-            if (!supabase || !id) return;
-            const msgs = await fetchTopicMessages(supabase, id);
+            if (!backend || !id) return;
+            const msgs = await fetchTopicMessages(backend, id);
             const userId = await getCurrentUserId();
             setRemoteMessages(await refreshRemoteUpvotes(msgs, userId));
           })();
@@ -287,9 +287,9 @@ export default function TopicChatPage() {
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [remoteReady, supabase, id, refreshRemoteRoom, refreshRemotePolls, refreshRemoteUpvotes, router]);
+  }, [remoteReady, backend, id, refreshRemoteRoom, refreshRemotePolls, refreshRemoteUpvotes, router]);
 
   const localThreadWithUpvotes = useMemo(() => {
     const voterKey = getVisitorId();
@@ -338,10 +338,10 @@ export default function TopicChatPage() {
     let cancelled = false;
 
     async function loadLockedName() {
-      if (remoteReady && supabase && currentUserId) {
+      if (remoteReady && backend && currentUserId) {
         try {
           const locked = await fetchLockedRoomDisplayName(
-            supabase,
+            backend,
             id,
             currentUserId,
           );
@@ -377,7 +377,7 @@ export default function TopicChatPage() {
     id,
     chatHydrated,
     remoteReady,
-    supabase,
+    backend,
     currentUserId,
     getLockedRoomNameLocal,
   ]);
@@ -388,15 +388,15 @@ export default function TopicChatPage() {
   }
 
   const canPrivateChat =
-    remoteReady && supabase && currentUserId && isGoogleSignedIn(session);
+    remoteReady && backend && currentUserId && isGoogleSignedIn(session);
 
   const refreshPendingDms = useCallback(async () => {
-    if (!supabase || !id || !currentUserId || !canPrivateChat) {
+    if (!backend || !id || !currentUserId || !canPrivateChat) {
       setPendingDmCount(0);
       return;
     }
     try {
-      const reqs = await fetchDmRequests(supabase, id, currentUserId);
+      const reqs = await fetchDmRequests(backend, id, currentUserId);
       setPendingDmCount(
         reqs.filter(
           (r) => r.status === "pending" && r.toUserId === currentUserId,
@@ -405,16 +405,16 @@ export default function TopicChatPage() {
     } catch {
       setPendingDmCount(0);
     }
-  }, [supabase, id, currentUserId, canPrivateChat]);
+  }, [backend, id, currentUserId, canPrivateChat]);
 
   useEffect(() => {
     void refreshPendingDms();
   }, [refreshPendingDms]);
 
   useEffect(() => {
-    if (!supabase || !id || !canPrivateChat) return;
+    if (!backend || !id || !canPrivateChat) return;
 
-    const channel = supabase
+    const channel = backend
       .channel(`dm-requests-${id}`)
       .on(
         "postgres_changes",
@@ -424,12 +424,12 @@ export default function TopicChatPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [supabase, id, canPrivateChat, refreshPendingDms]);
+  }, [backend, id, canPrivateChat, refreshPendingDms]);
 
   async function handlePrivateChat(message: ChatMessage) {
-    if (!canPrivateChat || !supabase || !currentUserId || !message.authorUserId) {
+    if (!canPrivateChat || !backend || !currentUserId || !message.authorUserId) {
       alert("Sign in with Google to use private chats.");
       return;
     }
@@ -439,7 +439,7 @@ export default function TopicChatPage() {
 
     try {
       const thread = await findThreadWithUser(
-        supabase,
+        backend,
         id,
         currentUserId,
         message.authorUserId,
@@ -489,8 +489,8 @@ export default function TopicChatPage() {
       let mediaType: "image" | "gif" | undefined;
 
       if (pendingFile) {
-        if (remoteReady && supabase) {
-          const uploaded = await uploadMessageMedia(supabase, pendingFile, id);
+        if (remoteReady && backend) {
+          const uploaded = await uploadMessageMedia(backend, pendingFile, id);
           mediaUrl = uploaded.url;
           mediaType = uploaded.mediaType;
         } else {
@@ -520,8 +520,8 @@ export default function TopicChatPage() {
         mediaType,
       };
 
-      if (remoteReady && supabase) {
-        const posted = await sendMessageRemote(supabase, payload);
+      if (remoteReady && backend) {
+        const posted = await sendMessageRemote(backend, payload);
         setRemoteMessages((prev) => {
           const next = appendUniqueMessage(prev, posted);
           return next.sort((a, b) => a.createdAt - b.createdAt);
@@ -553,8 +553,8 @@ export default function TopicChatPage() {
     const author = name.trim() || "anon";
     setPollBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await createPollRemote(supabase, {
+      if (remoteReady && backend) {
+        await createPollRemote(backend, {
           topicId: id,
           authorName: author,
           question: input.question,
@@ -588,8 +588,8 @@ export default function TopicChatPage() {
 
     setHotBusy(true);
     try {
-      if (remoteReady && supabase) {
-        const upvoted = await toggleMessageUpvoteRemote(supabase, message.id);
+      if (remoteReady && backend) {
+        const upvoted = await toggleMessageUpvoteRemote(backend, message.id);
         setRemoteMessages((prev) =>
           prev.map((entry) =>
             entry.id === message.id
@@ -624,8 +624,8 @@ export default function TopicChatPage() {
 
     setPollBusy(true);
     try {
-      if (remoteReady && supabase) {
-        await votePollRemote(supabase, pollId, optionId);
+      if (remoteReady && backend) {
+        await votePollRemote(backend, pollId, optionId);
         await refreshRemotePolls();
       } else {
         const voterKey = getVisitorId();
@@ -661,9 +661,9 @@ export default function TopicChatPage() {
       return;
     }
 
-    if (remoteReady && supabase) {
+    if (remoteReady && backend) {
       try {
-        await deleteTopicRemote(supabase, id);
+        await deleteTopicRemote(backend, id);
         router.push("/topics");
       } catch (err) {
         alert(unknownErrorMessage(err, "Could not close topic."));
@@ -793,10 +793,10 @@ export default function TopicChatPage() {
           replyTo={replyTo}
           pendingFile={pendingFile}
           composerDisabled={
-            posting || (remoteReady && (!supabase || !remoteLoaded))
+            posting || (remoteReady && (!backend || !remoteLoaded))
           }
           pollDisabled={
-            pollBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
+            pollBusy || posting || (remoteReady && (!backend || !remoteLoaded))
           }
           currentUserId={currentUserId}
           onPrivateChat={canPrivateChat ? handlePrivateChat : undefined}
@@ -818,7 +818,7 @@ export default function TopicChatPage() {
           onSortChange={setSort}
           onHot={(message) => void handleHot(message)}
           hotDisabled={
-            hotBusy || posting || (remoteReady && (!supabase || !remoteLoaded))
+            hotBusy || posting || (remoteReady && (!backend || !remoteLoaded))
           }
         />
       )}
@@ -831,11 +831,11 @@ export default function TopicChatPage() {
         roomUrl={shareUrl}
       />
 
-      {canPrivateChat && supabase && currentUserId ? (
+      {canPrivateChat && backend && currentUserId ? (
         <PrivateChatPanel
           open={dmOpen}
           onClose={closeDmPanel}
-          supabase={supabase}
+          backend={backend}
           topicId={id}
           currentUserId={currentUserId}
           initialThreadId={dmInitialThreadId}

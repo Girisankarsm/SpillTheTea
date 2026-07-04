@@ -10,7 +10,7 @@ import {
   rejectDmRequest,
   sendDmMessage,
   sendDmRequest,
-} from "@/lib/supabase/dm-remote";
+} from "@/lib/backend/dm-remote";
 import { appendUniqueMessage } from "@/lib/merge-messages";
 import { unknownErrorMessage } from "@/lib/error-message";
 import {
@@ -37,7 +37,7 @@ type BackendClient = {
 type PrivateChatPanelProps = {
   open: boolean;
   onClose: () => void;
-  supabase: BackendClient;
+  backend: BackendClient;
   topicId: string;
   currentUserId: string;
   initialThreadId?: string | null;
@@ -56,7 +56,7 @@ function formatTime(ms: number): string {
 export function PrivateChatPanel({
   open,
   onClose,
-  supabase,
+  backend,
   topicId,
   currentUserId,
   initialThreadId,
@@ -84,8 +84,8 @@ export function PrivateChatPanel({
     setLoading(true);
     try {
       const [reqs, ths] = await Promise.all([
-        fetchDmRequests(supabase, topicId, currentUserId),
-        fetchDmThreads(supabase, topicId, currentUserId),
+        fetchDmRequests(backend, topicId, currentUserId),
+        fetchDmThreads(backend, topicId, currentUserId),
       ]);
       setRequests(reqs);
       setThreads(ths);
@@ -95,7 +95,7 @@ export function PrivateChatPanel({
     } finally {
       setLoading(false);
     }
-  }, [open, supabase, topicId, currentUserId, onDataChange]);
+  }, [open, backend, topicId, currentUserId, onDataChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,7 +120,7 @@ export function PrivateChatPanel({
     requestSentRef.current = true;
     void (async () => {
       try {
-        await sendDmRequest(supabase, topicId, initialRequestUserId);
+        await sendDmRequest(backend, topicId, initialRequestUserId);
         await reload();
         alert(`Request sent to ${initialRequestDisplayName ?? "them"}.`);
       } catch (e) {
@@ -132,7 +132,7 @@ export function PrivateChatPanel({
     initialRequestUserId,
     initialThreadId,
     initialRequestDisplayName,
-    supabase,
+    backend,
     topicId,
     reload,
   ]);
@@ -147,7 +147,7 @@ export function PrivateChatPanel({
     void (async () => {
       try {
         const msgs = await fetchDmMessages(
-          supabase,
+          backend,
           activeThreadId,
           currentUserId,
         );
@@ -157,7 +157,7 @@ export function PrivateChatPanel({
       }
     })();
 
-    const channel = supabase
+    const channel = backend
       .channel(`dm-${activeThreadId}`)
       .on(
         "postgres_changes",
@@ -197,7 +197,7 @@ export function PrivateChatPanel({
       )
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          void fetchDmMessages(supabase, activeThreadId, currentUserId).then(
+          void fetchDmMessages(backend, activeThreadId, currentUserId).then(
             (msgs) => setMessages(msgs),
             () => undefined,
           );
@@ -206,9 +206,9 @@ export function PrivateChatPanel({
 
     return () => {
       cancelled = true;
-      void supabase.removeChannel(channel);
+      void backend.removeChannel(channel);
     };
-  }, [open, activeThreadId, supabase, currentUserId]);
+  }, [open, activeThreadId, backend, currentUserId]);
 
   useEffect(() => {
     if (!open) return;
@@ -225,7 +225,7 @@ export function PrivateChatPanel({
 
   async function handleAccept(requestId: string) {
     try {
-      const threadId = await acceptDmRequest(supabase, requestId);
+      const threadId = await acceptDmRequest(backend, requestId);
       await reload();
       setActiveThreadId(threadId);
     } catch (e) {
@@ -235,7 +235,7 @@ export function PrivateChatPanel({
 
   async function handleReject(requestId: string) {
     try {
-      await rejectDmRequest(supabase, requestId);
+      await rejectDmRequest(backend, requestId);
       await reload();
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not decline request."));
@@ -247,7 +247,7 @@ export function PrivateChatPanel({
     if (!activeThreadId || sending) return;
     setSending(true);
     try {
-      const sent = await sendDmMessage(supabase, activeThreadId, draft, currentUserId);
+      const sent = await sendDmMessage(backend, activeThreadId, draft, currentUserId);
       setMessages((prev) => appendUniqueMessage(prev, sent));
       void notifyMessageRecipient({ kind: "dm", messageId: sent.id });
       setDraft("");

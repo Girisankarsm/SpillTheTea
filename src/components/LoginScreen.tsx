@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { AppLogo } from "@/components/AppLogo";
 import { LegalFooterLinks } from "@/components/LegalFooterLinks";
-import { useSupabase } from "@/components/SupabaseProvider";
+import { useBackend } from "@/components/BackendProvider";
 import { APP_DISCLAIMER } from "@/lib/disclaimer";
 import { setLegalAcceptanceCookie } from "@/lib/legal-acceptance";
 import { PRIVACY_POLICY_PATH, TERMS_OF_SERVICE_PATH } from "@/lib/legal";
@@ -16,7 +16,7 @@ import {
   signUpWithEmail,
   resendSignupConfirmationEmail,
   isGoogleSignedIn,
-} from "@/lib/supabase/auth";
+} from "@/lib/backend/auth";
 
 type AuthMode = "login" | "register";
 type SignInMethod = "password" | "magiclink";
@@ -202,7 +202,7 @@ export function LoginScreen() {
   const authFailed = searchParams.get("auth") === "failed";
   const legalRequired = searchParams.get("auth") === "legal";
 
-  const { supabase, session, authReady, configured } = useSupabase();
+  const { backend, session, authReady, configured } = useBackend();
   const [mode, setMode] = useState<AuthMode>("login");
   const [signInMethod, setSignInMethod] = useState<SignInMethod>("password");
   const [email, setEmail] = useState("");
@@ -225,11 +225,11 @@ export function LoginScreen() {
   }
 
   async function handleResendConfirmation() {
-    if (!supabase || !email.trim() || resendBusy) return;
+    if (!backend || !email.trim() || resendBusy) return;
     resetMessages();
     setResendBusy(true);
     try {
-      const { error } = await resendSignupConfirmationEmail(supabase, email);
+      const { error } = await resendSignupConfirmationEmail(backend, email);
       if (error) {
         setFormError(error.message);
         return;
@@ -241,12 +241,12 @@ export function LoginScreen() {
   }
 
   async function handleGoogleSignIn() {
-    if (!supabase || !canSubmit || busy) return;
+    if (!backend || !canSubmit || busy) return;
     resetMessages();
     setBusy(true);
     try {
       setLegalAcceptanceCookie();
-      const { error } = await signInWithGoogle(supabase, nextPath);
+      const { error } = await signInWithGoogle(backend, nextPath);
       if (error) setFormError(error.message);
     } finally {
       setBusy(false);
@@ -255,7 +255,7 @@ export function LoginScreen() {
 
   async function handleMagicLink(event: React.FormEvent) {
     event.preventDefault();
-    if (!supabase || !canSubmit || busy) return;
+    if (!backend || !canSubmit || busy) return;
     resetMessages();
 
     if (!email.trim()) {
@@ -266,7 +266,7 @@ export function LoginScreen() {
     setBusy(true);
     try {
       setLegalAcceptanceCookie();
-      const { error } = await signInWithMagicLink(supabase, email, nextPath);
+      const { error } = await signInWithMagicLink(backend, email, nextPath);
       if (error) {
         setFormError(error.message);
         return;
@@ -279,7 +279,7 @@ export function LoginScreen() {
 
   async function handleEmailLogin(event: React.FormEvent) {
     event.preventDefault();
-    if (!supabase || !canSubmit || busy) return;
+    if (!backend || !canSubmit || busy) return;
     resetMessages();
 
     if (!email.trim() || !password) {
@@ -290,7 +290,7 @@ export function LoginScreen() {
     setBusy(true);
     try {
       setLegalAcceptanceCookie();
-      const { error } = await signInWithEmail(supabase, email, password);
+      const { error } = await signInWithEmail(backend, email, password);
       if (error) {
         const msg = error.message.toLowerCase().includes("email not confirmed")
           ? "Confirm your email first — check your inbox (and spam), then log in."
@@ -306,7 +306,7 @@ export function LoginScreen() {
 
   async function handleEmailRegister(event: React.FormEvent) {
     event.preventDefault();
-    if (!supabase || !canSubmit || busy) return;
+    if (!backend || !canSubmit || busy) return;
     resetMessages();
 
     if (!email.trim() || !password) {
@@ -326,7 +326,7 @@ export function LoginScreen() {
     try {
       setLegalAcceptanceCookie();
       const { error, needsEmailConfirmation } = await signUpWithEmail(
-        supabase,
+        backend,
         email,
         password,
       );
@@ -473,7 +473,7 @@ export function LoginScreen() {
               </p>
             ) : null}
 
-            {configured && supabase ? (
+            {configured && backend ? (
               <div className="mt-8 flex w-full flex-col gap-6">
                 <button
                   type="button"

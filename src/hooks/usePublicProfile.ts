@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSupabase } from "@/components/SupabaseProvider";
-import { fetchPublicProfileRemote } from "@/lib/supabase/profile-remote";
+import { useBackend } from "@/components/BackendProvider";
+import { fetchPublicProfileRemote } from "@/lib/backend/profile-remote";
 import { useProfileStore } from "@/lib/profile-store";
 import type { PublicUserProfile } from "@/lib/types/profile";
 
@@ -11,18 +11,18 @@ export function usePublicProfile(input: {
   visitorId?: string;
   fallbackName?: string;
 }) {
-  const { supabase, remoteReady } = useSupabase();
+  const { backend, remoteReady } = useBackend();
   const getLocalPublicProfile = useProfileStore((s) => s.getLocalPublicProfile);
   const [remote, setRemote] = useState<PublicUserProfile | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (input.userId && remoteReady && supabase) {
+    if (input.userId && remoteReady && backend) {
       let cancelled = false;
       setLoading(true);
       void (async () => {
         try {
-          const profile = await fetchPublicProfileRemote(supabase, input.userId!);
+          const profile = await fetchPublicProfileRemote(backend, input.userId!);
           if (!cancelled) setRemote(profile);
         } finally {
           if (!cancelled) setLoading(false);
@@ -35,7 +35,7 @@ export function usePublicProfile(input: {
 
     setRemote(null);
     setLoading(false);
-  }, [input.userId, remoteReady, supabase]);
+  }, [input.userId, remoteReady, backend]);
 
   if (input.userId && remoteReady) {
     return {
