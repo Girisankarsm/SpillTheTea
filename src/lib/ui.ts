@@ -1,6 +1,6 @@
 /** Primary CTA — white pill on dark background. */
 export const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-[9px] bg-white font-semibold text-black shadow-[0_2px_14px_rgba(255,255,255,0.18)] transition hover:bg-[#e8e8e8] hover:shadow-[0_4px_22px_rgba(255,255,255,0.22)] disabled:cursor-not-allowed disabled:opacity-50";
+  "press-scale inline-flex items-center justify-center rounded-[10px] bg-white font-semibold text-black shadow-[0_2px_14px_rgba(255,255,255,0.18)] transition-[background,box-shadow,transform] duration-200 ease-out hover:bg-[#e8e8e8] hover:shadow-[0_4px_22px_rgba(255,255,255,0.22)] hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0";
 
 export const primaryButtonMdClass = `${primaryButtonClass} px-4 py-2.5 text-sm`;
 
@@ -26,4 +26,7 @@ export const inputFieldClass =
 
 /** Section label — uppercase micro typography. */
 export const sectionLabelClass =
-  "text-[10px] font-medium uppercase tracking-[0.1em] text-muted";
+  "text-[10px] font-semibold uppercase tracking-[0.12em] text-muted";
+
+/** Page section spacing */
+export const sectionGapClass = "flex flex-col gap-6 sm:gap-7 lg:gap-8";

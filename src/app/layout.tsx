@@ -15,7 +15,7 @@ const bricolage = Bricolage_Grotesque({
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600"],
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -53,7 +53,7 @@ export default function RootLayout({
       lang="en"
       className={`${dmSans.variable} ${bricolage.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="relative flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
+      <body className="relative flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-[15px] text-foreground selection:bg-white/20">
         <AppAmbientBackground />
         <BackendProvider>
           <VoiceCallProvider>

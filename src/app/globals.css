@@ -29,6 +29,12 @@
   --radius-pill: 999px;
   --bottom-nav-h: 64px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 280ms;
+  --duration-slow: 480ms;
 }
 
 @theme inline {
@@ -63,6 +69,25 @@ body {
   color: var(--foreground);
   overflow-x: hidden;
   min-width: 0;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+}
+
+.body-text {
+  font-size: 0.9375rem;
+  line-height: 1.62;
+  letter-spacing: -0.008em;
+}
+
+.prose-comfort {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  letter-spacing: -0.006em;
+  color: var(--subtle);
 }
 
 .bg-brand {
@@ -121,13 +146,31 @@ body {
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
-  transition: all 0.18s ease;
+  transition:
+    background var(--duration-normal) var(--ease-smooth),
+    border-color var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-out-expo),
+    box-shadow var(--duration-normal) var(--ease-smooth);
 }
 
 .card-interactive:hover {
   background: var(--surface-2);
   border-color: var(--border-strong);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  transition-duration: var(--duration-fast);
+}
+
+.press-scale {
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.press-scale:active {
+  transform: scale(0.97);
 }
 
 .chip {
@@ -224,7 +267,7 @@ body {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -233,7 +276,75 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.5s ease forwards;
+  animation: fade-up var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter var(--duration-slow) var(--ease-out-expo) both;
+}
+
+.stagger-1 { animation-delay: 0.04s; }
+.stagger-2 { animation-delay: 0.08s; }
+.stagger-3 { animation-delay: 0.12s; }
+.stagger-4 { animation-delay: 0.16s; }
+.stagger-5 { animation-delay: 0.20s; }
+.stagger-6 { animation-delay: 0.24s; }
+.stagger-7 { animation-delay: 0.28s; }
+.stagger-8 { animation-delay: 0.32s; }
+
+@keyframes nav-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.nav-active-pill {
+  animation: nav-pop var(--duration-normal) var(--ease-spring) both;
+}
+
+@keyframes slide-up-panel {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-panel-in {
+  animation: slide-up-panel var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .card-interactive:hover {
+    transform: none;
+  }
 }
 
 .leaflet-container {
