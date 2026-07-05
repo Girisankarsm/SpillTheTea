@@ -1,8 +1,10 @@
 name: Production
 
-# Push develop → auto-merge to main → Vercel production deploy (main branch).
+# Push develop → CI must pass → auto-merge to main → Vercel production deploy (main branch).
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [develop]
 
 permissions:
@@ -10,11 +12,13 @@ permissions:
 
 jobs:
   promote:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: develop
           fetch-depth: 0
 
       - name: Merge develop into main

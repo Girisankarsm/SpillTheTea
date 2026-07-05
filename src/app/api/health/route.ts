@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb/client";
+import { mongoDb } from "@/lib/mongodb/client";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export async function GET() {
   }
 
   try {
-    const db = await getDb();
+    const db = await mongoDb();
     await db.command({ ping: 1 });
     return NextResponse.json({ ok: true, checks });
   } catch (err) {
