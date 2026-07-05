@@ -18,7 +18,7 @@ import {
   type VoiceCallSignal,
   type VoiceCallStatus,
 } from "@/lib/voice-call/types";
-import type { BackendClient } from "@/lib/backend/client-types";
+import type { BackendChannel, BackendClient } from "@/lib/backend/client-types";
 
 type StartCallInput = {
   roomId: string;
