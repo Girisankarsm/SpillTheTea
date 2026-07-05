@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreateTopicPanel, type CreateTopicPayload } from "@/components/CreateTopicPanel";
+import { PageContainer } from "@/components/PageContainer";
 import { TeaFeedCard } from "@/components/TeaFeedCard";
 import { useBackend } from "@/components/BackendProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -18,7 +19,7 @@ import { readFileAsDataUrl } from "@/lib/message-thread";
 import { normalizeMediaUrlInput } from "@/lib/backend/message-media";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { getUserLocation, primeUserLocation } from "@/lib/geolocation";
-import { primaryButtonSmClass, sectionLabelClass } from "@/lib/ui";
+import { primaryButtonSmClass, sectionGapClass, sectionLabelClass } from "@/lib/ui";
 import {
   buildLocalTopicPreviews,
   sortTopicsForFeed,
@@ -27,41 +28,26 @@ import {
 import { topicMessageCount, useMeetGreetStore } from "@/lib/store";
 
 const quickActions = [
-  {
-    href: "/topics/tea",
-    icon: "💬",
-    title: "Tea",
-    desc: "Browse & post topics",
-    color: "from-white/10 to-white/5",
-  },
-  {
-    href: "/duties",
-    icon: "✅",
-    title: "Duties",
-    desc: "Paid micro-tasks",
-    color: "from-emerald-500/10 to-emerald-500/5",
-  },
-  {
-    href: "/rides",
-    icon: "🚗",
-    title: "Rides",
-    desc: "Pool near you",
-    color: "from-sky-500/10 to-sky-500/5",
-  },
-  {
-    href: "/explore",
-    icon: "🗺️",
-    title: "Map",
-    desc: "See what's nearby",
-    color: "from-violet-500/10 to-violet-500/5",
-  },
+  { href: "/topics/tea", icon: "💬", title: "Tea", desc: "Browse & post topics" },
+  { href: "/duties", icon: "✅", title: "Duties", desc: "Paid micro-tasks" },
+  { href: "/rides", icon: "🚗", title: "Rides", desc: "Pool near you" },
+  { href: "/explore", icon: "🗺️", title: "Map", desc: "See what's nearby" },
 ] as const;
+
+const STAGGER = ["stagger-4", "stagger-5", "stagger-6"] as const;
+
+function timeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 function StatSkeleton() {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-border bg-surface p-3">
-      <div className="skeleton h-6 w-10" />
-      <div className="skeleton mt-2 h-3 w-16" />
+    <div className="rounded-[var(--radius)] border border-border bg-surface p-4">
+      <div className="skeleton h-7 w-12" />
+      <div className="skeleton mt-2.5 h-3 w-16" />
     </div>
   );
 }
@@ -70,7 +56,7 @@ function FeedSkeleton() {
   return (
     <div className="flex flex-col gap-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-[var(--radius)] border border-border bg-surface p-4">
+        <div key={i} className="rounded-[var(--radius)] border border-border bg-surface p-5">
           <div className="skeleton h-4 w-3/4" />
           <div className="skeleton mt-3 h-3 w-full" />
           <div className="skeleton mt-2 h-3 w-2/3" />
@@ -118,14 +104,13 @@ export function HomeDashboard() {
       setRxActivity(feed.topicActivity);
       setDutyCount(duties.length);
       setRideCount(rides.length);
-
       const previews = await fetchTopicPreviewsRemote(
         backend,
         feed.topics.map((t) => t.id),
       );
       setRxPreviews(previews);
     } catch {
-      /* stats are optional on home */
+      /* optional */
     } finally {
       setLoading(false);
     }
@@ -161,10 +146,7 @@ export function HomeDashboard() {
 
   const previews = useMemo(() => {
     if (remoteReady) return rxPreviews;
-    return buildLocalTopicPreviews(
-      localMessages,
-      localTopics.map((t) => t.id),
-    );
+    return buildLocalTopicPreviews(localMessages, localTopics.map((t) => t.id));
   }, [remoteReady, rxPreviews, localMessages, localTopics]);
 
   const hotTopics = useMemo(
@@ -178,8 +160,8 @@ export function HomeDashboard() {
     rides: remoteReady ? rideCount : 0,
   };
 
-  const greeting = defaultDisplayName?.trim() || "there";
-  const avatarInitial = greeting.slice(0, 1).toUpperCase();
+  const name = defaultDisplayName?.trim() || "friend";
+  const avatarInitial = name.slice(0, 1).toUpperCase();
   const avatarUrl = profile.avatarUrl?.trim() || null;
 
   async function spillTea(payload: CreateTopicPayload) {
@@ -202,9 +184,7 @@ export function HomeDashboard() {
         sendMessageLocal({ topicId: id, authorName, body: payload.body });
       }
       if (payload.kind === "link") {
-        const linkBody = payload.body
-          ? `${payload.body}\n\n${payload.linkUrl}`
-          : payload.linkUrl;
+        const linkBody = payload.body ? `${payload.body}\n\n${payload.linkUrl}` : payload.linkUrl;
         sendMessageLocal({ topicId: id, authorName, body: linkBody });
       }
       if (payload.kind === "media") {
@@ -223,13 +203,7 @@ export function HomeDashboard() {
           mediaUrl = normalized.url;
           mediaType = normalized.mediaType;
         }
-        sendMessageLocal({
-          topicId: id,
-          authorName,
-          body: payload.body,
-          mediaUrl,
-          mediaType,
-        });
+        sendMessageLocal({ topicId: id, authorName, body: payload.body, mediaUrl, mediaType });
       }
       if (payload.kind === "poll") {
         createPollLocal({
@@ -248,163 +222,151 @@ export function HomeDashboard() {
     }
   }
 
+  const statItems = [
+    { href: "/topics/tea", value: stats.topics, label: "Topics" },
+    { href: "/duties", value: stats.duties, label: "Duties" },
+    { href: "/rides", value: stats.rides, label: "Rides" },
+  ] as const;
+
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[720px] flex-col gap-5 px-4 py-4 sm:gap-6 sm:py-6">
-      {/* Greeting */}
-      <header className="animate-fade-up flex items-start justify-between gap-4">
-        <div>
-          <p className={sectionLabelClass}>Your neighborhood</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-            Hey, {greeting} 👋
-          </h1>
-          <p className="mt-1 text-sm text-subtle">
-            What&apos;s happening near you today?
-          </p>
-        </div>
-        <Link
-          href="/profile"
-          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 transition hover:border-brand-border"
-          title="Your profile"
-        >
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-sm font-semibold text-foreground">{avatarInitial}</span>
-          )}
-        </Link>
-      </header>
-
-      {/* Live badge */}
-      <div className="card-interactive animate-fade-up flex items-center gap-3 px-4 py-3" style={{ animationDelay: "0.05s" }}>
-        <span className="live-dot shrink-0" />
-        <p className="text-sm text-subtle">
-          <strong className="font-medium text-foreground">{stats.topics} topics</strong> live near you
-          {stats.duties > 0 ? (
-            <> · <strong className="font-medium text-foreground">{stats.duties} duties</strong> open</>
-          ) : null}
-          {stats.rides > 0 ? (
-            <> · <strong className="font-medium text-foreground">{stats.rides} rides</strong> available</>
-          ) : null}
-        </p>
-      </div>
-
-      {/* Quick post bar */}
-      {!createOpen ? (
-        <button
-          type="button"
-          onClick={() => setManualCreateOpen(true)}
-          className="card-interactive animate-fade-up flex w-full items-center gap-3 px-4 py-3.5 text-left"
-          style={{ animationDelay: "0.1s" }}
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-xs font-semibold">
-            {avatarInitial}
-          </span>
-          <span className="flex-1 text-sm text-muted">Spill some tea…</span>
-          <span className={primaryButtonSmClass}>Post</span>
-        </button>
-      ) : (
-        <div id="create-tea-panel" className="scroll-mt-24 animate-fade-up">
-          <CreateTopicPanel
-            onSubmit={spillTea}
-            onClose={() => {
-              setManualCreateOpen(false);
-              router.replace("/topics");
-            }}
-            disabled={remoteReady && (!backend || loading)}
-            submitting={posting}
-          />
-        </div>
-      )}
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-        {loading && remoteReady ? (
-          <>
-            <StatSkeleton />
-            <StatSkeleton />
-            <StatSkeleton />
-          </>
-        ) : (
-          <>
-            <Link href="/topics/tea" className="card-interactive px-3 py-3 sm:px-4">
-              <p className="font-display text-xl font-semibold text-foreground sm:text-2xl">{stats.topics}</p>
-              <p className="mt-0.5 text-[11px] text-muted">Topics</p>
-            </Link>
-            <Link href="/duties" className="card-interactive px-3 py-3 sm:px-4">
-              <p className="font-display text-xl font-semibold text-foreground sm:text-2xl">{stats.duties}</p>
-              <p className="mt-0.5 text-[11px] text-muted">Duties</p>
-            </Link>
-            <Link href="/rides" className="card-interactive px-3 py-3 sm:px-4">
-              <p className="font-display text-xl font-semibold text-foreground sm:text-2xl">{stats.rides}</p>
-              <p className="mt-0.5 text-[11px] text-muted">Rides</p>
-            </Link>
-          </>
-        )}
-      </div>
-
-      {/* Quick actions */}
-      <section>
-        <p className={`${sectionLabelClass} mb-3`}>Quick actions</p>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
-          {quickActions.map((action) => (
+    <PageContainer width="wide">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-10 xl:gap-12">
+        <div className={sectionGapClass}>
+          <header className="animate-fade-up flex items-start justify-between gap-5">
+            <div>
+              <p className={sectionLabelClass}>{timeGreeting()}</p>
+              <h1 className="font-display mt-2 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[2rem]">
+                Hey, {name}
+              </h1>
+              <p className="body-text mt-2 max-w-sm text-subtle">
+                What&apos;s happening in your neighborhood today?
+              </p>
+            </div>
             <Link
-              key={action.href}
-              href={action.href}
-              className={`card-interactive flex flex-col gap-2 bg-gradient-to-br ${action.color} p-3.5 sm:p-4`}
+              href="/profile"
+              className="press-scale flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 transition hover:border-brand-border hover:shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+              title="Your profile"
             >
-              <span className="text-xl" aria-hidden>{action.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{action.title}</p>
-                <p className="mt-0.5 text-[11px] text-muted">{action.desc}</p>
-              </div>
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-sm font-semibold text-foreground">{avatarInitial}</span>
+              )}
             </Link>
-          ))}
-        </div>
-      </section>
+          </header>
 
-      {/* Trending */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <p className={sectionLabelClass}>Trending near you</p>
-          <Link
-            href="/topics/tea"
-            className="text-xs font-medium text-subtle transition hover:text-foreground"
-          >
-            See all →
-          </Link>
-        </div>
-
-        {loading && remoteReady ? (
-          <FeedSkeleton />
-        ) : hotTopics.length > 0 ? (
-          <div className="flex flex-col gap-2.5">
-            {hotTopics.map((t) => (
-              <TeaFeedCard
-                key={t.id}
-                topic={t}
-                messageCount={activity[t.id] ?? 0}
-                preview={previews[t.id]}
-                onShare={() => {}}
-                compact
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-[var(--radius)] border border-dashed border-border bg-surface/50 px-4 py-10 text-center">
-            <p className="text-2xl" aria-hidden>🍵</p>
-            <p className="mt-2 text-sm font-medium text-foreground">No topics yet</p>
-            <p className="mt-1 text-xs text-subtle">Be the first to spill some tea in your area.</p>
+          {!createOpen ? (
             <button
               type="button"
               onClick={() => setManualCreateOpen(true)}
-              className={`${primaryButtonSmClass} mt-4`}
+              className="card-interactive animate-fade-up stagger-1 flex w-full items-center gap-4 px-5 py-4 text-left"
             >
-              + Post tea
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-xs font-semibold">
+                {avatarInitial}
+              </span>
+              <span className="body-text flex-1 text-muted">Spill some tea…</span>
+              <span className={primaryButtonSmClass}>Post</span>
             </button>
+          ) : (
+            <div id="create-tea-panel" className="scroll-mt-24 animate-panel-in">
+              <CreateTopicPanel
+                onSubmit={spillTea}
+                onClose={() => {
+                  setManualCreateOpen(false);
+                  router.replace("/topics");
+                }}
+                disabled={remoteReady && (!backend || loading)}
+                submitting={posting}
+              />
+            </div>
+          )}
+
+          <section className="animate-fade-up stagger-3">
+            <div className="mb-4 flex items-center justify-between">
+              <p className={sectionLabelClass}>Trending near you</p>
+              <Link href="/topics/tea" className="text-[13px] font-medium text-subtle transition hover:text-foreground">
+                See all →
+              </Link>
+            </div>
+
+            {loading && remoteReady ? (
+              <FeedSkeleton />
+            ) : hotTopics.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {hotTopics.map((t, i) => (
+                  <div key={t.id} className={["animate-fade-up", STAGGER[i] ?? "stagger-6"].join(" ")}>
+                    <TeaFeedCard
+                      topic={t}
+                      messageCount={activity[t.id] ?? 0}
+                      preview={previews[t.id]}
+                      onShare={() => {}}
+                      compact
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[var(--radius)] border border-dashed border-border bg-surface/40 px-6 py-12 text-center">
+                <p className="text-3xl" aria-hidden>🍵</p>
+                <p className="mt-3 text-[15px] font-medium text-foreground">No topics yet</p>
+                <p className="body-text mt-1.5">Be the first to start a conversation nearby.</p>
+                <button type="button" onClick={() => setManualCreateOpen(true)} className={`${primaryButtonSmClass} mt-5`}>
+                  + Post tea
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className={`${sectionGapClass} lg:sticky lg:top-24`}>
+          <div className="card-interactive animate-fade-up stagger-2 flex items-center gap-3 px-4 py-3.5">
+            <span className="live-dot shrink-0" />
+            <p className="body-text text-subtle">
+              <strong className="font-medium text-foreground">{stats.topics}</strong> topics live
+              {stats.duties > 0 ? <> · <strong className="font-medium text-foreground">{stats.duties}</strong> duties</> : null}
+              {stats.rides > 0 ? <> · <strong className="font-medium text-foreground">{stats.rides}</strong> rides</> : null}
+            </p>
           </div>
-        )}
-      </section>
-    </div>
+
+          <section className="animate-fade-up stagger-3">
+            <p className={`${sectionLabelClass} mb-3`}>Overview</p>
+            <div className="flex flex-col gap-2.5">
+              {loading && remoteReady ? (
+                <>
+                  <StatSkeleton />
+                  <StatSkeleton />
+                  <StatSkeleton />
+                </>
+              ) : (
+                statItems.map((item) => (
+                  <Link key={item.href} href={item.href} className="card-interactive flex items-center justify-between px-4 py-3.5">
+                    <span className="text-[13px] font-medium text-subtle">{item.label}</span>
+                    <span className="font-display text-xl font-semibold tabular-nums text-foreground">{item.value}</span>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="animate-fade-up stagger-4">
+            <p className={`${sectionLabelClass} mb-3`}>Explore</p>
+            <div className="flex flex-col gap-2">
+              {quickActions.map((action) => (
+                <Link key={action.href} href={action.href} className="card-interactive flex items-center gap-3.5 px-4 py-3.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-surface-2 text-base" aria-hidden>
+                    {action.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-foreground">{action.title}</p>
+                    <p className="mt-0.5 text-[12px] text-muted">{action.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </aside>
+      </div>
+    </PageContainer>
   );
 }
