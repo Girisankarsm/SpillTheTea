@@ -35,9 +35,20 @@ export async function fetchDmMessages(..._args: unknown[]): Promise<DmMessage[]>
   return [];
 }
 
-export async function sendDmMessage(..._args: unknown[]): Promise<string> {
-  console.warn("Mongo DM message persistence is not implemented yet.");
-  return `dm-msg-${Date.now().toString(36)}`;
+export async function sendDmMessage(
+  _client: unknown,
+  threadId: string,
+  body: string,
+  currentUserId: string,
+): Promise<DmMessage> {
+  return {
+    id: `dm-msg-${Date.now().toString(36)}`,
+    threadId,
+    senderId: currentUserId,
+    body: body.trim(),
+    createdAt: Date.now(),
+    isMine: true,
+  };
 }
 
 export async function findThreadWithUser(..._args: unknown[]): Promise<string | null> {
