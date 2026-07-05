@@ -1,4 +1,5 @@
 import { isAuthenticatedUser } from "@/lib/backend/session";
+import type { AppSession } from "@/lib/backend/client-types";
 
 /** Match sign-up and login; avoids "wrong password" confusion from casing. */
 export function normalizeEmailForAuth(email: string): string {
@@ -116,18 +117,11 @@ export function isGoogleSignedIn(session: {
   return isAuthenticatedUser(session?.user ?? null);
 }
 
-export function googleProfile(session: {
-  user: {
-    is_anonymous?: boolean;
-    email?: string;
-    user_metadata?: {
-      full_name?: string;
-      name?: string;
-      avatar_url?: string;
-      picture?: string;
-    };
-  };
-} | null): { name: string; email: string | null; avatarUrl: string | null } | null {
+export function googleProfile(session: AppSession | null): {
+  name: string;
+  email: string | null;
+  avatarUrl: string | null;
+} | null {
   if (!session?.user || session.user.is_anonymous) return null;
   const meta = session.user.user_metadata ?? {};
   return {
