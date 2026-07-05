@@ -19,20 +19,7 @@ import {
 } from "@/lib/backend/ride-chat-remote";
 import { formatMoney } from "@/lib/types/ride";
 import type { RideChatMessage } from "@/lib/types/ride-chat";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+import type { BackendClient } from "@/lib/backend/client-types";
 
 type RideChatPanelProps = {
   rideId: string;

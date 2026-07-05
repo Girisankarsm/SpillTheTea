@@ -19,20 +19,7 @@ import {
 } from "@/lib/backend/duty-chat-remote";
 import { formatMoney } from "@/lib/types/duty";
 import type { DutyChatMessage } from "@/lib/types/duty-chat";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+import type { BackendClient } from "@/lib/backend/client-types";
 
 type DutyChatPanelProps = {
   dutyId: string;

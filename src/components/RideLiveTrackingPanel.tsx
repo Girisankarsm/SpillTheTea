@@ -17,22 +17,9 @@ import {
 } from "@/lib/backend/ride-location-remote";
 import type { RideLiveLocations } from "@/lib/types/ride-location";
 import type { RideWithOffers } from "@/lib/types/ride";
+import type { BackendClient } from "@/lib/backend/client-types";
 
 import "leaflet/dist/leaflet.css";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
 
 const CARTO_VOYAGER =
   "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";

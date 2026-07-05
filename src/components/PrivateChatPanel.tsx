@@ -19,20 +19,7 @@ import {
   notifyMessageRecipient,
 } from "@/lib/push/client";
 import { VoiceCallButton } from "@/components/VoiceCallButton";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+import type { BackendClient } from "@/lib/backend/client-types";
 
 type PrivateChatPanelProps = {
   open: boolean;

@@ -18,6 +18,7 @@ import {
   rewardRideRemote,
 } from "@/lib/backend/ride-remote";
 import { formatMoney, type RideWithOffers } from "@/lib/types/ride";
+import type { RideChatContext } from "@/lib/backend/client-types";
 
 export default function RideDetailPage() {
   const params = useParams();
@@ -33,7 +34,7 @@ export default function RideDetailPage() {
   const [offerOpen, setOfferOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const rideChat =
+  const rideChat: RideChatContext | null =
     remoteReady && backend && currentUserId && rideId
       ? { rideId, backend, currentUserId }
       : null;

@@ -9,20 +9,7 @@ import {
   type DutyWithOffers,
 } from "@/lib/types/duty";
 import { DutyPersonLabel } from "@/components/DutyPersonLabel";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+import type { DutyChatContext } from "@/lib/backend/client-types";
 
 type DutyDetailPanelProps = {
   duty: DutyWithOffers;
@@ -34,11 +21,7 @@ type DutyDetailPanelProps = {
   onComplete: () => void;
   onReward: () => void;
   onCancel: () => void;
-  chat?: {
-    dutyId: string;
-    backend: BackendClient;
-    currentUserId: string;
-  } | null;
+  chat?: DutyChatContext | null;
 };
 
 function isAuthor(

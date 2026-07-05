@@ -23,6 +23,7 @@ import { useProfileStore } from "@/lib/profile-store";
 import type { DutyWithOffers } from "@/lib/types/duty";
 import { formatMoney } from "@/lib/types/duty";
 import { getVisitorId } from "@/lib/visitor";
+import type { DutyChatContext } from "@/lib/backend/client-types";
 
 export default function DutyDetailPage() {
   const params = useParams();
@@ -54,7 +55,7 @@ export default function DutyDetailPage() {
 
   const duty = remoteReady ? remoteDuty : localDuty;
   const viewerKey = getVisitorId();
-  const dutyChat =
+  const dutyChat: DutyChatContext | null =
     remoteReady && backend && currentUserId && dutyId
       ? { dutyId, backend, currentUserId }
       : null;

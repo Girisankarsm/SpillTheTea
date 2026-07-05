@@ -8,41 +8,13 @@ import {
   useMemo,
   useState,
 } from "react";
+import type {
+  AppSession,
+  BackendChannel,
+  BackendClient,
+} from "@/lib/backend/client-types";
 
-type AppSession = {
-  user: {
-    id: string;
-    email?: string;
-    is_anonymous?: false;
-    app_metadata?: { provider?: string; roles?: string[] };
-    user_metadata?: {
-      full_name?: string;
-      name?: string;
-      avatar_url?: string | null;
-      picture?: string | null;
-    };
-  };
-};
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel;
-  send: (payload: unknown) => Promise<"ok">;
-};
-
-type BackendClient = {
-  auth: {
-    getSession: () => Promise<{ data: { session: AppSession | null } }>;
-    getUser: () => Promise<{ data: { user: AppSession["user"] | null } }>;
-    signOut: () => Promise<void>;
-  };
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+export type { BackendClient, BackendChannel } from "@/lib/backend/client-types";
 
 type Ctx = {
   backend: BackendClient | null;

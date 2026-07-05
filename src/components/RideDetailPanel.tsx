@@ -11,20 +11,7 @@ import { PayHelperPanel } from "@/components/PayHelperPanel";
 import { RideLiveTrackingPanel } from "@/components/RideLiveTrackingPanel";
 import { RideRouteSummary } from "@/components/RideRouteSummary";
 import { formatRideVehicle } from "@/lib/types/ride-vehicle";
-
-type BackendChannel = {
-  on: (
-    type: string,
-    filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
-  ) => BackendChannel;
-  subscribe: (callback?: (status: string) => void) => BackendChannel | Promise<BackendChannel>;
-};
-
-type BackendClient = {
-  channel: (name: string) => BackendChannel;
-  removeChannel: (channel: BackendChannel) => Promise<void>;
-};
+import type { RideChatContext } from "@/lib/backend/client-types";
 
 type RideDetailPanelProps = {
   ride: RideWithOffers;
@@ -35,11 +22,7 @@ type RideDetailPanelProps = {
   onComplete: () => void;
   onReward: () => void;
   onCancel: () => void;
-  chat?: {
-    rideId: string;
-    backend: BackendClient;
-    currentUserId: string;
-  } | null;
+  chat?: RideChatContext | null;
 };
 
 function isRider(ride: RideWithOffers, viewerUserId?: string | null): boolean {
