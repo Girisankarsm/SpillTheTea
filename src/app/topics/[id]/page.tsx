@@ -600,20 +600,20 @@ export default function TopicChatPage() {
     setHotBusy(true);
     try {
       if (remoteReady && backend) {
-        const upvoted = await toggleMessageUpvoteRemote(backend, message.id);
+        await toggleMessageUpvoteRemote(backend, message.id);
         setRemoteMessages((prev) =>
-          prev.map((entry) =>
-            entry.id === message.id
-              ? {
-                  ...entry,
-                  myUpvote: upvoted,
-                  upvoteCount: Math.max(
-                    0,
-                    (entry.upvoteCount ?? 0) + (upvoted ? 1 : -1),
-                  ),
-                }
-              : entry,
-          ),
+          prev.map((entry) => {
+            if (entry.id !== message.id) return entry;
+            const nextUpvote = !entry.myUpvote;
+            return {
+              ...entry,
+              myUpvote: nextUpvote,
+              upvoteCount: Math.max(
+                0,
+                (entry.upvoteCount ?? 0) + (nextUpvote ? 1 : -1),
+              ),
+            };
+          }),
         );
       } else {
         const voterKey = getVisitorId();
