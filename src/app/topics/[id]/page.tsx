@@ -445,7 +445,7 @@ export default function TopicChatPage() {
         message.authorUserId,
       );
       if (thread) {
-        setDmInitialThreadId(thread.id);
+        setDmInitialThreadId(thread);
       } else {
         setDmInitialRequest({
           userId: message.authorUserId,
