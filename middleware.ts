@@ -16,6 +16,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  if (pathname === "/api/health") {
+    return NextResponse.next({ request });
+  }
+
   if (pathname === "/manifest.webmanifest" || pathname === "/sw.js") {
     return NextResponse.next({ request });
   }
