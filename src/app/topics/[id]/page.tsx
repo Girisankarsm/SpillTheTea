@@ -521,7 +521,18 @@ export default function TopicChatPage() {
       };
 
       if (remoteReady && backend) {
-        const posted = await sendMessageRemote(backend, payload);
+        const messageId = await sendMessageRemote(backend, payload);
+        const posted: ChatMessage = {
+          id: messageId,
+          topicId: id,
+          authorName: author,
+          body: trimmedBody,
+          createdAt: Date.now(),
+          authorUserId: currentUserId ?? undefined,
+          replyToId: replyTo?.id,
+          mediaUrl,
+          mediaType,
+        };
         setRemoteMessages((prev) => {
           const next = appendUniqueMessage(prev, posted);
           return next.sort((a, b) => a.createdAt - b.createdAt);
