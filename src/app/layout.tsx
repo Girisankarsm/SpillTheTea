@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Inter } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans, Instrument_Serif } from "next/font/google";
 import { AppAmbientBackground } from "@/components/AppAmbientBackground";
 import { AppShellOrPlain } from "@/components/AppShellOrPlain";
 import { BackendProvider } from "@/components/BackendProvider";
 import { VoiceCallProvider } from "@/components/VoiceCallProvider";
 import "./globals.css";
 
-const inter = Inter({
+const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const dmSans = DM_Sans({
@@ -18,11 +18,10 @@ const dmSans = DM_Sans({
   weight: ["300", "400", "500"],
 });
 
-const instrumentSerif = Inter({
+const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument",
   subsets: ["latin"],
   weight: ["400"],
-  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${bricolage.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="relative flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
         <AppAmbientBackground />

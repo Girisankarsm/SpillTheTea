@@ -39,8 +39,11 @@ const ExploreMap = dynamic(
 
 function MapSkeleton() {
   return (
-    <div className="flex h-[min(72vh,580px)] min-h-[340px] w-full items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-sky-200 via-yellow-100 to-lime-100 text-sm font-bold text-stone-600 shadow-[0_0_0_4px_#fff,0_12px_40px_rgb(0_0_0_0.12)]">
-      Loading map…
+    <div className="flex h-[min(72vh,580px)] min-h-[340px] w-full items-center justify-center rounded-[var(--radius)] border border-border bg-surface text-sm text-subtle">
+      <div className="flex flex-col items-center gap-3">
+        <div className="skeleton h-8 w-8 rounded-full" />
+        <span>Loading map…</span>
+      </div>
     </div>
   );
 }

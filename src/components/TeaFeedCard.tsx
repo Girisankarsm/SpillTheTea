@@ -14,6 +14,7 @@ type TeaFeedCardProps = {
   deletable?: boolean;
   onClose?: () => void;
   onShare: () => void;
+  compact?: boolean;
 };
 
 export function TeaFeedCard({
@@ -24,22 +25,25 @@ export function TeaFeedCard({
   deletable,
   onClose,
   onShare,
+  compact = false,
 }: TeaFeedCardProps) {
   const href = `/topics/${topic.id}`;
   const previewBody = preview?.body ? truncatePreview(preview.body) : "";
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-surface">
+    <article className="card-interactive overflow-hidden">
       <div className="flex gap-2 px-3 pt-3 sm:gap-3 sm:px-4 sm:pt-4">
-        <div
-          className="flex w-8 shrink-0 flex-col items-center gap-0.5 pt-1 text-[11px] font-bold text-subtle"
-          aria-hidden
-        >
-          <span aria-hidden>🔥</span>
-          <span className="text-foreground">{messageCount > 0 ? messageCount : ""}</span>
-        </div>
+        {!compact ? (
+          <div
+            className="flex w-8 shrink-0 flex-col items-center gap-0.5 pt-1 text-[11px] font-bold text-subtle"
+            aria-hidden
+          >
+            <span aria-hidden>🔥</span>
+            <span className="text-foreground">{messageCount > 0 ? messageCount : ""}</span>
+          </div>
+        ) : null}
 
-        <div className="min-w-0 flex-1 pb-3">
+        <div className={`min-w-0 flex-1 ${compact ? "pb-3" : "pb-3"}`}>
           <header className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-subtle">
             <span className="inline-flex items-center gap-1 font-bold text-foreground">
               <span aria-hidden>🍵</span>
@@ -103,22 +107,24 @@ export function TeaFeedCard({
       <footer className="flex flex-wrap items-center gap-1 border-t border-border px-3 py-2 sm:px-4">
         <Link
           href={href}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-bold text-subtle hover:bg-background hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-bold text-subtle transition hover:bg-background hover:text-foreground"
         >
           <span aria-hidden>💬</span>
           {messageCount} {messageCount === 1 ? "Comment" : "Comments"}
         </Link>
-        <button
-          type="button"
-          onClick={onShare}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-bold text-subtle hover:bg-background hover:text-foreground"
-        >
-          <span aria-hidden>↗</span>
-          Share
-        </button>
+        {!compact ? (
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-bold text-subtle transition hover:bg-background hover:text-foreground"
+          >
+            <span aria-hidden>↗</span>
+            Share
+          </button>
+        ) : null}
         <Link
           href={href}
-          className="ml-auto inline-flex items-center rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+          className="ml-auto inline-flex items-center rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-black transition hover:opacity-90"
         >
           Open
         </Link>

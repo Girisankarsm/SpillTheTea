@@ -3,7 +3,7 @@ import { AuthMenu } from "@/components/AuthMenu";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { InstallBanner } from "@/components/InstallBanner";
 import { LegalFooterLinks } from "@/components/LegalFooterLinks";
-import { MainNav } from "@/components/MainNav";
+import { MainNav, BottomNav } from "@/components/MainNav";
 import { PushNotificationManager, PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { SetupBanner } from "@/components/SetupBanner";
 
@@ -44,13 +44,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <AuthMenu />
             </div>
           </div>
-
-          <MainNav variant="mobile" />
         </header>
       </div>
       <HeaderSpacer />
-      <main className="flex flex-1 flex-col">{children}</main>
-      <footer className="border-t border-border bg-surface/40 py-6 backdrop-blur-sm">
+      <main className="flex flex-1 flex-col pb-bottom-nav">{children}</main>
+      <BottomNav />
+      <footer className="hidden border-t border-border bg-surface/40 py-6 backdrop-blur-sm sm:block">
         <LegalFooterLinks centered className="mx-auto max-w-[1100px] px-4" />
       </footer>
     </>

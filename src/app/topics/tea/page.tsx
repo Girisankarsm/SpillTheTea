@@ -170,10 +170,8 @@ function TeaPageContent() {
 
   function sortButtonClass(active: boolean): string {
     return [
-      "rounded-md px-2.5 py-1 text-xs font-bold transition",
-      active
-        ? "bg-brand text-white"
-        : "text-subtle hover:bg-brand-soft hover:text-foreground",
+      "chip",
+      active ? "chip-active" : "",
     ].join(" ");
   }
 

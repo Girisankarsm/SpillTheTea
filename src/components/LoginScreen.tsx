@@ -22,10 +22,10 @@ type SignInMethod = "password" | "magiclink";
 
 /** Shared input styling inside auth card */
 const FIELD_SHELL =
-  "w-full rounded-xl border border-white/10 bg-black/35 py-3.5 pl-4 text-sm text-foreground outline-none transition placeholder:text-subtle/70 focus:border-violet-500/45 focus:ring-2 focus:ring-violet-500/20";
+  "w-full rounded-xl border border-border bg-black/35 py-3.5 pl-4 text-sm text-foreground outline-none transition placeholder:text-subtle/70 focus:border-brand-border focus:ring-2 focus:ring-brand-soft";
 
-const BTN_GRADIENT =
-  "w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#2563eb] py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-950/35 transition hover:brightness-[1.06] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-45";
+const BTN_PRIMARY =
+  "w-full rounded-xl bg-white py-3.5 text-sm font-bold text-black shadow-[0_4px_22px_rgba(255,255,255,0.18)] transition hover:bg-[#e8e8e8] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-45";
 
 function LegalDocLink({
   href,
@@ -39,7 +39,7 @@ function LegalDocLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-semibold text-violet-300 underline-offset-2 hover:text-violet-200 hover:underline"
+      className="font-semibold text-foreground underline-offset-2 hover:text-white hover:underline"
     >
       {children}
     </Link>
@@ -149,7 +149,7 @@ function SegmentedTabs<T extends string>({
             className={[
               "flex-1 rounded-lg py-2.5 text-sm font-semibold transition",
               active
-                ? "bg-gradient-to-r from-[#6366f1] to-[#2563eb] text-white shadow-md shadow-indigo-950/30"
+                ? "bg-white text-black shadow-[0_2px_14px_rgba(255,255,255,0.18)]"
                 : "text-subtle hover:text-foreground",
             ].join(" ")}
           >
@@ -355,7 +355,7 @@ export function LoginScreen() {
           <div className="mt-10 flex flex-col items-center gap-4">
             <Link
               href="/topics"
-              className="inline-flex w-full max-w-[280px] items-center justify-center rounded-xl bg-gradient-to-r from-[#6366f1] to-[#2563eb] px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-950/35 transition hover:brightness-[1.06]"
+              className="inline-flex w-full max-w-[280px] items-center justify-center rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-black shadow-[0_4px_22px_rgba(255,255,255,0.18)] transition hover:bg-[#e8e8e8]"
             >
               Go to app →
             </Link>
@@ -381,7 +381,7 @@ export function LoginScreen() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-violet-500"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-white"
                 />
                 <span className="text-foreground/95">
                   I agree to the{" "}
@@ -393,7 +393,7 @@ export function LoginScreen() {
                   type="checkbox"
                   checked={acceptedPrivacy}
                   onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-violet-500"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-white"
                 />
                 <span className="text-foreground/95">
                   I agree to the{" "}
@@ -488,7 +488,7 @@ export function LoginScreen() {
                           <button
                             type="submit"
                             disabled={!canSubmit || busy}
-                            className={BTN_GRADIENT}
+                            className={BTN_PRIMARY}
                           >
                             {busy ? "Signing in…" : "Sign in"}
                           </button>
@@ -497,7 +497,7 @@ export function LoginScreen() {
                               type="button"
                               disabled={!email.trim() || resendBusy}
                               onClick={() => void handleResendConfirmation()}
-                              className="text-xs font-semibold text-violet-400 underline-offset-4 hover:text-violet-300 hover:underline disabled:cursor-not-allowed disabled:opacity-45 disabled:no-underline"
+                              className="text-xs font-semibold text-subtle underline-offset-4 hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-45 disabled:no-underline"
                             >
                               {resendBusy ? "Sending…" : "Resend confirmation email"}
                             </button>
@@ -524,7 +524,7 @@ export function LoginScreen() {
                           <button
                             type="submit"
                             disabled={!canSubmit || busy}
-                            className={BTN_GRADIENT}
+                            className={BTN_PRIMARY}
                           >
                             {busy ? "Sending…" : "Email me a link"}
                           </button>
@@ -564,7 +564,7 @@ export function LoginScreen() {
                       placeholder="Repeat password"
                       autoComplete="new-password"
                     />
-                    <button type="submit" disabled={!canSubmit || busy} className={BTN_GRADIENT}>
+                    <button type="submit" disabled={!canSubmit || busy} className={BTN_PRIMARY}>
                       {busy ? "Creating account…" : "Create account"}
                     </button>
                   </form>
@@ -582,7 +582,7 @@ export function LoginScreen() {
                       Don&apos;t have an account?{" "}
                       <button
                         type="button"
-                        className="font-bold text-violet-400 hover:text-violet-300 hover:underline"
+                        className="font-bold text-foreground hover:text-white hover:underline"
                         onClick={() => {
                           setMode("register");
                           resetMessages();
@@ -596,7 +596,7 @@ export function LoginScreen() {
                       Already have an account?{" "}
                       <button
                         type="button"
-                        className="font-bold text-violet-400 hover:text-violet-300 hover:underline"
+                        className="font-bold text-foreground hover:text-white hover:underline"
                         onClick={() => {
                           setMode("login");
                           resetMessages();

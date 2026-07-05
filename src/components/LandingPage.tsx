@@ -11,7 +11,7 @@ const features = [
   {
     icon: "⚡",
     title: "Zero friction",
-    text: "Sign in with Google, pick a display name, and start talking in seconds.",
+    text: "Sign in with email, pick a display name, and start talking in seconds.",
   },
   {
     icon: "🛡️",
@@ -26,7 +26,7 @@ const features = [
 ] as const;
 
 const steps = [
-  { n: "01", title: "Sign in", text: "Google login + accept Terms & Privacy." },
+  { n: "01", title: "Sign in", text: "Email login + accept Terms & Privacy." },
   { n: "02", title: "Talk or task", text: "Post tea, duties, or rides near you." },
   { n: "03", title: "Connect", text: "Reply, DM, call, or meet when matched." },
 ] as const;
@@ -38,7 +38,7 @@ const faqs = [
   },
   {
     q: "Is my email public?",
-    a: "No. Others see your anonymous display name and optional photo — not your Google email.",
+    a: "No. Others see your anonymous display name and optional photo — not your email address.",
   },
   {
     q: "How do payments work?",

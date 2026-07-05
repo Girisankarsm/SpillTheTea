@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpillTheTea — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080808;
+    --surface: rgba(255,255,255,0.05);
+    --surface2: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.10);
+    --border2: rgba(255,255,255,0.16);
+    --text1: #f5f5f5;
+    --text2: rgba(245,245,245,0.55);
+    --text3: rgba(245,245,245,0.30);
+    --white: #ffffff;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text1);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ambient glow */
+  .amb {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 55% 45% at 12% 8%, rgba(255,255,255,0.055) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 40% at 88% 90%, rgba(255,255,255,0.030) 0%, transparent 60%),
+      #080808;
+  }
+  .dots {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: rgba(8,8,8,0.82);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-wrap {
+    max-width: 1200px; margin: 0 auto; padding: 0 28px;
+    display: flex; align-items: center; height: 56px; gap: 8px;
+  }
+  .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; flex-shrink: 0; }
+  .logo-box {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; box-shadow: 0 0 14px rgba(255,255,255,0.22);
+  }
+  .logo-text {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 16px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px;
+  }
+  .nav-links { display: flex; align-items: center; gap: 2px; margin-left: 24px; }
+  .nl {
+    padding: 5px 13px; border-radius: 8px; font-size: 13px;
+    color: var(--text2); cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .nl:hover { color: var(--text1); background: var(--surface); }
+  .nl.act { color: #000; background: #fff; font-weight: 500; box-shadow: 0 2px 12px rgba(255,255,255,0.18); }
+  .ndot { width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 5px rgba(255,255,255,0.9); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .btn-post {
+    padding: 7px 16px; border-radius: 9px; background: #fff; color: #000;
+    border: none; font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; box-shadow: 0 2px 12px rgba(255,255,255,0.18); letter-spacing: -0.2px;
+  }
+  .btn-post:hover { background: #e5e5e5; }
+  .av {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.10); border: 0.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: #fff; cursor: pointer;
+  }
+
+  /* ── LAYOUT ── */
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 28px 28px 48px; display: grid; grid-template-columns: 220px 1fr 260px; gap: 20px; }
+
+  /* ── LEFT SIDEBAR ── */
+  .sidebar-l { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+  .sl-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); padding: 10px 10px 4px; font-weight: 400; }
+  .sl-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px; cursor: pointer;
+    font-size: 13.5px; color: var(--text2); transition: all .15s;
+  }
+  .sl-item:hover { background: var(--surface); color: var(--text1); }
+  .sl-item.act { background: var(--surface2); color: var(--text1); font-weight: 500; }
+  .sl-icon { font-size: 15px; width: 20px; text-align: center; }
+  .sl-count {
+    margin-left: auto; font-size: 11px; color: var(--text3);
+    background: var(--surface); padding: 1px 7px; border-radius: 20px;
+  }
+  .sl-item.act .sl-count { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6); }
+
+  /* radius pill */
+  .radius-box {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-top: 8px;
+  }
+  .rb-label { font-size: 11px; color: var(--text3); margin-bottom: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .rb-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rb-pill {
+    padding: 4px 11px; border-radius: 20px; font-size: 12px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    color: var(--text2); cursor: pointer; transition: all .15s;
+  }
+  .rb-pill.act { background: #fff; color: #000; border-color: #fff; font-weight: 500; }
+  .rb-pill:hover:not(.act) { border-color: var(--border2); color: var(--text1); }
+
+  /* live badge */
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; margin-top: 8px;
+  }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.7); flex-shrink: 0; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(0.85)} }
+  .live-text { font-size: 12px; color: var(--text2); }
+  .live-text strong { color: var(--text1); font-weight: 500; }
+
+  /* ── MAIN FEED ── */
+  .feed { display: flex; flex-direction: column; gap: 0; }
+
+  /* quick post bar */
+  .qpost {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .qpost:hover { border-color: var(--border2); }
+  .qp-av {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.10); border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500;
+  }
+  .qp-input {
+    flex: 1; font-size: 14px; color: var(--text3); font-family: 'DM Sans',sans-serif;
+  }
+  .qp-btn {
+    padding: 6px 14px; border-radius: 8px; background: #fff; color: #000;
+    border: none; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+    font-family: 'DM Sans',sans-serif;
+  }
+
+  /* filter tabs */
+  .ftabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+  .ftabs::-webkit-scrollbar { display: none; }
+  .ftab {
+    padding: 6px 14px; border-radius: 20px; font-size: 12.5px;
+    border: 0.5px solid var(--border); color: var(--text2);
+    cursor: pointer; white-space: nowrap; transition: all .15s; flex-shrink: 0;
+  }
+  .ftab:hover { border-color: var(--border2); color: var(--text1); }
+  .ftab.act { background: #fff; color: #000; border-color: #fff; font-weight: 500; }
+
+  /* feed header */
+  .feed-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .feed-title { font-family: 'Bricolage Grotesque',sans-serif; font-size: 15px; font-weight: 500; color: var(--text1); }
+  .feed-sort { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+  /* topic card */
+  .tcard {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    transition: all .18s; cursor: pointer; margin-bottom: 10px;
+  }
+  .tcard:hover { background: var(--surface2); border-color: var(--border2); transform: translateY(-1px); }
+  .tc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .tc-user { display: flex; align-items: center; gap: 9px; }
+  .tc-av {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #000;
+  }
+  .tc-name { font-size: 13px; font-weight: 500; color: var(--text1); }
+  .tc-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .tc-cat {
+    font-size: 10.5px; padding: 3px 9px; border-radius: 20px;
+    background: var(--surface2); border: 0.5px solid var(--border);
+    color: var(--text2); font-weight: 400;
+  }
+  .tc-body { font-size: 14px; color: rgba(245,245,245,0.75); line-height: 1.58; margin-bottom: 12px; }
+  .tc-tags { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tc-tag { font-size: 11px; color: var(--text3); background: var(--surface); border: 0.5px solid var(--border); padding: 2px 9px; border-radius: 20px; }
+  .tc-bottom { display: flex; align-items: center; gap: 16px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  .tc-action { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text3); cursor: pointer; transition: color .15s; }
+  .tc-action:hover { color: var(--text1); }
+  .tc-action svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .tc-dist { margin-left: auto; font-size: 11px; color: var(--text3); }
+
+  /* trending strip */
+  .trending-strip {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+  }
+  .ts-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+  .ts-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+  .ts-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ts-rank { font-size: 11px; color: var(--text3); width: 14px; }
+  .ts-text { font-size: 13px; color: var(--text2); flex: 1; }
+  .ts-count { font-size: 11px; color: var(--text3); }
+
+  /* ── RIGHT SIDEBAR ── */
+  .sidebar-r { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+  .sr-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px; overflow: hidden;
+  }
+  .sr-title { font-family: 'Bricolage Grotesque',sans-serif; font-size: 13px; font-weight: 500; color: var(--text1); margin-bottom: 12px; }
+
+  /* mini map placeholder */
+  .mini-map {
+    width: 100%; height: 130px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border: 0.5px solid var(--border);
+    position: relative; overflow: hidden; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .map-pin { font-size: 18px; position: relative; z-index: 1; }
+  .map-ring {
+    position: absolute; width: 60px; height: 60px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15); top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .map-ring2 {
+    position: absolute; width: 100px; height: 100px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.07); top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .map-dot {
+    position: absolute; width: 6px; height: 6px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.8);
+  }
+  .map-btn {
+    width: 100%; padding: 8px; border-radius: 9px;
+    background: var(--surface2); border: 0.5px solid var(--border);
+    color: var(--text2); font-size: 12px; font-family: 'DM Sans',sans-serif;
+    cursor: pointer; transition: all .15s;
+  }
+  .map-btn:hover { color: var(--text1); border-color: var(--border2); }
+
+  /* nearby users */
+  .nu-item { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .nu-item:last-child { border-bottom: none; }
+  .nu-av {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #000; flex-shrink: 0;
+  }
+  .nu-name { font-size: 12.5px; color: var(--text2); flex: 1; }
+  .nu-dist { font-size: 11px; color: var(--text3); }
+  .nu-live { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 5px rgba(74,222,128,0.6); }
+
+  /* stats mini */
+  .stats-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sm-item {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 12px;
+  }
+  .sm-num { font-family: 'Bricolage Grotesque',sans-serif; font-size: 20px; font-weight: 600; color: var(--text1); }
+  .sm-label { font-size: 10.5px; color: var(--text3); margin-top: 2px; font-weight: 300; }
+
+  /* animations */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .a1{animation:fadeUp .4s ease .05s both}
+  .a2{animation:fadeUp .4s ease .10s both}
+  .a3{animation:fadeUp .4s ease .15s both}
+  .a4{animation:fadeUp .4s ease .20s both}
+  .a5{animation:fadeUp .4s ease .25s both}
+  .a6{animation:fadeUp .4s ease .30s both}
+  .a7{animation:fadeUp .4s ease .35s both}
+
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.10);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="amb"></div>
+<div class="dots"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-wrap">
+    <a class="logo" href="#">
+      <div class="logo-box">🍵</div>
+      <span class="logo-text">SpillTheTea</span>
+    </a>
+    <div class="nav-links">
+      <div class="nl act">Home</div>
+      <div class="nl">Tea <span class="ndot"></span></div>
+      <div class="nl">Duties</div>
+      <div class="nl">Rides</div>
+      <div class="nl">Map</div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-post">+ Post tea</button>
+      <div class="av">D</div>
+    </div>
+  </div>
+</nav>
+
+<!-- BODY -->
+<div class="wrap">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-l a1">
+    <div class="sl-label">Browse</div>
+    <div class="sl-item act"><span class="sl-icon">🏠</span> Home <span class="sl-count">New</span></div>
+    <div class="sl-item"><span class="sl-icon">💬</span> Tea <span class="sl-count">24</span></div>
+    <div class="sl-item"><span class="sl-icon">✅</span> Duties <span class="sl-count">8</span></div>
+    <div class="sl-item"><span class="sl-icon">🚗</span> Rides <span class="sl-count">5</span></div>
+    <div class="sl-item"><span class="sl-icon">🗺️</span> Map</div>
+    <div class="sl-item"><span class="sl-icon">💌</span> DMs <span class="sl-count">3</span></div>
+
+    <div class="sl-label" style="margin-top:8px">Your stuff</div>
+    <div class="sl-item"><span class="sl-icon">👤</span> Profile</div>
+    <div class="sl-item"><span class="sl-icon">📌</span> My Posts</div>
+    <div class="sl-item"><span class="sl-icon">⭐</span> Saved</div>
+
+    <div class="radius-box">
+      <div class="rb-label">Radius</div>
+      <div class="rb-pills">
+        <div class="rb-pill">1 km</div>
+        <div class="rb-pill act">5 km</div>
+        <div class="rb-pill">10 km</div>
+        <div class="rb-pill">25 km</div>
+      </div>
+    </div>
+
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <div class="live-text"><strong>47 people</strong> active nearby</div>
+    </div>
+  </aside>
+
+  <!-- MAIN FEED -->
+  <main class="feed">
+
+    <!-- Quick post -->
+    <div class="qpost a2">
+      <div class="qp-av">D</div>
+      <div class="qp-input">What's happening near you?</div>
+      <button class="qp-btn">Spill 🍵</button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="ftabs a3">
+      <div class="ftab act">✨ All</div>
+      <div class="ftab">🔥 Trending</div>
+      <div class="ftab">💬 Gossip</div>
+      <div class="ftab">🆘 Help</div>
+      <div class="ftab">🔍 Lost & Found</div>
+      <div class="ftab">🎉 Events</div>
+      <div class="ftab">⚠️ Alerts</div>
+    </div>
+
+    <!-- Feed header -->
+    <div class="feed-header a4">
+      <div class="feed-title">Near you · Kollam</div>
+      <div class="feed-sort">Latest ↕</div>
+    </div>
+
+    <!-- CARD 1 -->
+    <div class="tcard a4">
+      <div class="tc-top">
+        <div class="tc-user">
+          <div class="tc-av" style="background:linear-gradient(135deg,#fde68a,#fbbf24)">AK</div>
+          <div>
+            <div class="tc-name">Arjun K.</div>
+            <div class="tc-meta">2 min ago · Kollam</div>
+          </div>
+        </div>
+        <div class="tc-cat">⚠️ Alert</div>
+      </div>
+      <div class="tc-body">Heavy traffic on NH66 near the KSRTC depot. Avoid if possible — accident blocking two lanes. Take service road via Chinnakada instead.</div>
+      <div class="tc-tags">
+        <span class="tc-tag">Traffic</span>
+        <span class="tc-tag">NH66</span>
+        <span class="tc-tag">Kollam</span>
+      </div>
+      <div class="tc-bottom">
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M2 5a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" stroke-linecap="round" stroke-linejoin="round"/></svg> 18</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M8 13.5S2 9.5 2 5.5a3 3 0 015-2.2 3 3 0 015 2.2c0 4-6 8-6 8z" stroke-linecap="round" stroke-linejoin="round"/></svg> 42</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M13 8l-4-4M13 8l-4 4M13 8H3" stroke-linecap="round" stroke-linejoin="round"/></svg> DM</div>
+        <div class="tc-dist">0.3 km away</div>
+      </div>
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="tcard a5">
+      <div class="tc-top">
+        <div class="tc-user">
+          <div class="tc-av" style="background:linear-gradient(135deg,#a5f3fc,#67e8f9)">MR</div>
+          <div>
+            <div class="tc-name">Maya R.</div>
+            <div class="tc-meta">14 min ago · Asramam</div>
+          </div>
+        </div>
+        <div class="tc-cat">💬 Gossip</div>
+      </div>
+      <div class="tc-body">Okay who else saw that massive queue at the new Amul outlet near the stadium?? Waited 40 minutes for a single scoop 😭 worth it though ngl</div>
+      <div class="tc-tags">
+        <span class="tc-tag">Food</span>
+        <span class="tc-tag">Asramam</span>
+        <span class="tc-tag">Worth it</span>
+      </div>
+      <div class="tc-bottom">
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M2 5a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" stroke-linecap="round" stroke-linejoin="round"/></svg> 31</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M8 13.5S2 9.5 2 5.5a3 3 0 015-2.2 3 3 0 015 2.2c0 4-6 8-6 8z" stroke-linecap="round" stroke-linejoin="round"/></svg> 87</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M13 8l-4-4M13 8l-4 4M13 8H3" stroke-linecap="round" stroke-linejoin="round"/></svg> DM</div>
+        <div class="tc-dist">1.1 km away</div>
+      </div>
+    </div>
+
+    <!-- CARD 3 -->
+    <div class="tcard a6">
+      <div class="tc-top">
+        <div class="tc-user">
+          <div class="tc-av" style="background:linear-gradient(135deg,#d8b4fe,#c084fc)">SK</div>
+          <div>
+            <div class="tc-name">Sree K.</div>
+            <div class="tc-meta">28 min ago · Kadavoor</div>
+          </div>
+        </div>
+        <div class="tc-cat">🆘 Help</div>
+      </div>
+      <div class="tc-body">Lost my dog near Kadavoor junction — brown Labrador, answers to "Bruno". Please DM if you spot him. Reward for anyone who helps find him 🙏</div>
+      <div class="tc-tags">
+        <span class="tc-tag">Lost Dog</span>
+        <span class="tc-tag">Kadavoor</span>
+        <span class="tc-tag">Urgent</span>
+      </div>
+      <div class="tc-bottom">
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M2 5a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" stroke-linecap="round" stroke-linejoin="round"/></svg> 7</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M8 13.5S2 9.5 2 5.5a3 3 0 015-2.2 3 3 0 015 2.2c0 4-6 8-6 8z" stroke-linecap="round" stroke-linejoin="round"/></svg> 23</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M13 8l-4-4M13 8l-4 4M13 8H3" stroke-linecap="round" stroke-linejoin="round"/></svg> DM</div>
+        <div class="tc-dist">2.4 km away</div>
+      </div>
+    </div>
+
+    <!-- CARD 4 -->
+    <div class="tcard a7">
+      <div class="tc-top">
+        <div class="tc-user">
+          <div class="tc-av" style="background:linear-gradient(135deg,#86efac,#4ade80)">PN</div>
+          <div>
+            <div class="tc-name">Priya N.</div>
+            <div class="tc-meta">1 hr ago · Thangassery</div>
+          </div>
+        </div>
+        <div class="tc-cat">🎉 Events</div>
+      </div>
+      <div class="tc-body">Huge beach cleanup happening this Sunday at Thangassery lighthouse from 7–10am. Need 20 more volunteers. Free breakfast included! DM to register.</div>
+      <div class="tc-tags">
+        <span class="tc-tag">Event</span>
+        <span class="tc-tag">Thangassery</span>
+        <span class="tc-tag">Volunteer</span>
+      </div>
+      <div class="tc-bottom">
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M2 5a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" stroke-linecap="round" stroke-linejoin="round"/></svg> 52</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M8 13.5S2 9.5 2 5.5a3 3 0 015-2.2 3 3 0 015 2.2c0 4-6 8-6 8z" stroke-linecap="round" stroke-linejoin="round"/></svg> 134</div>
+        <div class="tc-action"><svg viewBox="0 0 16 16"><path d="M13 8l-4-4M13 8l-4 4M13 8H3" stroke-linecap="round" stroke-linejoin="round"/></svg> DM</div>
+        <div class="tc-dist">3.8 km away</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar-r a2">
+
+    <!-- Stats -->
+    <div class="stats-mini">
+      <div class="sm-item"><div class="sm-num">2.4k</div><div class="sm-label">Locals active</div></div>
+      <div class="sm-item"><div class="sm-num">184</div><div class="sm-label">Posts today</div></div>
+      <div class="sm-item"><div class="sm-num">31</div><div class="sm-label">Rides now</div></div>
+      <div class="sm-item"><div class="sm-num">8</div><div class="sm-label">Duties open</div></div>
+    </div>
+
+    <!-- Mini map -->
+    <div class="sr-card">
+      <div class="sr-title">📍 Nearby activity</div>
+      <div class="mini-map">
+        <div class="map-grid"></div>
+        <div class="map-ring"></div>
+        <div class="map-ring2"></div>
+        <div class="map-dot" style="top:36%;left:48%"></div>
+        <div class="map-dot" style="top:55%;left:62%;opacity:.7"></div>
+        <div class="map-dot" style="top:44%;left:35%;opacity:.6"></div>
+        <div class="map-dot" style="top:62%;left:44%;opacity:.5"></div>
+        <div class="map-pin">📍</div>
+      </div>
+      <button class="map-btn">Open full map →</button>
+    </div>
+
+    <!-- Nearby users -->
+    <div class="sr-card">
+      <div class="sr-title">👥 Active nearby</div>
+      <div class="nu-item">
+        <div class="nu-av" style="background:linear-gradient(135deg,#fde68a,#fbbf24)">AK</div>
+        <div class="nu-name">Arjun K.</div>
+        <div class="nu-dist">0.3 km</div>
+        <div class="nu-live"></div>
+      </div>
+      <div class="nu-item">
+        <div class="nu-av" style="background:linear-gradient(135deg,#a5f3fc,#67e8f9)">MR</div>
+        <div class="nu-name">Maya R.</div>
+        <div class="nu-dist">1.1 km</div>
+        <div class="nu-live"></div>
+      </div>
+      <div class="nu-item">
+        <div class="nu-av" style="background:linear-gradient(135deg,#d8b4fe,#c084fc)">SK</div>
+        <div class="nu-name">Sree K.</div>
+        <div class="nu-dist">2.4 km</div>
+        <div class="nu-live"></div>
+      </div>
+      <div class="nu-item">
+        <div class="nu-av" style="background:linear-gradient(135deg,#86efac,#4ade80)">PN</div>
+        <div class="nu-name">Priya N.</div>
+        <div class="nu-dist">3.8 km</div>
+        <div class="nu-live"></div>
+      </div>
+    </div>
+
+    <!-- Trending -->
+    <div class="sr-card">
+      <div class="sr-title">🔥 Trending near you</div>
+      <div class="ts-item"><div class="ts-rank">1</div><div class="ts-text">NH66 traffic jam</div><div class="ts-count">42 🔁</div></div>
+      <div class="ts-item"><div class="ts-rank">2</div><div class="ts-text">Amul outlet queue</div><div class="ts-count">31 🔁</div></div>
+      <div class="ts-item"><div class="ts-rank">3</div><div class="ts-text">Beach cleanup Sunday</div><div class="ts-count">28 🔁</div></div>
+      <div class="ts-item"><div class="ts-rank">4</div><div class="ts-text">Lost dog Bruno</div><div class="ts-count">19 🔁</div></div>
+    </div>
+
+  </aside>
+
+</div>
+</body>
+</html>
