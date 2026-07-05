@@ -1,23 +1,52 @@
 import type { RideChatMessage, RideChatMessageType } from "@/lib/types/ride-chat";
 
-export async function fetchRideMessages(..._args: unknown[]): Promise<RideChatMessage[]> {
+export type RideChatContext = {
+  currentUserId: string;
+  riderUserId: string;
+  riderName: string;
+  driverUserId: string;
+  driverName: string;
+};
+
+export async function fetchRideMessages(
+  _client: unknown,
+  _rideId: string,
+  _currentUserId: string,
+  _riderUserId: string,
+  _riderName: string,
+  _driverUserId: string,
+  _driverName: string,
+): Promise<RideChatMessage[]> {
   return [];
 }
 
 export async function sendRideChatMessage(
   _client: unknown,
+  rideId: string,
   input: {
-    rideId: string;
-    senderName: string;
-    body: string;
     messageType?: RideChatMessageType;
+    body?: string;
     audioUrl?: string;
     mediaUrl?: string;
     fileName?: string;
   },
-): Promise<string> {
-  console.warn("Mongo ride chat persistence is not implemented yet.", input);
-  return `ride-msg-${Date.now().toString(36)}`;
+  ctx: RideChatContext,
+): Promise<RideChatMessage> {
+  const senderName =
+    ctx.currentUserId === ctx.riderUserId ? ctx.riderName : ctx.driverName;
+  return {
+    id: `ride-msg-${Date.now().toString(36)}`,
+    rideId,
+    senderId: ctx.currentUserId,
+    senderName,
+    messageType: input.messageType ?? "text",
+    body: input.body ?? "",
+    audioUrl: input.audioUrl,
+    mediaUrl: input.mediaUrl,
+    fileName: input.fileName,
+    createdAt: Date.now(),
+    isMine: true,
+  };
 }
 
 type RideChatRowInput = Partial<RideChatMessage> & {
@@ -50,7 +79,8 @@ export function mapRideChatRow(
     audioUrl: row.audioUrl ?? row.audio_url,
     mediaUrl: row.mediaUrl ?? row.media_url,
     fileName: row.fileName ?? row.file_name,
-    createdAt: row.createdAt ?? (row.created_at ? new Date(row.created_at).getTime() : Date.now()),
+    createdAt:
+      row.createdAt ?? (row.created_at ? new Date(row.created_at).getTime() : Date.now()),
     isMine: currentUserId ? senderId === currentUserId : Boolean(row.isMine),
   };
 }

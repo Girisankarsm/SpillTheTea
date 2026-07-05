@@ -1,23 +1,52 @@
 import type { DutyChatMessage, DutyChatMessageType } from "@/lib/types/duty-chat";
 
-export async function fetchDutyMessages(..._args: unknown[]): Promise<DutyChatMessage[]> {
+export type DutyChatContext = {
+  currentUserId: string;
+  authorUserId: string;
+  authorName: string;
+  helperUserId: string;
+  helperName: string;
+};
+
+export async function fetchDutyMessages(
+  _client: unknown,
+  _dutyId: string,
+  _currentUserId: string,
+  _authorUserId: string,
+  _authorName: string,
+  _helperUserId: string,
+  _helperName: string,
+): Promise<DutyChatMessage[]> {
   return [];
 }
 
 export async function sendDutyChatMessage(
   _client: unknown,
+  dutyId: string,
   input: {
-    dutyId: string;
-    senderName: string;
-    body: string;
     messageType?: DutyChatMessageType;
+    body?: string;
     audioUrl?: string;
     mediaUrl?: string;
     fileName?: string;
   },
-): Promise<string> {
-  console.warn("Mongo duty chat persistence is not implemented yet.", input);
-  return `duty-msg-${Date.now().toString(36)}`;
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
+  const senderName =
+    ctx.currentUserId === ctx.authorUserId ? ctx.authorName : ctx.helperName;
+  return {
+    id: `duty-msg-${Date.now().toString(36)}`,
+    dutyId,
+    senderId: ctx.currentUserId,
+    senderName,
+    messageType: input.messageType ?? "text",
+    body: input.body ?? "",
+    audioUrl: input.audioUrl,
+    mediaUrl: input.mediaUrl,
+    fileName: input.fileName,
+    createdAt: Date.now(),
+    isMine: true,
+  };
 }
 
 export async function sendDutyMessage(
@@ -25,23 +54,29 @@ export async function sendDutyMessage(
   dutyId: string,
   senderName: string,
   body: string,
-): Promise<string> {
-  return sendDutyChatMessage(client, { dutyId, senderName, body, messageType: "text" });
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
+  return sendDutyChatMessage(
+    client,
+    dutyId,
+    { body, messageType: "text" },
+    { ...ctx, authorName: senderName, helperName: senderName },
+  );
 }
 
 export async function sendDutyVoiceMessage(
   client: unknown,
   dutyId: string,
-  senderName: string,
+  _senderName: string,
   audioUrl: string,
-): Promise<string> {
-  return sendDutyChatMessage(client, {
+  ctx: DutyChatContext,
+): Promise<DutyChatMessage> {
+  return sendDutyChatMessage(
+    client,
     dutyId,
-    senderName,
-    body: "Voice message",
-    audioUrl,
-    messageType: "voice",
-  });
+    { body: "Voice message", audioUrl, messageType: "voice" },
+    ctx,
+  );
 }
 
 type DutyChatRowInput = Partial<DutyChatMessage> & {
@@ -74,7 +109,8 @@ export function mapDutyChatRow(
     audioUrl: row.audioUrl ?? row.audio_url,
     mediaUrl: row.mediaUrl ?? row.media_url,
     fileName: row.fileName ?? row.file_name,
-    createdAt: row.createdAt ?? (row.created_at ? new Date(row.created_at).getTime() : Date.now()),
+    createdAt:
+      row.createdAt ?? (row.created_at ? new Date(row.created_at).getTime() : Date.now()),
     isMine: currentUserId ? senderId === currentUserId : Boolean(row.isMine),
   };
 }
