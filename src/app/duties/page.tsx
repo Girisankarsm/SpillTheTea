@@ -104,14 +104,14 @@ export default function DutiesPage() {
           alert("Sign in to post a duty.");
           return;
         }
-        const duty = await createDutyRemote(backend, {
+        const dutyId = await createDutyRemote(backend, {
           title: input.title,
           description: input.description,
           authorName: postingName,
         });
         setCreateOpen(false);
         await reload();
-        router.push(`/duties/${duty.id}`);
+        router.push(`/duties/${dutyId}`);
         return;
       }
 

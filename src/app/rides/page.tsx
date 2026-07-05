@@ -165,10 +165,10 @@ export default function RidesPage() {
         alert("Sign in to request a ride.");
         return;
       }
-      const ride = await createRideRemote(backend, input);
+      const rideId = await createRideRemote(backend, input);
       setCreateOpen(false);
       await reload();
-      router.push(`/rides/${ride.id}`);
+      router.push(`/rides/${rideId}`);
     } catch (e) {
       alert(unknownErrorMessage(e, "Could not post ride request."));
     } finally {
