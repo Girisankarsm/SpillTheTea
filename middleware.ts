@@ -24,7 +24,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const user = await verifySessionToken(request.cookies.get(AUTH_COOKIE)?.value);
+  let user: Awaited<ReturnType<typeof verifySessionToken>> = null;
+  try {
+    user = await verifySessionToken(request.cookies.get(AUTH_COOKIE)?.value);
+  } catch {
+    user = null;
+  }
 
   if (
     pathname === "/" ||
