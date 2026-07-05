@@ -1,8 +1,15 @@
+export type BackendRealtimePayload = {
+  payload?: unknown;
+  new?: unknown;
+  old?: unknown;
+  eventType?: string;
+};
+
 export type BackendChannel = {
   on: (
     type: string,
     filter: unknown,
-    callback?: (event: { payload?: unknown }) => void,
+    callback?: (event: BackendRealtimePayload) => void,
   ) => BackendChannel;
   subscribe: (callback?: (status: string) => void) => BackendChannel;
   send: (payload: unknown) => Promise<"ok">;
