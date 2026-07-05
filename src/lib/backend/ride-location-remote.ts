@@ -1,7 +1,9 @@
-import type { RideLiveLocation } from "@/lib/types/ride-location";
+import type { RideLiveLocation, RideLiveLocations } from "@/lib/types/ride-location";
 
-export async function fetchRideLiveLocations(..._args: unknown[]): Promise<RideLiveLocation[]> {
-  return [];
+export async function fetchRideLiveLocations(
+  ..._args: unknown[]
+): Promise<RideLiveLocations> {
+  return { rider: null, driver: null };
 }
 
 export async function upsertRideLiveLocation(..._args: unknown[]): Promise<void> {
@@ -30,4 +32,14 @@ export function mapRideLiveLocationRow(row: {
     sharing: row.sharing,
     updatedAt: new Date(row.updated_at).getTime(),
   };
+}
+
+export function mergeRideLiveLocation(
+  current: RideLiveLocations,
+  location: RideLiveLocation,
+): RideLiveLocations {
+  if (location.role === "rider") {
+    return { ...current, rider: location };
+  }
+  return { ...current, driver: location };
 }
