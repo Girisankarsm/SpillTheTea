@@ -128,13 +128,13 @@ export default function TopicChatPage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const refreshRemoteUpvotes = useCallback(
-    async (messages: ChatMessage[], userId: string | null) => {
+    async (messages: ChatMessage[], _userId: string | null) => {
       if (!backend || messages.length === 0) return messages;
-      const upvotes = await fetchMessageUpvotes(
+      const { counts, mine } = await fetchMessageUpvotes(
         backend,
         messages.map((message) => message.id),
       );
-      return applyUpvotesToMessages(messages, upvotes, userId);
+      return applyUpvotesToMessages(messages, counts, mine);
     },
     [backend],
   );

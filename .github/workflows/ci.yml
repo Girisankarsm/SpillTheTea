@@ -31,9 +31,11 @@ jobs:
           npm run build 2>&1 | tee build.log || {
             echo "--- build failed; last 80 lines ---"
             tail -80 build.log
+            echo "--- source locations ---"
+            grep -E '\./src/[^ ]+\.[0-9]+:[0-9]+' build.log || true
             while IFS= read -r line; do
               case "$line" in
-                *"Type error"*|*"Error:"*|*"Failed"*|*"Module not found"*)
+                *"Type error"*|*"Error:"*|*"Failed"*|*"Module not found"*|*"./src/"*)
                   echo "::error title=next build::$line"
                   ;;
               esac
