@@ -52,7 +52,7 @@ export function MainNav({ variant }: MainNavProps) {
             aria-current={active ? "page" : undefined}
           >
             {link.label}
-            {link.showDot ? (
+            {"showDot" in link && link.showDot ? (
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
             ) : null}
           </Link>
