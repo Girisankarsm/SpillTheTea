@@ -11,19 +11,14 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { canDeleteTopic } from "@/lib/admin";
 import type { TopicSort } from "@/lib/message-upvotes";
 import {
-  createTopicRemote,
   deleteTopicRemote,
   fetchExploreFeeds,
   fetchTopicPreviewsRemote,
   getCurrentUserId,
-  sendMessageRemote,
+  spillTeaRemote,
 } from "@/lib/backend/meet-greet-remote";
 import { readFileAsDataUrl } from "@/lib/message-thread";
-import {
-  normalizeMediaUrlInput,
-  uploadMessageMedia,
-} from "@/lib/backend/message-media";
-import { createPollRemote } from "@/lib/backend/poll-remote";
+import { normalizeMediaUrlInput } from "@/lib/backend/message-media";
 import { unknownErrorMessage } from "@/lib/error-message";
 import { roomShareUrl } from "@/lib/share-room";
 import {
@@ -217,68 +212,7 @@ function TopicsDirectoryContent() {
       const lng = location?.lng ?? 0;
 
       if (remoteReady && backend) {
-        const tid = await createTopicRemote(backend, {
-          title: payload.title,
-          lat,
-          lng,
-        });
-
-        if (payload.kind === "text" && payload.body) {
-          await sendMessageRemote(backend, {
-            topicId: tid,
-            authorName,
-            body: payload.body,
-          });
-        }
-
-        if (payload.kind === "link") {
-          const linkBody = payload.body
-            ? `${payload.body}\n\n${payload.linkUrl}`
-            : payload.linkUrl;
-          await sendMessageRemote(backend, {
-            topicId: tid,
-            authorName,
-            body: linkBody,
-          });
-        }
-
-        if (payload.kind === "media") {
-          let mediaUrl: string | undefined;
-          let mediaType: "image" | "gif" | undefined;
-
-          if (payload.mediaFile) {
-            const uploaded = await uploadMessageMedia(
-              backend,
-              payload.mediaFile,
-              tid,
-            );
-            mediaUrl = uploaded.url;
-            mediaType = uploaded.mediaType;
-          } else if (payload.gifUrl) {
-            const normalized = normalizeMediaUrlInput(payload.gifUrl);
-            if (!normalized) throw new Error("Invalid GIF URL.");
-            mediaUrl = normalized.url;
-            mediaType = normalized.mediaType;
-          }
-
-          await sendMessageRemote(backend, {
-            topicId: tid,
-            authorName,
-            body: payload.body,
-            mediaUrl,
-            mediaType,
-          });
-        }
-
-        if (payload.kind === "poll") {
-          await createPollRemote(backend, {
-            topicId: tid,
-            authorName,
-            question: payload.pollQuestion,
-            options: payload.pollOptions,
-          });
-        }
-
+        const tid = await spillTeaRemote(backend, payload, authorName, lat, lng);
         router.push(`/topics/${tid}`);
         return;
       }

@@ -1,5 +1,21 @@
 import type { TopicPreview } from "@/lib/tea-feed";
 import type { ChatMessage, SendMessageInput, Topic } from "@/lib/types";
+import { createPollRemote } from "@/lib/backend/poll-remote";
+import {
+  normalizeMediaUrlInput,
+  uploadMessageMedia,
+} from "@/lib/backend/message-media";
+
+export type SpillTeaRemoteInput = {
+  kind: "text" | "media" | "link" | "poll";
+  title: string;
+  body: string;
+  linkUrl: string;
+  mediaFile: File | null;
+  gifUrl: string;
+  pollQuestion: string;
+  pollOptions: string[];
+};
 
 type FeedResponse = {
   topics: Topic[];
@@ -50,7 +66,17 @@ export async function fetchTopicPreviewsRemote(
 
 export async function createTopicRemote(
   _client: unknown,
-  input: { title: string; lat: number; lng: number },
+  input: {
+    title: string;
+    lat: number;
+    lng: number;
+    initialMessage?: {
+      authorName: string;
+      body: string;
+      mediaUrl?: string;
+      mediaType?: "image" | "gif";
+    };
+  },
 ): Promise<string> {
   const data = await jsonFetch<{ id: string }>("/api/topics", {
     method: "POST",
@@ -127,4 +153,75 @@ export async function getCurrentUserId(): Promise<string | null> {
   if (!response.ok) return null;
   const data = (await response.json()) as { user?: { id: string } | null };
   return data.user?.id ?? null;
+}
+
+/** Creates a topic and first message atomically when the post has chat content. */
+export async function spillTeaRemote(
+  client: unknown,
+  payload: SpillTeaRemoteInput,
+  authorName: string,
+  lat: number,
+  lng: number,
+): Promise<string> {
+  const topicBase = { title: payload.title, lat, lng };
+
+  if (payload.kind === "poll") {
+    const topicId = await createTopicRemote(client, topicBase);
+    await createPollRemote(client, {
+      topicId,
+      authorName,
+      question: payload.pollQuestion,
+      options: payload.pollOptions,
+    });
+    return topicId;
+  }
+
+  let initialMessage:
+    | {
+        authorName: string;
+        body: string;
+        mediaUrl?: string;
+        mediaType?: "image" | "gif";
+      }
+    | undefined;
+
+  if (payload.kind === "text" && payload.body) {
+    initialMessage = { authorName, body: payload.body };
+  }
+
+  if (payload.kind === "link") {
+    const linkBody = payload.body
+      ? `${payload.body}\n\n${payload.linkUrl}`
+      : payload.linkUrl;
+    initialMessage = { authorName, body: linkBody };
+  }
+
+  if (payload.kind === "media") {
+    let mediaUrl: string | undefined;
+    let mediaType: "image" | "gif" | undefined;
+
+    if (payload.mediaFile) {
+      const uploaded = await uploadMessageMedia(client, payload.mediaFile, "");
+      mediaUrl = uploaded.url;
+      mediaType = uploaded.mediaType;
+    } else if (payload.gifUrl) {
+      const normalized = normalizeMediaUrlInput(payload.gifUrl);
+      if (!normalized) throw new Error("Invalid GIF URL.");
+      mediaUrl = normalized.url;
+      mediaType = normalized.mediaType;
+    }
+
+    initialMessage = {
+      authorName,
+      body: payload.body,
+      mediaUrl,
+      mediaType,
+    };
+  }
+
+  if (initialMessage) {
+    return createTopicRemote(client, { ...topicBase, initialMessage });
+  }
+
+  return createTopicRemote(client, topicBase);
 }
