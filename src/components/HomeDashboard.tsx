@@ -93,7 +93,9 @@ export function HomeDashboard() {
   const sendMessageLocal = useMeetGreetStore((s) => s.sendMessage);
   const createPollLocal = useMeetGreetStore((s) => s.createPoll);
 
-  const [createOpen, setCreateOpen] = useState(false);
+  const createFromUrl = searchParams.get("create") === "1";
+  const [manualCreateOpen, setManualCreateOpen] = useState(false);
+  const createOpen = createFromUrl || manualCreateOpen;
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -138,16 +140,14 @@ export function HomeDashboard() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("create") === "1") {
-      setCreateOpen(true);
-      requestAnimationFrame(() => {
-        document.getElementById("create-tea-panel")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+    if (!createFromUrl) return;
+    requestAnimationFrame(() => {
+      document.getElementById("create-tea-panel")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
-    }
-  }, [searchParams]);
+    });
+  }, [createFromUrl]);
 
   const topics = remoteReady ? rxTopics : localTopics;
   const activity = useMemo(() => {
@@ -293,7 +293,7 @@ export function HomeDashboard() {
       {!createOpen ? (
         <button
           type="button"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => setManualCreateOpen(true)}
           className="card-interactive animate-fade-up flex w-full items-center gap-3 px-4 py-3.5 text-left"
           style={{ animationDelay: "0.1s" }}
         >
@@ -308,7 +308,7 @@ export function HomeDashboard() {
           <CreateTopicPanel
             onSubmit={spillTea}
             onClose={() => {
-              setCreateOpen(false);
+              setManualCreateOpen(false);
               router.replace("/topics");
             }}
             disabled={remoteReady && (!backend || loading)}
@@ -397,7 +397,7 @@ export function HomeDashboard() {
             <p className="mt-1 text-xs text-subtle">Be the first to spill some tea in your area.</p>
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => setManualCreateOpen(true)}
               className={`${primaryButtonSmClass} mt-4`}
             >
               + Post tea
