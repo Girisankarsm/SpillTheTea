@@ -24,4 +24,19 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build
+
+      - name: Build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log || {
+            echo "--- build failed; last 80 lines ---"
+            tail -80 build.log
+            while IFS= read -r line; do
+              case "$line" in
+                *"Type error"*|*"Error:"*|*"Failed"*|*"Module not found"*)
+                  echo "::error title=next build::$line"
+                  ;;
+              esac
+            done < build.log
+            exit 1
+          }

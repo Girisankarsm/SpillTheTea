@@ -225,6 +225,9 @@ export async function createTopicWithFirstMessage(input: {
       );
       messageId = messageResult.insertedId.toString();
     });
+    if (!topicId || !messageId) {
+      throw new Error("Could not create topic and first message.");
+    }
     return { topicId, messageId };
   } finally {
     await session.endSession();
